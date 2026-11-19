@@ -1,4 +1,4 @@
-name: Gerar APK RVTEC Firebase
+name: Gerar APK RVTEC Firebase (build solicitado)
 
 on:
   workflow_dispatch:
