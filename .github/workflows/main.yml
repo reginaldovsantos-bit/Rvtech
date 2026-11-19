@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/**'
       - 'RVTEC_FIREBASE_PREPARADO.zip'
+      - 'RVTEC_Android_v1.1_LOGIN_IA.zip'
 
 jobs:
   build:
@@ -20,9 +21,9 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Extrair projeto RVTEC com Firebase
+      - name: Extrair projeto RVTEC 1.1
         run: |
-          ZIP="RVTEC_FIREBASE_PREPARADO.zip"
+          ZIP="RVTEC_Android_v1.1_LOGIN_IA.zip"
           test -f "$ZIP" || { echo "Arquivo $ZIP não encontrado"; exit 1; }
           unzip -o "$ZIP" -d .
 
@@ -37,5 +38,5 @@ jobs:
       - name: Disponibilizar APK
         uses: actions/upload-artifact@v4
         with:
-          name: RVTEC-APK-FIREBASE
+          name: RVTEC-APK-v1.1
           path: RVTEC_Android/app/build/outputs/apk/debug/app-debug.apk
