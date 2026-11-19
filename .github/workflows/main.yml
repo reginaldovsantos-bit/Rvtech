@@ -1,11 +1,11 @@
-name: Gerar APK RVTEC Firebase (build solicitado)
+name: Gerar APK RVTEC com login separado
 
 on:
   workflow_dispatch:
   push:
     paths:
       - '.github/workflows/**'
-      - 'RVTEC_FIREBASE_PREPARADO.zip'
+      - 'RVTEC_LOGIN_SEPARADO_PREPARADO.zip'
 
 jobs:
   build:
@@ -20,9 +20,9 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Extrair projeto RVTEC com Firebase
+      - name: Extrair projeto RVTEC com login separado
         run: |
-          ZIP="RVTEC_FIREBASE_PREPARADO.zip"
+          ZIP="RVTEC_LOGIN_SEPARADO_PREPARADO.zip"
           test -f "$ZIP" || { echo "Arquivo $ZIP não encontrado"; exit 1; }
           unzip -o "$ZIP" -d .
 
@@ -37,5 +37,5 @@ jobs:
       - name: Disponibilizar APK
         uses: actions/upload-artifact@v4
         with:
-          name: RVTEC-APK-FIREBASE
+          name: RVTEC-APK-LOGIN-SEPARADO
           path: RVTEC_Android/app/build/outputs/apk/debug/app-debug.apk
