@@ -1,16 +1,15 @@
-name: Gerar APK RVTEC
+name: Gerar APK RVTEC Firebase
 
 on:
   workflow_dispatch:
   push:
     paths:
       - '.github/workflows/**'
-      - 'RVTEC_Android_Projeto_ICONE_NOVO.zip'
+      - 'RVTEC_FIREBASE_PREPARADO.zip'
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Baixar projeto
         uses: actions/checkout@v4
@@ -21,13 +20,10 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Extrair projeto Android original com ícone
+      - name: Extrair projeto RVTEC com Firebase
         run: |
-          ZIP="RVTEC_Android_Projeto_ICONE_NOVO.zip"
-          if [ ! -f "$ZIP" ]; then
-            echo "Arquivo $ZIP não encontrado"
-            exit 1
-          fi
+          ZIP="RVTEC_FIREBASE_PREPARADO.zip"
+          test -f "$ZIP" || { echo "Arquivo $ZIP não encontrado"; exit 1; }
           unzip -o "$ZIP" -d .
 
       - name: Preparar Gradle
@@ -41,5 +37,5 @@ jobs:
       - name: Disponibilizar APK
         uses: actions/upload-artifact@v4
         with:
-          name: RVTEC-APK-ORIGINAL-SEM-LOGIN
+          name: RVTEC-APK-FIREBASE
           path: RVTEC_Android/app/build/outputs/apk/debug/app-debug.apk
