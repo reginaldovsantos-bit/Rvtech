@@ -48,6 +48,99 @@ jobs:
               p.write_text(s)
           PY
 
+
+      - name: Adicionar gestão de usuários e perfis na tela de login
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          root=Path("RVTEC_Android/app/src/main")
+          login=root/"assets/login.html"
+          s=login.read_text()
+          old='''#msg{min-height:22px;color:#b42323}a{display:block;text-align:center;color:#1877b9;font-size:13px;margin-top:14px}
+          </style></head><body><section class="card"><div class="brand">RVTEC</div><h1>Acesso ao sistema</h1><p>Entre com seu e-mail e senha cadastrados.</p>
+          <label for="email">E-mail</label><input id="email" type="email" autocomplete="username" placeholder="seuemail@empresa.com">
+          <label for="password">Senha</label><input id="password" type="password" autocomplete="current-password" placeholder="Sua senha">
+          <button id="enter" onclick="login()">Entrar</button><a href="#" onclick="resetPassword();return false">Esqueci minha senha</a><p id="msg" role="status"></p></section>'''
+          new='''#msg{min-height:22px;color:#b42323}a{display:block;text-align:center;color:#1877b9;font-size:13px;margin-top:14px}
+          button.secondary{background:#e8f1f8;color:#145b89;border:1px solid #cbdce9;margin-top:10px}
+          .hidden{display:none!important}.userrow{padding:12px 0;border-bottom:1px solid #e6edf3}.userrow strong{display:block}.userrow small{color:#68798a}.userrow select,.userrow button{margin-top:8px}.userrow button{width:auto;padding:9px 12px}.sectionTitle{margin-top:22px;border-top:1px solid #e6edf3;padding-top:15px}
+          </style></head><body><section class="card"><div class="brand">RVTEC</div><h1>Acesso ao sistema</h1><p>Entre com seu e-mail e senha cadastrados.</p>
+          <div id="loginFields"><label for="email">E-mail</label><input id="email" type="email" autocomplete="username" placeholder="seuemail@empresa.com">
+          <label for="password">Senha</label><input id="password" type="password" autocomplete="current-password" placeholder="Sua senha">
+          <button id="enter" onclick="login()">Entrar</button><a href="#" onclick="resetPassword();return false">Esqueci minha senha</a></div>
+          <div id="adminArea" class="hidden"><h2>Usuários e permissões</h2><p>Área exclusiva do administrador. Cadastre pessoas, escolha o perfil e ative ou bloqueie acessos.</p>
+          <label for="newName">Nome</label><input id="newName" placeholder="Nome completo">
+          <label for="newEmail">E-mail</label><input id="newEmail" type="email" placeholder="usuario@empresa.com">
+          <label for="newPassword">Senha inicial</label><input id="newPassword" type="password" minlength="6" placeholder="Mínimo de 6 caracteres">
+          <label for="newRole">Perfil de acesso</label><select id="newRole"><option value="supervisor">Supervisor</option><option value="production">Operador / Produção</option><option value="electrician">Técnico / Eletricista</option><option value="management">Gestão</option></select>
+          <button onclick="createUser()">Cadastrar usuário</button><p id="adminMsg" role="status"></p>
+          <h3 class="sectionTitle">Usuários cadastrados</h3><div id="usersList">Carregando...</div>
+          <button class="secondary" onclick="enterApp()">Entrar no RVTEC</button><button class="secondary" onclick="logoutAdmin()">Sair da conta</button></div>
+          <p id="msg" role="status"></p></section>'''
+          if old not in s: raise SystemExit("Não encontrou o bloco original do login para atualizar.")
+          s=s.replace(old,new,1)
+          a=s.index("function msg(t)")
+          b=s.index("</script>",a)
+          js="""function msg(t){document.getElementById('msg').textContent=t}
+          function adminMsg(t){document.getElementById('adminMsg').textContent=t}
+          let currentProfile=null;
+          const roleLabels={admin:'Administrador',supervisor:'Supervisor',production:'Operador / Produção',electrician:'Técnico / Eletricista',management:'Gestão'};
+          const roleValues=['supervisor','production','electrician','management'];
+          function showAdmin(){document.getElementById('loginFields').classList.add('hidden');document.getElementById('adminArea').classList.remove('hidden');loadUsers();}
+          function showLogin(){document.getElementById('loginFields').classList.remove('hidden');document.getElementById('adminArea').classList.add('hidden');}
+          async function validateAndOpen(user){
+           if(!user)return;
+           try{const d=await db.collection('rvtec_users').doc(user.uid).get();
+           if(!d.exists||d.data().active!==true){await auth.signOut();msg('Usuário sem perfil ativo. Procure o administrador.');return;}
+           currentProfile=d.data();
+           if(currentProfile.role==='admin'){showAdmin();msg('Acesso administrativo autorizado.');return;}
+           if(window.RVTECNative)RVTECNative.openApp();
+           }catch(e){msg('Não foi possível validar seu perfil: '+(e.message||e));}
+          }
+          auth.onAuthStateChanged(user=>{if(user)validateAndOpen(user);else{currentProfile=null;showLogin();}});
+          async function login(){const b=document.getElementById('enter');b.disabled=true;msg('Validando acesso...');
+           try{const c=await auth.signInWithEmailAndPassword(document.getElementById('email').value.trim(),document.getElementById('password').value);await validateAndOpen(c.user);}
+           catch(e){msg('E-mail ou senha inválidos, ou falha de conexão.');}finally{b.disabled=false;}}
+          async function resetPassword(){const e=document.getElementById('email').value.trim();if(!e){msg('Digite seu e-mail primeiro.');return;}try{await auth.sendPasswordResetEmail(e);msg('Link de redefinição enviado.');}catch(e){msg('Não foi possível enviar o link.');}}
+          async function createUser(){
+           if(currentProfile?.role!=='admin')return adminMsg('Somente o administrador pode cadastrar usuários.');
+           const name=document.getElementById('newName').value.trim(),email=document.getElementById('newEmail').value.trim(),password=document.getElementById('newPassword').value,role=document.getElementById('newRole').value;
+           if(!name||!email||password.length<6)return adminMsg('Preencha nome, e-mail e senha com pelo menos 6 caracteres.');
+           adminMsg('Cadastrando usuário...');let secondary=null;
+           try{secondary=firebase.initializeApp(cfg,'rvtecAdminCreator');const credential=await secondary.auth().createUserWithEmailAndPassword(email,password);
+           await db.collection('rvtec_users').doc(credential.user.uid).set({name,email,role,active:true,createdAt:firebase.firestore.FieldValue.serverTimestamp(),createdBy:auth.currentUser.uid});
+           await credential.user.sendEmailVerification().catch(()=>{});await secondary.auth().signOut();await secondary.delete();
+           ['newName','newEmail','newPassword'].forEach(id=>document.getElementById(id).value='');adminMsg('Usuário cadastrado com sucesso.');await loadUsers();
+           }catch(e){if(secondary){try{await secondary.delete()}catch(_){}}adminMsg(e.message||'Não foi possível cadastrar.');}
+          }
+          async function loadUsers(){
+           const box=document.getElementById('usersList');if(currentProfile?.role!=='admin'){box.textContent='Acesso restrito.';return;}
+           try{const snap=await db.collection('rvtec_users').get();const rows=snap.docs.map(d=>({id:d.id,...d.data()}));
+           box.innerHTML=rows.map(u=>'<div class="userrow"><strong>'+escapeHtml(u.name||'Sem nome')+'</strong><small>'+escapeHtml(u.email||'')+' • '+(u.active===true?'Ativo':'Bloqueado')+'</small><label>Perfil</label><select id="role-'+u.id+'" '+(u.role==='admin'?'disabled':'')+'>'+ (u.role==='admin'?['admin']:roleValues).map(r=>'<option value="'+r+'" '+(u.role===r?'selected':'')+'>'+roleLabels[r]+'</option>').join('')+'</select><button class="secondary" '+(u.role==='admin'?'disabled':'')+' onclick="saveUser(\''+u.id+'\',false)">Salvar perfil</button><button class="secondary" '+(u.role==='admin'?'disabled':'')+' onclick="saveUser(\''+u.id+'\',true)">'+(u.active===true?'Bloquear':'Ativar')+'</button></div>').join('')||'Nenhum usuário cadastrado.';
+           }catch(e){box.textContent='Falha ao carregar usuários: '+e.message;}
+          }
+          function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+          async function saveUser(uid,toggle){if(currentProfile?.role!=='admin')return;try{const ref=db.collection('rvtec_users').doc(uid),snap=await ref.get();if(!snap.exists)return;const data=snap.data();if(data.role==='admin')return;const patch=toggle?{active:data.active!==true}:{role:document.getElementById('role-'+uid).value};await ref.update(patch);adminMsg('Permissão atualizada.');await loadUsers();}catch(e){adminMsg('Não foi possível atualizar: '+e.message);}}
+          function enterApp(){if(currentProfile?.role==='admin'&&window.RVTECNative)RVTECNative.openApp();}
+          async function logoutAdmin(){await auth.signOut();msg('Sessão encerrada.');}
+          """
+          s=s[:a]+js+s[b:]
+          login.write_text(s)
+          app=root/"assets/index.html"
+          x=app.read_text()
+          x=x.replace("const roleNames={admin:'Administrador',supervisor:'Supervisor',electrician:'Eletricista',production:'Produção'};","const roleNames={admin:'Administrador',supervisor:'Supervisor',electrician:'Técnico / Eletricista',production:'Operador / Produção',management:'Gestão'};")
+          x=x.replace(" production:['solicitacoes']\n};"," production:['solicitacoes'],\n management:['inicio','relatorios']\n};")
+          x=x.replace("!['admin','supervisor','electrician','production'].includes(profile.role)","!['admin','supervisor','electrician','production','management'].includes(profile.role)")
+          x=x.replace("const adminPanel=$('adminUsers');if(adminPanel)adminPanel.style.display=role==='admin'?'block':'none';","const adminPanel=$('adminUsers');if(adminPanel)adminPanel.style.display='none';")
+          m=re.search(r'<section id="adminUsers".*?</section>',x,re.S)
+          if m:x=x[:m.start()]+x[m.end():]
+          app.write_text(x)
+          rules=Path("RVTEC_Android/RVTEC_FIRESTORE_RULES.txt")
+          y=rules.read_text().replace("['supervisor', 'electrician', 'production']","['supervisor', 'electrician', 'production', 'management']")
+          rules.write_text(y)
+          PY
+
       - name: Preparar Gradle
         uses: gradle/actions/setup-gradle@v6
         with:
