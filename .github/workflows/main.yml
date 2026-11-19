@@ -5,6 +5,7 @@ on:
   push:
     paths:
       - '.github/workflows/**'
+      - 'RVTEC_Android_Projeto_ICONE_NOVO.zip'
 
 jobs:
   build:
@@ -20,11 +21,11 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Extrair projeto Android
+      - name: Extrair projeto Android com novo ícone
         run: |
-          ZIP=$(find . -maxdepth 1 -name '*.zip' | head -n 1)
-          if [ -z "$ZIP" ]; then
-            echo "Arquivo ZIP não encontrado"
+          ZIP="RVTEC_Android_Projeto_ICONE_NOVO.zip"
+          if [ ! -f "$ZIP" ]; then
+            echo "Arquivo $ZIP não encontrado"
             exit 1
           fi
           unzip -o "$ZIP" -d .
@@ -40,5 +41,5 @@ jobs:
       - name: Disponibilizar APK
         uses: actions/upload-artifact@v4
         with:
-          name: RVTEC-APK
+          name: RVTEC-APK-NOVO-ICONE
           path: RVTEC_Android/app/build/outputs/apk/debug/app-debug.apk
