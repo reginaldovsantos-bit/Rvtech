@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - 'RVTEC_Android_v1.2_CLOUDFLARE.zip'
+      - 'RVTEC_Android_v1.2_CLOUDFLARE(1).zip'
       - '.github/workflows/build-cloudflare.yml'
 
 jobs:
@@ -26,7 +26,7 @@ jobs:
           gradle-version: '8.9'
 
       - name: Extract Cloudflare project
-        run: unzip -o RVTEC_Android_v1.2_CLOUDFLARE.zip -d .
+        run: unzip -o 'RVTEC_Android_v1.2_CLOUDFLARE(1).zip' -d .
 
       - name: Compile APK
         run: gradle -p RVTEC_Android assembleDebug
