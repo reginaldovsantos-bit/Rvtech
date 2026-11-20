@@ -57,7 +57,7 @@ self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
         const message = Array.prototype.map.call(arguments, function (part) {
           return typeof part === 'string' ? part : (part && typeof part.message === 'string' ? part.message : String(part));
         }).join(' ');
-        const match = message.match(/AppCheck debug token:\s*["']?([0-9a-fA-F-]{36})/i);
+                const match = message.match(/App\\s*Check.*debug token:\\s*[\"']?([0-9a-fA-F-]{36})/i);
         if (match) showRvtecDebugToken(match[1]);
       } catch (_) {}
       return original.apply(console, arguments);
