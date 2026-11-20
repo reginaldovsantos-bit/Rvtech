@@ -6,6 +6,7 @@ on:
     paths:
       - 'RVTEC_Android_v1.3_GEMINI_SEM_CLOUD(1).zip'
       - '.github/workflows/build-rvtec-v1-3-gemini.yml'
+      - 'scripts/fix_rvtec_v13_firebase_ai.py'
 
 jobs:
   build:
@@ -27,6 +28,9 @@ jobs:
 
       - name: Extract RVTEC source
         run: unzip -q 'RVTEC_Android_v1.3_GEMINI_SEM_CLOUD(1).zip' -d source
+
+      - name: Apply Firebase AI initialization fix
+        run: python scripts/fix_rvtec_v13_firebase_ai.py source/RVTEC_Android
 
       - name: Build debug APK
         working-directory: source/RVTEC_Android
