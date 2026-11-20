@@ -42,6 +42,27 @@ jobs:
           p.write_text(s)
           PY
 
+      - name: Corrigir ponte nativa do WebView
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("RVTEC_Android/app/src/main/java/com/rvtec/manutencao/MainActivity.java")
+          s=p.read_text()
+          if "class Bridge" not in s:
+              pos=s.rfind("}")
+              if pos < 0: raise SystemExit("MainActivity.java inválido")
+              bridge='''
+              private class Bridge {
+                  @android.webkit.JavascriptInterface
+                  public void returnToLogin() {
+                      runOnUiThread(() -> finish());
+                  }
+              }
+          '''
+              s=s[:pos]+bridge+s[pos:]
+              p.write_text(s)
+          PY
+
       - name: Configurar Gradle
         uses: gradle/actions/setup-gradle@v6
         with:
