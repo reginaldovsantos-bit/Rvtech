@@ -2,9 +2,7 @@ name: Build APK RVTEC gratuito
 on:
   workflow_dispatch:
   push:
-    paths:
-      - 'RVTEC_Android_v1.1_LOGIN_IA.zip'
-      - '.github/workflows/build-rvtec.yml'
+    branches: [ main ]
 jobs:
   build:
     runs-on: ubuntu-latest
