@@ -40,13 +40,6 @@ jobs:
             'input,select{width:100%;padding:13px;border:1px solid #d3dde6;border-radius:10px;font:inherit;background:#fff}',
             1
           )
-          old_validate="""async function validateAndOpen(user){
-           if(!user)return;
-           try{const d=await db.collection('rvtec_users').doc(user.uid).get();
-           if(!d.exists||d.data().active===false){await auth.signOut();msg('Usuário sem perfil ativo. Procure o administrador.');return;}
-           if(window.RVTECNative)RVTECNative.openApp();
-          }catch(e){msg('Não foi possível validar seu perfil: '+(e.message||e));}
-          }"""
           new_validate="""async function validateAndOpen(user){
            if(!user)return;
            const selected=document.getElementById('profile').value;
@@ -64,8 +57,9 @@ jobs:
             if(window.RVTECNative)RVTECNative.openApp();
            }catch(e){msg('Não foi possível validar seu perfil: '+(e.message||e));}
           }"""
-          if old_validate not in s: raise SystemExit("Função de validação original não encontrada; login não alterado.")
-          s=s.replace(old_validate,new_validate,1)
+          import re
+          s,n=re.subn(r"async function validateAndOpen\\(user\\)\\{.*?\\n\\}",new_validate,s,count=1,flags=re.S)
+          if n!=1: raise SystemExit("Função de validação original não encontrada; login não alterado.")
           s=s.replace(
             "async function login(){const b=document.getElementById('enter');b.disabled=true;msg('Validando acesso...');",
             "async function login(){const b=document.getElementById('enter');if(!document.getElementById('profile').value){msg('Selecione seu perfil de acesso.');return;}b.disabled=true;msg('Validando acesso...');",
