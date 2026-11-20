@@ -119,4 +119,60 @@ g = gradle.read_text(encoding="utf-8")
 g = g.replace("versionCode 3", "versionCode 5").replace("versionCode 4", "versionCode 5")
 g = g.replace("versionName '1.2'", "versionName '1.3.2'").replace("versionName '1.3'", "versionName '1.3.2'").replace("versionName '1.3.1'", "versionName '1.3.2'")
 gradle.write_text(g, encoding="utf-8")
-print("RVTEC Firebase initialization + App Check debug provider patch applied (test build only).")
+
+# Forward Android WebView console messages to the HTML panel so the owner can
+# retrieve the Firebase-generated App Check debug token without ADB/Logcat.
+activity = root / "app/src/main/java/com/rvtec/manutencao/MainActivity.java"
+java = activity.read_text(encoding="utf-8")
+if "import android.webkit.ConsoleMessage;" not in java:
+    java = java.replace("import android.webkit.WebChromeClient;", "import android.webkit.WebChromeClient;\\nimport android.webkit.ConsoleMessage;", 1)
+needle = """        webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public void onPermissionRequest(PermissionRequest request) {"""
+replacement = """        webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
+                String message = consoleMessage.message();
+                if (message != null && message.toLowerCase().contains("appcheck")) {
+                    final String quoted = org.json.JSONObject.quote(message);
+                    webView.post(() -> webView.evaluateJavascript(
+                        "if(window.rvtecReceiveNativeConsole){window.rvtecReceiveNativeConsole(" + quoted + ");}",
+                        null
+                    ));
+                }
+                return true;
+            }
+
+            @Override
+            public void onPermissionRequest(PermissionRequest request) {"""
+if needle in java:
+    java = java.replace(needle, replacement, 1)
+elif "rvtecReceiveNativeConsole" not in java:
+    raise SystemExit("WebChromeClient insertion point not found in MainActivity.java")
+activity.write_text(java, encoding="utf-8")
+
+# Add a receiver inside the App Check bootstrap IIFE. This uses Android's
+# WebChromeClient callback and never exposes tokens to GitHub or external logs.
+receiver_anchor = """  function showRvtecDebugToken(token) {
+    window.__rvtecAppCheckDebugToken = token;"""
+receiver_insert = """  function showRvtecDebugToken(token) {
+    window.__rvtecAppCheckDebugToken = token;"""
+if receiver_anchor not in s:
+    raise SystemExit("Token display function not found")
+# Insert receiver immediately after the show function closes, before console wrappers.
+anchor2 = """  ['log', 'info', 'warn', 'error'].forEach(function (level) {"""
+receiver = """  window.rvtecReceiveNativeConsole = function (message) {
+    try {
+      const match = String(message).match(/App\\s*Check.*debug token:\\s*["']?([0-9a-fA-F-]{36})/i);
+      if (match) showRvtecDebugToken(match[1]);
+    } catch (_) {}
+  };
+  ['log', 'info', 'warn', 'error'].forEach(function (level) {"""
+if "window.rvtecReceiveNativeConsole =" not in s:
+    if anchor2 not in s:
+        raise SystemExit("Console wrapper insertion point not found")
+    s = s.replace(anchor2, receiver, 1)
+
+html.write_text(s, encoding="utf-8")
+
+print("RVTEC Firebase initialization + App Check debug token bridge patch applied (test build only).")
