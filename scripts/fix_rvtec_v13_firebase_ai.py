@@ -125,7 +125,7 @@ gradle.write_text(g, encoding="utf-8")
 activity = root / "app/src/main/java/com/rvtec/manutencao/MainActivity.java"
 java = activity.read_text(encoding="utf-8")
 if "import android.webkit.ConsoleMessage;" not in java:
-    java = java.replace("import android.webkit.WebChromeClient;", "import android.webkit.WebChromeClient;\\nimport android.webkit.ConsoleMessage;", 1)
+    java = java.replace("import android.webkit.WebChromeClient;", "import android.webkit.WebChromeClient;\nimport android.webkit.ConsoleMessage;", 1)
 needle = """        webView.setWebChromeClient(new WebChromeClient() {
             @Override
             public void onPermissionRequest(PermissionRequest request) {"""
