@@ -23,6 +23,59 @@ jobs:
         run: |
           unzip -o RVTEC_LOGIN_SEPARADO_PREPARADO.zip -d .
 
+
+      - name: Atualizar login com Técnico, Produção e Gerência
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("RVTEC_Android/app/src/main/assets/login.html")
+          s=p.read_text()
+          s=s.replace(
+            '<label for="email">E-mail</label>',
+            '<label for="profile">Perfil de acesso</label><select id="profile" required><option value="">Selecione seu perfil</option><option value="tecnico">Técnico</option><option value="producao">Produção</option><option value="gerencia">Gerência</option></select>\\n<label for="email">E-mail</label>',
+            1
+          )
+          s=s.replace(
+            'input{width:100%;padding:13px;border:1px solid #d3dde6;border-radius:10px;font:inherit}',
+            'input,select{width:100%;padding:13px;border:1px solid #d3dde6;border-radius:10px;font:inherit;background:#fff}',
+            1
+          )
+          old_validate="""async function validateAndOpen(user){
+           if(!user)return;
+           try{const d=await db.collection('rvtec_users').doc(user.uid).get();
+           if(!d.exists||d.data().active===false){await auth.signOut();msg('Usuário sem perfil ativo. Procure o administrador.');return;}
+           if(window.RVTECNative)RVTECNative.openApp();
+          }catch(e){msg('Não foi possível validar seu perfil: '+(e.message||e));}
+          }"""
+          new_validate="""async function validateAndOpen(user){
+           if(!user)return;
+           const selected=document.getElementById('profile').value;
+           if(!selected){msg('Selecione Técnico, Produção ou Gerência antes de entrar.');return;}
+           try{
+            const d=await db.collection('rvtec_users').doc(user.uid).get();
+            if(!d.exists||d.data().active===false){await auth.signOut();msg('Usuário sem perfil ativo. Procure a gerência.');return;}
+            const actual=d.data().role;
+            const allowed={tecnico:['electrician'],producao:['production'],gerencia:['supervisor','admin']};
+            if(!(allowed[selected]||[]).includes(actual)){
+             await auth.signOut();
+             msg('O perfil selecionado não corresponde ao seu cadastro no RVTEC. Selecione o perfil correto ou procure a gerência.');
+             return;
+            }
+            if(window.RVTECNative)RVTECNative.openApp();
+           }catch(e){msg('Não foi possível validar seu perfil: '+(e.message||e));}
+          }"""
+          if old_validate not in s: raise SystemExit("Função de validação original não encontrada; login não alterado.")
+          s=s.replace(old_validate,new_validate,1)
+          s=s.replace(
+            "async function login(){const b=document.getElementById('enter');b.disabled=true;msg('Validando acesso...');",
+            "async function login(){const b=document.getElementById('enter');if(!document.getElementById('profile').value){msg('Selecione seu perfil de acesso.');return;}b.disabled=true;msg('Validando acesso...');",
+            1
+          )
+          if 'value="tecnico">Técnico' not in s or 'value="gerencia">Gerência' not in s:
+           raise SystemExit("Não foi possível confirmar as três opções do login.")
+          p.write_text(s)
+          PY
+
       - name: Aplicar telas exclusivas por perfil
         run: |
           python3 - <<'PY'
