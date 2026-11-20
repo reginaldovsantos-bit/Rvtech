@@ -87,22 +87,22 @@ jobs:
           if n!=1: raise SystemExit("Não foi possível localizar a matriz de permissões.")
           s=s.replace(
             '<span id="accountInfo"></span>',
-            '<span id="accountInfo"></span><button id="adminUsersButton" class="secondary" onclick="toggleAdminUsers(true)" style="display:none;padding:6px 9px;font-size:11px">Administração</button>',
+            '<span id="accountInfo"></span><button id="adminUsersButton" class="secondary" onclick="toggleAdminUsers(true)" style="display:none;padding:6px 9px;font-size:11px">Gestão de Usuários</button>',
             1
           )
           s=s.replace(
-            '<h3>Usuários e permissões</h3>',
+            '<h3>Gestão de Usuários</h3>',
             '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h3>Usuários e permissões</h3><button class="secondary" onclick="toggleAdminUsers(false)">Fechar</button></div>',
             1
           )
           s=s.replace(
             "const adminPanel=$('adminUsers');if(adminPanel)adminPanel.style.display=role==='admin'?'block':'none';",
-            "const adminPanel=$('adminUsers');if(adminPanel)adminPanel.style.display='none';const adminButton=$('adminUsersButton');if(adminButton)adminButton.style.display=role==='admin'?'inline-block':'none';",
+            "const adminPanel=$('adminUsers');if(adminPanel)adminPanel.style.display='none';const adminButton=$('adminUsersButton');if(adminButton)adminButton.style.display=['admin','supervisor'].includes(role)?'inline-block':'none';",
             1
           )
           s=s.replace(
             'function tab(id){if(!canOpenTab(id)){',
-            "function toggleAdminUsers(open){const panel=$('adminUsers');if(!panel)return;if(!userProfile||userProfile.role!=='admin'){panel.style.display='none';return;}panel.style.display=open?'block':'none';if(open)panel.scrollIntoView({behavior:'smooth',block:'start'});}\nfunction tab(id){if(!canOpenTab(id)){",
+            "function toggleAdminUsers(open){const panel=$('adminUsers');if(!panel)return;if(!userProfile||!['admin','supervisor'].includes(userProfile.role)){panel.style.display='none';return;}panel.style.display=open?'block':'none';if(open)panel.scrollIntoView({behavior:'smooth',block:'start'});}\nfunction tab(id){if(!canOpenTab(id)){",
             1
           )
           if "function toggleAdminUsers(open)" not in s or "adminButton.style.display=role==='admin'?'inline-block':'none'" not in s:
