@@ -1,0 +1,46 @@
+name: Compilar APK RVTEC IA v1.2
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'RVTEC_IA_LOCAL_GRATUITA_v1.2.zip'
+      - '.github/workflows/build-rvtec-ia-v1-2.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar repositório
+        uses: actions/checkout@v4
+
+      - name: Preparar Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Preparar Gradle 8.9
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Extrair projeto RVTEC IA v1.2
+        run: |
+          test -f RVTEC_IA_LOCAL_GRATUITA_v1.2.zip
+          unzip -q RVTEC_IA_LOCAL_GRATUITA_v1.2.zip
+          test -f RVTEC_Android/app/build.gradle
+          test -f RVTEC_Android/app/src/main/AndroidManifest.xml
+
+      - name: Compilar APK
+        run: gradle -p RVTEC_Android assembleDebug --no-daemon
+
+      - name: Publicar APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: RVTEC-IA-GRATUITA-v1.2-APK
+          path: RVTEC_Android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
