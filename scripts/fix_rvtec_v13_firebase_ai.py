@@ -33,9 +33,7 @@ if old_init in s:
 elif new_init not in s:
     raise SystemExit("Firebase initialization anchor not found")
 
-# The APK loads a Firebase Web app inside Android WebView. For this TEST build,
-# use the App Check debug provider; token values are generated per installation
-# and are NOT written to this public repository.
+# TEST BUILD ONLY. The debug token is generated per installation; never store it in Git.
 bootstrap = r"""<script>
 self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
 (function () {
@@ -59,7 +57,7 @@ self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
         const message = Array.prototype.map.call(arguments, function (part) {
           return typeof part === 'string' ? part : (part && typeof part.message === 'string' ? part.message : String(part));
         }).join(' ');
-        const match = message.match(/AppCheck debug token:\\s*["']?([0-9a-fA-F-]{36})/i);
+        const match = message.match(/AppCheck debug token:\s*["']?([0-9a-fA-F-]{36})/i);
         if (match) showRvtecDebugToken(match[1]);
       } catch (_) {}
       return original.apply(console, arguments);
@@ -79,7 +77,7 @@ self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
 })();
 </script>"""
 if "self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;" not in s:
-    s = s.replace("</head>", bootstrap + "\\n</head>", 1)
+    s = s.replace("</head>", bootstrap + "\n</head>", 1)
 
 panel = """<div id="appCheckDebugPanel" class="panel" style="display:none;border:1px solid #d7a83a;background:#fffaf0">
 <h3>Token App Check — teste</h3>
@@ -91,16 +89,17 @@ status_anchor = '<p id="aiStatus" class="muted" role="status">Aguardando configu
 if 'id="appCheckDebugPanel"' not in s:
     if status_anchor not in s:
         raise SystemExit("AI status anchor not found")
-    s = s.replace(status_anchor, status_anchor + "\\n" + panel, 1)
+    s = s.replace(status_anchor, status_anchor + "\n" + panel, 1)
 
 ai_import = "import { getAI, getGenerativeModel, GoogleAIBackend } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-ai.js';"
 appcheck_import = "import { initializeAppCheck, ReCaptchaV3Provider, getToken } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-app-check.js';"
 if "firebase-app-check.js" not in s:
     if ai_import not in s:
         raise SystemExit("Firebase AI Logic import not found")
-    s = s.replace(ai_import, ai_import + "\\n" + appcheck_import, 1)
+    s = s.replace(ai_import, ai_import + "\n" + appcheck_import, 1)
 
-old_app_line = "  const app = getApps().length ? getApps()[0] : initializeApp(modularConfig);\\n  const ai = getAI(app, { backend: new GoogleAIBackend() });"
+old_app_line = """  const app = getApps().length ? getApps()[0] : initializeApp(modularConfig);
+  const ai = getAI(app, { backend: new GoogleAIBackend() });"""
 new_app_lines = """  const app = getApps().length ? getApps()[0] : initializeApp(modularConfig);
   const appCheck = initializeAppCheck(app, {
     provider: new ReCaptchaV3Provider('rvtec-debug-test-provider'),
