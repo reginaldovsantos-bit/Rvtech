@@ -1,0 +1,32 @@
+name: Auditar interface RVTEC
+on:
+  push:
+    paths:
+      - '.github/workflows/audit-rvtec.yml'
+  workflow_dispatch:
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extrair e auditar HTML
+        shell: bash
+        run: |
+          set -euo pipefail
+          unzip -q RVTEC_1.4.8_GRAFICOS_FONTE.zip -d audit-src
+          HTML=$(find audit-src -path '*/app/src/main/assets/index.html' -print -quit)
+          test -n "$HTML"
+          echo "HTML=$HTML"
+          python3 - "$HTML" <<'PY'
+          import sys,re
+          from pathlib import Path
+          p=Path(sys.argv[1]); s=p.read_text()
+          print("SIZE",len(s))
+          for pat in [r'<body[^>]*>',r'<nav[^>]*>',r'<header[^>]*>',r'<main[^>]*>',r'<script[^>]*>',r'id=["\']configuracoes["\']',r'data-tab=["\']configuracoes["\']']:
+            print("\\nPATTERN",pat)
+            for m in list(re.finditer(pat,s,re.I))[:12]:
+              print(s[max(0,m.start()-180):min(len(s),m.end()+420)].replace("\\n"," ")[:700])
+          print("\\nBUTTONS/TABS")
+          for m in re.finditer(r'<(?:button|a|nav|header)[^>]*>',s,re.I):
+            print(m.group(0)[:400])
+          PY
