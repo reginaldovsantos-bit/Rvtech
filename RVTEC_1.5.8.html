@@ -998,3 +998,126 @@ function renderStock(){
     <div class="stockRow">
       <div style="flex:1;min-width:0">
         <strong>${esc(x.name)}</strong>
+        <div class="muted">${esc(x.code||'Sem código')} • ${esc(x.location||'Sem localização')}</div>
+      </div>
+      <div style="text-align:right">
+        <strong>${Number(x.qty||0)}</strong>
+        <div class="rvtec-stock-actions">
+          <button class="secondary" type="button" onclick="rvtecEditStock(${Number(x.id)})">Editar</button>
+          <button class="danger" type="button" onclick="rvtecDeleteStock(${Number(x.id)})">Excluir</button>
+        </div>
+      </div>
+    </div>`).join(''):'Nenhuma peça cadastrada.';
+}
+
+function rvtecEditStock(id){
+  if(!canEditData())return alert('Seu perfil não tem permissão para alterar o estoque.');
+  const p=db.stock.find(x=>String(x.id)===String(id));
+  if(!p)return;
+  const name=prompt('Nome da peça:',p.name||'');
+  if(name===null)return;
+  if(!name.trim())return alert('Informe o nome da peça.');
+  const code=prompt('Código / modelo:',p.code||'');
+  if(code===null)return;
+  const qtyText=prompt('Quantidade atual:',String(Number(p.qty||0)));
+  if(qtyText===null)return;
+  const qty=Number(qtyText);
+  if(!Number.isFinite(qty)||qty<0)return alert('Quantidade inválida.');
+  const location=prompt('Localização:',p.location||'');
+  if(location===null)return;
+  p.name=name.trim();p.code=code.trim();p.qty=qty;p.location=location.trim();
+  p.updatedAt=new Date().toISOString();
+  save();
+  renderStock();
+}
+
+function rvtecDeleteStock(id){
+  if(!canEditData())return alert('Seu perfil não tem permissão para alterar o estoque.');
+  const p=db.stock.find(x=>String(x.id)===String(id));
+  if(!p)return;
+  if(!confirm(`Excluir "${p.name}" do estoque? O histórico de consumo nas ordens será preservado.`))return;
+  db.stock=db.stock.filter(x=>String(x.id)!==String(id));
+  save();
+  renderStock();
+}
+
+function rvtecAddStock(){
+  if(!canEditData())return alert('Seu perfil não tem permissão para alterar o estoque.');
+  const name=$('stockName').value.trim();
+  if(!name)return alert('Informe o nome da peça.');
+  const qty=Number($('stockQty').value||0);
+  if(!Number.isFinite(qty)||qty<0)return alert('Informe uma quantidade válida.');
+  db.stock.unshift({id:Date.now(),name,code:$('stockCode').value.trim(),qty,location:$('stockLocation').value.trim(),source:'manual',createdAt:new Date().toISOString()});
+  $('stockName').value='';$('stockCode').value='';$('stockQty').value='1';$('stockLocation').value='';
+  save();renderStock();
+}
+
+function rvtecSaveIdentifiedPart(){
+  if(!canEditData())return alert('Seu perfil não tem permissão para alterar o estoque.');
+  const name=$('partStockName').value.trim();
+  if(!name)return alert('Informe o nome confirmado da peça.');
+  const qty=Number($('partStockQty').value||0);
+  if(!Number.isFinite(qty)||qty<0)return alert('Quantidade inválida.');
+  db.stock.unshift({id:Date.now(),name,code:$('partStockCode').value.trim(),qty,location:$('partStockLocation').value.trim(),source:'foto',analysis:rvtecLastPartResult,createdAt:new Date().toISOString()});
+  save();renderStock();
+  alert('Peça cadastrada e sincronizada conforme as permissões da conta.');
+}
+
+function rvtecConsumeStockForOrder(orderId){
+  if(!canEditData())return alert('Seu perfil não tem permissão para baixar peças.');
+  const order=db.orders.find(x=>String(x.id)===String(orderId));
+  if(!order||order.status==='Concluída')return alert('A ordem não está aberta para movimentação.');
+  const select=$('rvtecStockSelect_'+orderId);
+  const qtyInput=$('rvtecStockQty_'+orderId);
+  const stockId=select?.value;
+  const qty=Number(qtyInput?.value||0);
+  const part=db.stock.find(x=>String(x.id)===String(stockId));
+  if(!part)return alert('Selecione uma peça do estoque.');
+  if(!Number.isFinite(qty)||qty<=0)return alert('Informe uma quantidade maior que zero.');
+  if(Number(part.qty||0)<qty)return alert(`Estoque insuficiente. Disponível: ${Number(part.qty||0)}.`);
+  if(!confirm(`Baixar ${qty} unidade(s) de "${part.name}" para a OS #${String(order.id).slice(-5)}?`))return;
+
+  part.qty=Number(part.qty||0)-qty;
+  part.updatedAt=new Date().toISOString();
+  order.stockUsage=order.stockUsage||[];
+  order.stockUsage.push({id:Date.now(),stockId:part.id,name:part.name,code:part.code||'',qty,at:new Date().toISOString(),by:cloudUser?.email||userProfile?.name||'Técnico'});
+  const description=`${qty} × ${part.name}${part.code?' ('+part.code+')':''}`;
+  order.parts=[order.parts,description].filter(Boolean).join('\n');
+  rvtecOrderLog(order,'Baixa de estoque',description);
+  save();
+  renderStock();
+  rvtecRenderOrders();
+}
+
+const rvtecRenderOrdersV157=rvtecRenderOrders;
+rvtecRenderOrders=function(){
+  rvtecRenderOrdersV157();
+  const el=$('orderList');
+  if(!el)return;
+  db.orders.forEach(o=>{
+    const cards=[...el.querySelectorAll('.item')];
+    const card=cards.find(c=>c.textContent.includes('OS #'+String(o.id).slice(-5)));
+    if(!card)return;
+    const detail=card.querySelector('.rvtec-os-detail');
+    if(!detail)return;
+    const usage=o.stockUsage||[];
+    const box=document.createElement('div');
+    box.style.cssText='grid-column:1/-1;margin-top:8px;padding:10px;border:1px solid var(--line);border-radius:10px';
+    box.innerHTML=`
+      <strong>Peças baixadas do estoque</strong>
+      <div class="rvtec-stock-used">${usage.length?usage.map(u=>`${esc(u.qty)} × ${esc(u.name)} — ${new Date(u.at).toLocaleString('pt-BR')}`).join('<br>'):'Nenhuma peça baixada nesta OS.'}</div>
+      ${o.status!=='Concluída'?`
+        <div class="rvtec-stock-actions">
+          <select id="rvtecStockSelect_${o.id}" aria-label="Peça para baixar">
+            <option value="">Selecionar peça</option>
+            ${db.stock.map(p=>`<option value="${p.id}">${esc(p.name)} — disponível: ${Number(p.qty||0)}</option>`).join('')}
+          </select>
+          <input id="rvtecStockQty_${o.id}" type="number" min="0.01" step="0.01" value="1" aria-label="Quantidade">
+          <button class="secondary" type="button" onclick="rvtecConsumeStockForOrder(${o.id})">Baixar peça</button>
+        </div>`:''}`;
+    detail.appendChild(box);
+  });
+};
+</script>
+
+</body></html>
