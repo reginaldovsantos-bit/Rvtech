@@ -61,7 +61,7 @@ jobs:
           from pathlib import Path
           p=Path("app/build.gradle")
           s=p.read_text()
-          s=s.replace("versionCode 14", "versionCode 17", 1)
+          s=s.replace("versionCode 14", "versionCode 18", 1)
           s=s.replace("versionName '1.5.1'", "versionName '1.5.7'", 1)
           if "buildConfig true" not in s and "buildConfig = true" not in s:
               marker="android {"
