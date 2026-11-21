@@ -69,7 +69,7 @@ jobs:
               if pos < 0:
                   raise SystemExit("Bloco android não encontrado")
               pos += len(marker)
-              s=s[:pos] + "\\n    buildFeatures { buildConfig true }" + s[pos:]
+              s=s[:pos] + "\n    buildFeatures { buildConfig true }\n" + s[pos:]
           p.write_text(s)
           html=Path("app/src/main/assets/index.html").read_text()
           required = ['id="configuracoes"', 'data-tab="configuracoes"', 'settingsTheme', 'settingsAccent', 'settingsScreens', 'saveRvtecSettings', 'settingsSchedule', 'settingsShift', 'settingsChartStyle', 'icon_']
