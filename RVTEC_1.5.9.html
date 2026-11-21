@@ -1,0 +1,1192 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111b26">
+<title>RVTEC</title>
+<style>
+
+:root{--navy:#10283f;--navy2:#173b58;--blue:#1877b9;--blue2:#eaf4fb;--bg:#f2f5f8;--card:#fff;--text:#172635;--muted:#68798a;--line:#e1e8ef;--green:#16845b;--red:#c74444;--amber:#a96b08;--shadow:0 8px 24px rgba(16,40,63,.06)}
+body[data-theme="dark"]{--bg:#101820;--card:#1b2833;--text:#edf3f8;--muted:#a8b7c5;--line:#344553;--blue2:#243d50;--shadow:0 8px 24px rgba(0,0,0,.22)} body[data-theme="dark"] nav{background:#182530} body[data-theme="dark"] nav button{background:#263744;color:#d8e3ec} body[data-theme="dark"] input,body[data-theme="dark"] select,body[data-theme="dark"] textarea{background:#22313d;color:#edf3f8;border-color:#465967} body[data-theme="dark"] .empty{background:#1b2833;border-color:#465967} body[data-theme="dark"] #cloudBar{background:#203646!important;color:#edf3f8;border-color:#344b5c!important} body[data-theme="dark"] .secondary{background:#263744;color:#edf3f8;border-color:#465967} body[data-theme="dark"] header{background:linear-gradient(125deg,var(--navy),var(--navy2))}
+nav button.settings-hidden{display:none!important}
+.backButton{position:absolute;left:16px;top:18px;background:#ffffff20;color:#fff;border:1px solid #ffffff40;border-radius:10px;padding:8px 11px;font-size:14px;font-weight:700;z-index:2;display:none}
+.settings-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.settings-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+.settings-row label{margin:0;flex:1}
+.settings-row input[type=checkbox]{width:auto}
+.settings-row select{max-width:120px;padding:8px}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px system-ui,-apple-system,Segoe UI,Roboto,Arial;line-height:1.45}
+header{background:linear-gradient(125deg,var(--navy),var(--navy2));color:white;padding:20px 18px 22px;position:relative;box-shadow:0 5px 18px #10283f22}
+header .small{opacity:.72;font-size:11px;letter-spacing:.13em;text-transform:uppercase;font-weight:750}
+header h1{font-size:23px;letter-spacing:-.5px;margin:5px 0 2px}
+header:after{content:"";position:absolute;width:130px;height:130px;border:1px solid #ffffff18;border-radius:30px;right:18px;top:-55px;transform:rotate(35deg)}
+nav{display:flex;gap:7px;overflow:auto;padding:11px 14px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:4;scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}
+nav button{border:1px solid transparent;background:#f2f5f8;border-radius:10px;padding:10px 13px;white-space:nowrap;color:#526477;font-weight:700;font-size:13px}
+nav button.active{background:var(--navy);color:#fff;box-shadow:0 3px 8px #10283f24}
+main{max-width:980px;margin:auto;padding:18px 15px 28px}
+h2{font-size:21px;letter-spacing:-.4px;margin:4px 0 15px}.muted{color:var(--muted);font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+.stat,.panel,.item{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:15px;margin-bottom:12px;box-shadow:var(--shadow)}
+.stat{position:relative;overflow:hidden;min-height:98px}
+.stat:after{content:"";position:absolute;width:56px;height:56px;border-radius:18px;background:var(--blue2);right:-16px;top:-17px;transform:rotate(25deg)}
+.stat strong{display:block;font-size:27px;letter-spacing:-.8px;margin-top:7px;position:relative;z-index:1}
+.stat span{font-size:12px;color:var(--muted);font-weight:650;position:relative;z-index:1}
+.panel h3{font-size:16px;margin:0 0 12px;letter-spacing:-.2px}
+label{display:block;font-size:12px;font-weight:750;color:#425569;margin:12px 0 6px}
+input,select,textarea{width:100%;padding:12px 13px;border:1px solid #d3dde6;border-radius:10px;background:#fbfcfd;color:var(--text);font:inherit;outline:none;transition:border .15s,box-shadow .15s}
+input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px #1877b91a;background:white}
+textarea{min-height:82px;resize:vertical}
+button{cursor:pointer;transition:transform .12s,filter .12s}button:active{transform:scale(.98)}
+button.primary,.primary{background:var(--blue);color:#fff;border:0;border-radius:10px;padding:12px 16px;font-weight:750;box-shadow:0 4px 10px #1877b925}
+button.secondary{background:#f1f5f8;color:var(--navy);border:1px solid var(--line);border-radius:10px;padding:11px 14px;font-weight:700}\nbutton.whatsapp{background:#16845b;color:#fff;border:0;border-radius:10px;padding:11px 14px;font-weight:800}
+button.danger{background:#fff1f1;color:var(--red);border:1px solid #f1caca;border-radius:10px;padding:9px 12px;font-weight:700}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.time-edit{width:100%;margin-top:12px;padding:13px;background:#f5f9fc;border:1px solid #d8e5ef;border-radius:12px}.time-edit-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.time-edit label{margin:5px 0}.time-edit input{padding:11px;background:#fff}.time-edit strong{display:block;margin-bottom:7px;color:var(--navy)}
+.item{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.item h3{margin:0 0 5px;font-size:15px;letter-spacing:-.15px}.tag{display:inline-block;border-radius:7px;padding:5px 8px;font-size:10px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;background:#edf3f8;color:var(--navy)}
+.tag.open{background:#fff3df;color:var(--amber)}.tag.done{background:#e5f5ed;color:var(--green)}.tag.stopped{background:#ffe3e3;color:#b42323;border:1px solid #f2b8b8}.tag.active{background:#e5f5ed;color:#16845b}
+.hidden{display:none!important}.empty{padding:28px 16px;text-align:center;color:var(--muted);background:#fff;border:1px dashed #cbd6e0;border-radius:14px}
+table{width:100%;border-collapse:collapse;font-size:13px}td,th{text-align:left;padding:10px 7px;border-bottom:1px solid var(--line)}th{color:#526477;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:24px 15px}
+#inicio>h2:after{content:"Visão geral da manutenção";display:block;font-size:12px;font-weight:500;color:var(--muted);letter-spacing:0;margin-top:3px}
+#inicio .panel:first-of-type{border-top:3px solid var(--blue)}
+@media(min-width:650px){.grid{grid-template-columns:repeat(4,minmax(0,1fr))}.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}main{padding:24px}.panel,.stat,.item{padding:18px}}
+@media(max-width:380px){header h1{font-size:20px}nav{gap:5px;padding:9px}nav button{padding:9px 11px;font-size:12px}.item{flex-direction:column}.item>div:last-child{text-align:left!important}}
+
+/* Antes do login, somente o cartão de acesso ocupa a tela. O app não fica escondido ocupando altura e causando rolagem. */
+body:not(.authenticated){overflow:hidden;height:100%;}
+body:not(.authenticated) header,body:not(.authenticated) nav,body:not(.authenticated) #cloudBar,body:not(.authenticated) #adminUsers,body:not(.authenticated) main,body:not(.authenticated) footer{display:none!important;}
+body.authenticated{overflow:auto;height:auto;}
+#loginGate{min-height:100vh;min-height:100dvh;overflow-y:auto;}
+#loginGate .panel{margin:0;max-height:calc(100dvh - 32px);overflow-y:auto;box-shadow:0 12px 36px rgba(16,40,63,.12);}
+#loginGate .actions{display:grid;grid-template-columns:1fr 1fr;}
+#loginGate .actions button{min-height:46px;}
+@media(max-width:380px){#loginGate{padding:14px!important}#loginGate .panel{padding:20px!important}#loginGate .actions{grid-template-columns:1fr;}}
+
+.menuToggle{position:absolute;right:16px;top:18px;background:#ffffff20;color:#fff;border:1px solid #ffffff40;border-radius:10px;padding:8px 12px;font-size:20px;z-index:2}
+nav{display:flex;flex-direction:column;position:fixed;z-index:20;left:0;top:0;bottom:0;width:min(82vw,300px);padding:72px 12px 18px;overflow-y:auto;transform:translateX(-105%);transition:transform .22s ease;box-shadow:12px 0 35px #10283f35;border:0}
+nav.open{transform:translateX(0)}
+/* Menu lateral rola de forma independente; o gesto nao passa para a tela de fundo. */
+nav{overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y}
+nav.open{overscroll-behavior-y:contain;}
+body.rvtec-menu-open{overflow:hidden!important;overscroll-behavior:none;touch-action:none}
+nav button{text-align:left;padding:13px 14px;font-size:14px}
+#navShade{display:none;position:fixed;inset:0;background:#08182788;z-index:19}#navShade.show{display:block}
+body{padding-bottom:env(safe-area-inset-bottom)}
+.photoDrop{border:2px dashed #9bb6ca;border-radius:16px;background:#f6fafe;padding:22px;text-align:center}
+.photoPreview{width:100%;max-height:250px;object-fit:contain;border-radius:12px;background:#edf2f6;display:none;margin-top:12px}
+.photoActions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.resultText{white-space:pre-wrap;line-height:1.55;color:#263849}
+.stockRow{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+@media(min-width:800px){main{max-width:1100px}.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+</style>
+<style id="rvtec-os-workflow-style">
+@keyframes rvtecAlertBlink{0%,49%{opacity:1}50%,100%{opacity:.22}}
+.rvtec-os-alert{border:2px solid #dc2626!important;box-shadow:0 0 0 2px #dc262622}
+.rvtec-os-alert .rvtec-alert-dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#dc2626;margin-right:7px;animation:rvtecAlertBlink 1s infinite}
+.rvtec-os-fixed .rvtec-alert-dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#dc2626;margin-right:7px}
+.rvtec-os-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+.rvtec-os-history{font-size:13px;line-height:1.6;margin-top:8px;padding:9px;background:#8881;border-radius:8px}
+.rvtec-os-detail{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.rvtec-os-detail input,.rvtec-os-detail textarea{width:100%;box-sizing:border-box}
+@media(max-width:600px){.rvtec-os-detail{grid-template-columns:1fr}}
+</style><style id="rvtec-os-alerts-v144">
+#rvtecOsAlertPanel{position:sticky;top:6px;z-index:20}
+.rvtec-os-alert{animation:rvtecPanelBlink 1s infinite}
+@keyframes rvtecPanelBlink{0%,49%{background:#fff!important}50%,100%{background:#fee2e2!important}}
+.rvtec-os-fixed{border:2px solid #dc2626!important;background:#fff5f5!important}
+.rvtec-os-escalated{border-left:6px solid #991b1b!important}
+</style>
+<style id="rvtec-dashboard-links">.dashboard-link{cursor:pointer;transition:transform .15s,box-shadow .15s}.dashboard-link:active{transform:scale(.98)}.dashboard-link:focus-visible{outline:3px solid #1976b9;outline-offset:3px}</style>
+
+<style id="rvtec-original-horizontal-tabs-fix">
+/* Mantém o visual original 1.4.x e permite arrastar as abas horizontalmente no Android. */
+nav{display:flex!important;flex-direction:row!important;position:sticky!important;top:0!important;left:auto!important;right:auto!important;bottom:auto!important;width:100%!important;max-width:100%!important;height:auto!important;padding:11px 14px!important;gap:7px!important;overflow-x:auto!important;overflow-y:hidden!important;white-space:nowrap!important;transform:none!important;transition:none!important;box-shadow:none!important;border:0!important;border-bottom:1px solid var(--line)!important;background:var(--card)!important;z-index:12!important;scrollbar-width:none;-webkit-overflow-scrolling:touch;touch-action:pan-x!important;overscroll-behavior-x:contain;}
+nav::-webkit-scrollbar{display:none!important}
+nav.open{transform:none!important}
+nav button{flex:0 0 auto!important;min-width:max-content!important;text-align:center!important;padding:10px 13px!important;border:1px solid transparent!important;border-radius:10px!important;background:#f2f5f8!important;color:#526477!important;font-size:13px!important;font-weight:700!important;}
+nav button.active{background:var(--navy)!important;color:#fff!important;box-shadow:0 3px 8px #10283f24!important}
+body[data-theme="dark"] nav{background:#182530!important}
+body[data-theme="dark"] nav button{background:#263744!important;color:#d8e3ec!important}
+#navShade{display:none!important}
+.menuToggle{right:16px;top:18px;background:#ffffff20;color:#fff;border:1px solid #ffffff40;border-radius:10px;padding:8px 12px;font-size:20px;z-index:2}
+@media(max-width:650px){nav{padding:9px 10px!important;gap:5px!important}nav button{padding:9px 11px!important;font-size:12px!important}}
+</style>
+
+</head>
+<body>
+<div id="loginGate" style="position:fixed;inset:0;z-index:1000;background:#f2f5f8;display:flex;align-items:center;justify-content:center;padding:20px">
+ <div class="panel" style="width:min(100%,420px);padding:24px">
+  <div style="font-weight:800;color:#1877b9;letter-spacing:2px">RVTEC</div><h2 style="margin:8px 0">Acesso ao sistema</h2>
+  <p class="muted">Entre com seu e-mail e senha cadastrados.</p>
+  <label>E-mail</label><input id="loginEmail" type="email" autocomplete="username" placeholder="seuemail@empresa.com">
+  <label>Senha</label><input id="loginPassword" type="password" autocomplete="current-password" placeholder="Sua senha">
+  <div class="actions"><button class="primary" id="loginButton" onclick="rvtecLogin()">Entrar</button><button class="secondary" onclick="rvtecResetPassword()">Esqueci a senha</button></div>
+  <p id="loginMessage" class="muted" style="margin-top:12px"></p>
+ </div>
+</div>
+<header><button class="backButton" id="rvtecBackButton" type="button" onclick="rvtecBack()">← Voltar</button><button class="menuToggle" id="rvtecSettingsTop" type="button" onclick="tab('configuracoes')" aria-label="Abrir configurações" title="Configurações">⚙</button><div class="small">Gestão técnica • manutenção</div><h1 id="appHeading">Manutenção Industrial</h1><div style="font-size:14px;font-weight:700;letter-spacing:2px;margin-top:5px">RVTEC</div><div style="font-size:12px;opacity:.78;margin-top:5px" id="appSubheading">Painel de controle da equipe</div></header>
+<div id="navShade" onclick="rvtecMenuToggle(false)"></div>
+<nav id="nav">
+<button class="active" data-tab="inicio" data-label="Início">⌂ Início</button><button data-tab="pecasFoto" data-label="Peças por foto">📷 Peças por foto</button><button data-tab="estoque" data-label="Estoque">▦ Estoque</button><button data-tab="paradas" data-label="Paradas de Máquina">⏱ Paradas de Máquina</button><button data-tab="responsaveis" data-label="Responsáveis">👥 Responsáveis</button><button data-tab="maquinas" data-label="Máquinas">⚙️ Máquinas</button><button data-tab="diagnosticos" data-label="Diagnósticos">🩺 Diagnósticos</button><button data-tab="memoriaTecnica" data-label="Memória Técnica">📚 Memória Técnica</button><button data-tab="iaRvtec" data-label="IA RVTEC">🤖 IA RVTEC</button><button data-tab="ordens" data-label="Ordens">🧾 Ordens</button><button data-tab="preventivas" data-label="Preventivas">🛠️ Preventivas</button><button data-tab="relatorios" data-label="Relatórios">📄 Relatórios</button><button data-tab="graficos" data-label="Gráficos">📊 Gráficos</button><button data-tab="diagnosticoNuvem" id="adminCloudTab" data-label="Diagnóstico e Sincronização" style="display:none">☁️ Diagnóstico e Sincronização</button><button data-tab="configuracoes" data-label="Configurações">⚙️ Configurações</button>
+</nav>
+<style id="rvtec-stop-alert-style">
+@keyframes rvtecStopBlink{0%,49%{background:#b91c1c;color:#fff;box-shadow:0 0 0 2px #fecaca}50%,100%{background:#fff;color:#b91c1c;box-shadow:0 0 0 2px #b91c1c}}
+nav button.rvtec-machine-stopped{animation:rvtecStopBlink .9s infinite;border:2px solid #b91c1c;font-weight:900}
+#rvtecMachineStopBanner{display:none;margin:10px 14px;padding:12px;border:2px solid #b91c1c;border-radius:12px;background:#fff1f2;color:#991b1b;font-weight:800}
+#rvtecMachineStopBanner.show{display:block}
+.dashboard-link{cursor:pointer}.dashboard-link:focus{outline:3px solid #1976b9;outline-offset:2px}
+</style>
+<div id="rvtecMachineStopBanner" role="status" aria-live="polite"></div>
+
+<div id="cloudBar" style="background:#eaf4fb;border-bottom:1px solid #d5e5f1;padding:8px 15px;display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px">
+ <span id="cloudStatus">Nuvem: aguardando login</span>
+ <span id="accountInfo"></span><button class="secondary" id="logoutButton" onclick="rvtecLogout()" style="display:none;padding:6px 10px">Sair</button>
+ <span><button class="secondary" style="padding:6px 9px;font-size:11px" onclick="syncCloud()">Sincronizar agora</button></span>
+</div>
+
+
+<main>
+<section id="pecasFoto" class="tab hidden">
+<h2>Identificação de peças por foto</h2>
+<p class="muted">Fotografe o componente ou a etiqueta. A IA RVTEC analisa a imagem e informa o que consegue confirmar.</p>
+<div class="panel">
+ <div class="photoDrop"><div style="font-size:38px">📷</div><h3 style="margin:8px 0">Fotografe a peça</h3><p class="muted">Inversores, sensores, rolamentos, motores, contatores, placas e etiquetas técnicas.</p>
+ <div class="photoActions"><button class="primary" onclick="rvtecChoosePhoto('camera')">Tirar foto</button><button class="secondary" onclick="rvtecChoosePhoto('gallery')">Galeria</button></div>
+ <img id="partPhotoPreview" class="photoPreview" alt="Foto da peça selecionada">
+ </div>
+ <label>O que deseja descobrir? (opcional)</label><textarea id="partPhotoQuestion" placeholder="Ex.: Identifique o modelo e informe tensão, corrente e aplicação."></textarea>
+ <div class="actions"><button class="primary" id="partAnalyzeBtn" onclick="rvtecAnalyzePart()" disabled>Identificar com IA</button></div>
+ <p id="partPhotoStatus" class="muted" role="status">Escolha ou tire uma foto para começar.</p>
+</div>
+<div class="panel" id="partResultPanel" style="display:none"><h3>Resultado da identificação</h3><div id="partResult" class="resultText"></div><label>Nome para cadastrar no estoque</label><input id="partStockName" placeholder="Nome confirmado da peça"><label>Código / modelo</label><input id="partStockCode" placeholder="Código legível, se houver"><label>Quantidade</label><input id="partStockQty" type="number" min="0" value="1"><label>Localização</label><input id="partStockLocation" placeholder="Ex.: Almoxarifado elétrico"><div class="actions"><button class="primary" onclick="rvtecSaveIdentifiedPart()">Salvar no estoque</button></div></div>
+</section>
+<section id="estoque" class="tab hidden"><h2>Estoque de peças</h2><div class="panel"><h3>Cadastrar peça manualmente</h3><div class="formgrid"><div><label>Peça *</label><input id="stockName" placeholder="Ex.: Sensor indutivo PNP"></div><div><label>Código / modelo</label><input id="stockCode" placeholder="Referência"></div><div><label>Quantidade</label><input id="stockQty" type="number" min="0" value="1"></div><div><label>Localização</label><input id="stockLocation" placeholder="Prateleira / setor"></div></div><div class="actions"><button class="primary" onclick="rvtecAddStock()">Cadastrar peça</button></div></div><div class="panel"><h3>Peças cadastradas</h3><div id="stockList" class="muted">Nenhuma peça cadastrada.</div></div></section>
+
+<section id="responsaveis" class="tab hidden">
+<h2>Responsáveis</h2>
+<div class="panel"><h3>Cadastrar responsável</h3><div class="formgrid">
+<div><label>Nome completo *</label><input id="staffName" placeholder="Ex.: Reginaldo Santos"></div>
+<div><label>Função / cargo técnico *</label><input id="staffRole" placeholder="Ex.: Eletricista de manutenção"></div>
+<div><label>Turno *</label><select id="staffShift"><option value="">Selecione o turno</option><option value="1º turno">1º turno</option><option value="2º turno">2º turno</option><option value="3º turno">3º turno (22:30–06:30)</option><option value="ADM">ADM (06:30–18:30)</option></select></div>
+<div><label>WhatsApp (com DDD)</label><input id="staffWhatsapp" placeholder="Ex.: 41999999999"></div>
+<div><label>E-mail</label><input id="staffEmail" type="email" placeholder="nome@empresa.com"></div>
+<div><label>SMS (número com DDD)</label><input id="staffSms" placeholder="Ex.: 41999999999"></div>
+<div><label>Telefone para ligação</label><input id="staffPhone" placeholder="Ex.: 41999999999"></div>
+<div style="grid-column:1/-1"><label>Canais preferidos</label><div class="actions"><label><input type="checkbox" id="staffChannelWhatsApp" checked> WhatsApp</label><label><input type="checkbox" id="staffChannelEmail" checked> E-mail</label><label><input type="checkbox" id="staffChannelSms"> SMS</label><label><input type="checkbox" id="staffChannelPhone"> Ligação</label></div><small class="muted">Preferências registradas. O envio externo por WhatsApp, e-mail e SMS exige integração e credenciais do serviço; ligação é apenas uma preferência de contato.</small></div>
+</div><div class="actions"><button class="primary" onclick="addStaff()">Salvar responsável</button></div></div>
+<div id="staffList"></div>
+</section>
+<section id="inicio" class="tab">
+<h2>Painel geral</h2><div class="grid">
+<div class="stat dashboard-link" role="button" tabindex="0" onclick="tab('maquinas')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();tab('maquinas')}"><span>Máquinas cadastradas</span><strong id="sMachines">0</strong></div>
+<div class="stat dashboard-link" role="button" tabindex="0" onclick="tab('paradas')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();tab('paradas')}"><span>Máquinas paradas agora</span><strong id="sStoppedMachines">0</strong></div>
+<div class="stat dashboard-link" role="button" tabindex="0" onclick="tab('paradas')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();tab('paradas')}"><span>Paradas hoje</span><strong id="sTodayStops">0</strong></div>
+<div class="stat dashboard-link" role="button" tabindex="0" onclick="tab('ordens')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();tab('ordens')}"><span>Ordens pendentes</span><strong id="sOrders">0</strong></div>
+<div class="stat dashboard-link" role="button" tabindex="0" onclick="tab('preventivas')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();tab('preventivas')}"><span>Preventivas atrasadas</span><strong id="sOverduePrev">0</strong></div>
+<div class="stat dashboard-link" role="button" tabindex="0" onclick="tab('preventivas')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();tab('preventivas')}"><span>Preventivas cadastradas</span><strong id="sPrev">0</strong></div></div>
+<div class="panel"><h3>Acesso rápido</h3><div class="actions"><button class="primary" onclick="tab('paradas')">＋ Registrar parada</button><button class="secondary" onclick="tab('ordens')">＋ Nova ordem</button><button class="secondary" onclick="tab('maquinas')">＋ Cadastrar máquina</button></div></div>
+<div class="panel"><h3>Últimas movimentações</h3><div id="recent" class="muted">Nenhuma movimentação registrada.</div></div>
+<div class="panel muted">Acesso protegido por conta individual. Os dados operacionais são compartilhados pela nuvem conforme as permissões do seu perfil.</div>
+</section>
+
+<section id="maquinas" class="tab hidden">
+<h2>Máquinas</h2><div class="panel"><h3>Cadastrar máquina</h3><div class="formgrid">
+<div><label>Nome / identificação *</label><input id="mName" placeholder="Ex.: Extrusora 109"></div>
+<div><label>Setor</label><input id="mSector" placeholder="Ex.: Extrusão"></div>
+<div><label>Patrimônio / código</label><input id="mCode" placeholder="Opcional"></div>
+<div><label>Responsável</label><input id="mOwner" placeholder="Nome do responsável"></div>
+<div><label>Produção / peso (kg/h)</label><input id="mKgH" type="number" min="0" step="0.1" placeholder="Ex.: 250"></div>
+<div><label>Horas programadas por dia *</label><input id="mHoursDay" type="number" min="1" max="24" step="0.5" value="24"></div></div>
+<div class="actions"><button class="primary" onclick="addMachine()">Salvar máquina</button></div></div>
+<div id="machineList"></div>
+</section>
+
+
+
+
+<section id="diagnosticos" class="tab hidden">
+<h2>Diagnósticos</h2>
+<div class="panel"><h3>Registrar diagnóstico</h3>
+<div class="formgrid">
+<div><label>Máquina *</label><select id="diagMachine"></select></div>
+<div><label>Componente</label><input id="diagPart" placeholder="Ex.: Inversor WEG CFW11"></div>
+<div><label>Código da falha</label><input id="diagCode" placeholder="Ex.: F030"></div>
+<div><label>Responsável</label><select id="diagOwner"><option value="">Selecione um responsável</option></select></div>
+</div>
+<label>Sintoma / descrição da falha *</label><textarea id="diagSymptom" placeholder="O que aconteceu? Em que condição a falha aparece?"></textarea>
+<label>Testes e medições realizados</label><textarea id="diagTests" placeholder="Registre medições, parâmetros e verificações..."></textarea>
+<label>Causa identificada</label><textarea id="diagCause" placeholder="Informe a causa confirmada ou escreva 'em análise'..."></textarea>
+<label>Solução aplicada</label><textarea id="diagSolution" placeholder="Descreva o reparo executado..."></textarea>
+<label>Validação do diagnóstico</label><select id="diagValidation"><option value="pending">Hipótese / em análise</option><option value="confirmed">Causa e solução confirmadas pelo técnico</option></select>
+<p class="muted">Somente registros confirmados, com causa e solução preenchidas, entram na Memória Técnica Inteligente.</p>
+<div class="actions"><button class="primary" onclick="addDiagnosis()">Salvar diagnóstico</button></div>
+</div>
+<div id="diagnosisList"></div>
+</section>
+
+<section id="memoriaTecnica" class="tab hidden">
+<h2>Memória Técnica Inteligente</h2>
+<div class="panel"><h3>Conhecimento validado da fábrica</h3><p class="muted">O RVTEC usa falhas e soluções confirmadas pelos técnicos para apoiar diagnósticos futuros. Hipóteses da IA não são gravadas como verdade.</p><div class="grid"><div class="stat"><span>Casos validados</span><strong id="memoryCount">0</strong></div><div class="stat"><span>Máquinas com histórico</span><strong id="memoryMachines">0</strong></div><div class="stat"><span>Falhas recorrentes</span><strong id="memoryRecurrences">0</strong></div></div></div>
+<div class="panel"><h3>Registrar resultado após o reparo</h3><p class="muted">Atualize um caso para informar se a solução resolveu e se o defeito voltou.</p><div id="memoryList"></div></div>
+</section>
+
+<section id="paradas" class="tab hidden">
+<h2>Controle de paradas</h2><div class="panel"><h3>Registrar parada</h3><div class="formgrid">
+<div><label>Máquina *</label><select id="stopMachine"></select></div>
+<div><label>Data e hora de início</label><input id="stopStart" type="datetime-local"></div>
+<div><label>Causa *</label><input id="stopCause" placeholder="Ex.: Falha no inversor"></div>
+<div><label>Responsável</label><select id="stopOwner"><option value="">Selecione um responsável</option></select></div></div>
+<label>Observações</label><textarea id="stopNotes" placeholder="Informações adicionais..."></textarea><label>Ação corretiva</label><textarea id="stopSolution" placeholder="Descreva o serviço realizado para resolver a parada..."></textarea>
+<div class="actions"><button class="primary" onclick="addStop()">Registrar parada</button></div></div>
+<div class="panel"><h3>Lista para WhatsApp</h3><p class="muted">Gera uma mensagem com as paradas e seus horários para compartilhar no grupo.</p><div class="actions"><button class="whatsapp" onclick="shareStopsWhatsApp()">WhatsApp — compartilhar lista</button></div></div><div id="stopList"></div>
+</section>
+
+<section id="ordens" class="tab hidden">
+<h2>Ordens de serviço</h2>
+<div id="rvtecOsAlertPanel" class="panel" style="display:none;border:2px solid #dc2626;background:#fff5f5">
+ <strong id="rvtecOsAlertText">Há ordens aguardando atendimento.</strong>
+ <div class="actions" style="margin-top:8px">
+  <button class="secondary" onclick="rvtecMuteOsSound()">Silenciar som por 10 minutos</button>
+  <span id="rvtecOsSoundStatus" class="muted"></span>
+ </div>
+</div>
+<div class="panel"><h3>Nova ordem de serviço</h3><div class="formgrid">
+<div><label>Máquina *</label><select id="orderMachine"></select></div>
+<div><label>Prioridade</label><select id="orderPriority"><option>Normal</option><option>Alta</option><option>Urgente</option><option>Baixa</option></select></div>
+<div><label>Solicitante</label><input id="orderRequester" placeholder="Nome"></div>
+<div><label>Área responsável</label><select id="orderArea"><option value="">Selecione a área</option><option>Mecânica</option><option>Elétrica</option><option>Pneumática</option><option>Hidráulica</option></select></div></div>
+<div><label>Prazo para assumir</label><select id="orderEscalation"><option value="10">10 minutos</option><option value="15" selected>15 minutos</option><option value="30">30 minutos</option><option value="60">60 minutos</option></select></div></div>
+<label>Descrição do serviço *</label><textarea id="orderDesc" placeholder="Descreva o serviço solicitado..."></textarea>
+<div class="actions"><button class="primary" onclick="addOrder()">Criar ordem</button></div></div><div id="orderList"></div>
+</section>
+
+<section id="preventivas" class="tab hidden">
+<h2>Manutenção preventiva</h2><div class="panel"><h3>Cadastrar preventiva</h3><div class="formgrid">
+<div><label>Máquina *</label><select id="prevMachine"></select></div>
+<div><label>Próxima data</label><input id="prevDate" type="date"></div>
+<div><label>Periodicidade</label><select id="prevPeriod"><option>Semanal</option><option>Quinzenal</option><option>Mensal</option><option>Bimestral</option><option>Trimestral</option><option>Semestral</option><option>Anual</option></select></div>
+<div><label>Responsável</label><select id="prevOwner"><option value="">Selecione um responsável</option></select></div></div>
+<label>Atividade preventiva *</label><textarea id="prevTask" placeholder="Ex.: Inspeção elétrica, reaperto e limpeza..."></textarea>
+<div class="actions"><button class="primary" onclick="addPrev()">Salvar preventiva</button></div></div><div id="prevList"></div>
+</section>
+
+<section id="relatorios" class="tab hidden">
+<h2>Relatórios</h2><div class="grid">
+<div class="stat"><span>Total de paradas</span><strong id="rStops">0</strong></div><div class="stat"><span>Tempo total parado</span><strong id="rTime">0 min</strong></div><div class="stat"><span>Ordens concluídas</span><strong id="rDone">0</strong></div><div class="stat"><span>Ordens pendentes</span><strong id="rPending">0</strong></div>
+<div class="stat"><span>MTBF médio</span><strong id="rMTBF">—</strong></div>
+<div class="stat"><span>MTTR médio</span><strong id="rMTTR">—</strong></div>
+<div class="stat"><span>Disponibilidade</span><strong id="rAvailability">—</strong></div>
+<div class="stat"><span>Confiabilidade</span><strong id="rReliability">—</strong></div></div>
+<div class="panel" id="reportSharePanel">
+<h3>Escolher o que enviar</h3>
+<p class="muted">Marque somente as informações que deseja compartilhar.</p>
+<div class="actions" style="margin:8px 0 12px">
+<button class="secondary" type="button" onclick="toggleReportSelection(true)">Selecionar tudo</button>
+<button class="secondary" type="button" onclick="toggleReportSelection(false)">Limpar seleção</button>
+</div>
+<div class="formgrid report-checks">
+<label><input type="checkbox" class="report-choice" value="machines" checked> Máquinas cadastradas</label>
+<label><input type="checkbox" class="report-choice" value="stops" checked> Histórico de paradas</label>
+<label><input type="checkbox" class="report-choice" value="orders"> Ordens de serviço</label>
+<label><input type="checkbox" class="report-choice" value="preventives"> Manutenções preventivas</label>
+<label><input type="checkbox" class="report-choice" value="diagnostics"> Diagnósticos técnicos</label>
+<label><input type="checkbox" class="report-choice" value="indicators" checked> Indicadores gerais (MTBF, MTTR, disponibilidade e confiabilidade)</label>
+</div>
+<div class="actions"><button class="whatsapp" type="button" onclick="shareSelectedReportWhatsApp()">WhatsApp — enviar selecionados</button></div>
+</div>
+<div class="panel"><h3>Indicadores por máquina</h3><p class="muted">Cálculo dos últimos 30 dias, usando as horas programadas por dia cadastradas em cada máquina.</p><div id="reliabilitySummary" class="muted">Sem dados suficientes.</div></div>
+<div class="panel"><h3>Resumo das paradas</h3><div id="stopSummary" class="muted">Sem dados.</div><div class="actions"><button class="secondary" onclick="exportCSV()">Exportar paradas (CSV)</button><button class="secondary" onclick="window.print()">Imprimir relatório</button></div></div>
+</section>
+<section id="configuracoes" class="tab hidden">
+<h2>Configurações do RVTEC</h2>
+<div class="panel"><h3>Identificação e jornada</h3><div class="settings-grid">
+<div><label for="settingsAppName">Nome exibido do aplicativo</label><input id="settingsAppName" maxlength="40" placeholder="Ex.: Manutenção Industrial"></div>
+<div><label for="settingsSchedule">Horário / escala de trabalho</label><input id="settingsSchedule" maxlength="100" placeholder="Ex.: 5x2 • 14:30 às 22:30"></div>
+<div><label for="settingsShift">Turno padrão</label><select id="settingsShift"><option value="">Não definido</option><option value="1º turno">1º turno • 06:30–14:30</option><option value="2º turno">2º turno • 14:30–22:30</option><option value="3º turno">3º turno • 22:30–06:30</option><option value="ADM">Administrativo</option><option value="Personalizado">Personalizado</option></select></div>
+</div></div>
+<div class="panel"><h3>Aparência</h3><div class="settings-grid"><div><label for="settingsTheme">Tema</label><select id="settingsTheme"><option value="light">Claro</option><option value="dark">Escuro</option></select></div><div><label for="settingsAccent">Cor principal</label><input id="settingsAccent" type="color" value="#1877b9" style="height:46px;padding:5px"></div><div><label for="settingsChartStyle">Estilo dos gráficos</label><select id="settingsChartStyle"><option value="bar">Barras</option><option value="line">Linhas</option></select></div><div><label for="settingsChartType">Gráfico inicial</label><select id="settingsChartType"><option value="machineStops">Paradas por máquina</option><option value="causes">Falhas por causa</option><option value="downtime">Horas paradas por máquina</option><option value="recurrences">Falhas reincidentes</option><option value="mtbf">MTBF por máquina</option><option value="mttr">MTTR por máquina</option></select></div></div></div>
+<div class="panel"><h3>Menu e telas</h3><p class="muted">Desmarque uma tela para ocultá-la do menu. Isso não apaga registros, históricos nem dados na nuvem. Você pode reativá-la a qualquer momento.</p><div id="settingsScreens"></div></div>
+<div class="panel"><h3>Ícones dos módulos</h3><p class="muted">Escolha o ícone que aparece ao lado de cada módulo nas abas superiores.</p><div id="settingsIcons"></div></div>
+<div class="actions"><button class="primary" onclick="saveRvtecSettings()">Salvar configurações</button><button class="secondary" onclick="resetRvtecSettings()">Restaurar padrão</button></div><p id="settingsStatus" class="muted" role="status"></p>
+</section>
+<section id="graficos" class="tab hidden">
+<h2>Gráficos de manutenção</h2>
+<p class="muted">Indicadores calculados com os registros reais de máquinas, paradas e Memória Técnica deste RVTEC.</p>
+<div class="panel">
+ <div class="formgrid">
+  <div><label for="chartType">Indicador</label><select id="chartType" onchange="renderCharts()"><option value="machineStops">Paradas por máquina</option><option value="causes">Falhas por causa</option><option value="downtime">Horas paradas por máquina</option><option value="recurrences">Falhas reincidentes por máquina</option><option value="mtbf">MTBF por máquina</option><option value="mttr">MTTR por máquina</option></select></div>
+  <div><label for="chartPeriod">Período rápido</label><select id="chartPeriod" onchange="renderCharts()"><option value="30">Últimos 30 dias</option><option value="7">Últimos 7 dias</option><option value="90">Últimos 90 dias</option><option value="365">Últimos 12 meses</option><option value="all">Todo o histórico</option></select></div>
+  <div><label for="chartMachineFilter">Filtrar máquina</label><select id="chartMachineFilter" onchange="renderCharts()"><option value="all">Todas as máquinas</option></select></div>
+  <div><label for="chartStartDate">Data inicial (opcional)</label><input id="chartStartDate" type="date" onchange="renderCharts()"></div>
+  <div><label for="chartEndDate">Data final (opcional)</label><input id="chartEndDate" type="date" onchange="renderCharts()"></div>
+  <div><label><input id="chartCompare" type="checkbox" style="width:auto" onchange="renderCharts()"> Comparar com período anterior</label></div>
+ </div>
+ <div style="height:280px;position:relative;margin-top:14px"><canvas id="rvtecChart" aria-label="Gráfico de indicadores de manutenção" role="img" style="width:100%;height:100%"></canvas></div>
+ <div id="chartEmpty" class="empty hidden">Ainda não há registros suficientes para este gráfico.</div>
+ <div id="chartSummary" class="muted" style="margin-top:12px"></div>
+</div>
+<div class="panel"><h3>Como os indicadores são calculados</h3><p class="muted">As paradas abertas contam até o momento atual. Horas paradas são calculadas pela diferença entre início e término. Reincidências usam os casos marcados como “Sim, voltou” na Memória Técnica. Os gráficos não criam dados fictícios.</p></div>
+</section>
+<section id="iaRvtec" class="tab hidden">
+<h2>IA RVTEC</h2>
+<div class="panel" style="border-top:3px solid var(--blue)">
+<div class="actions" style="align-items:center;justify-content:space-between">
+ <div><h3 style="margin:0">Assistente de manutenção industrial</h3><p class="muted" style="margin:5px 0 0">Controle manual: a IA só funciona quando você ativar.</p></div>
+ <button class="primary" type="button" id="aiMasterToggle" onclick="rvtecToggleAI()">Ativar IA</button>
+</div>
+<p id="aiMasterStatus" class="muted" role="status" style="margin-top:12px">IA desligada. Ative quando quiser usar o assistente.</p>
+<p class="muted">Faça perguntas por texto ou voz. A resposta pode ser lida em voz alta.</p>
+<div id="aiConversation" aria-live="polite" style="display:flex;flex-direction:column;gap:10px;margin:14px 0"><div class="item"><div><h3>IA RVTEC</h3><div class="muted">Olá! Sou a IA RVTEC. Posso ajudar com falhas, inversores, motores e manutenção. O servidor seguro está preparado e ficará disponível após a publicação da função pelo administrador.</div></div></div></div>
+<label for="aiQuestion">Sua pergunta</label><textarea id="aiQuestion" placeholder="Ex.: O que pode causar falha F074 no inversor WEG?" rows="3"></textarea>
+<div class="actions"><button class="primary" id="aiSendButton" onclick="rvtecAskAI()">Enviar pergunta</button><button class="secondary" onclick="rvtecToggleMic()">🎙 Falar</button><button class="secondary" id="aiVoiceButton" onclick="rvtecToggleVoice()">🔊 Voz: ligada</button></div>
+<p id="aiStatus" class="muted" role="status">Aguardando configuração segura do serviço de IA.</p>
+</div>
+<div class="panel"><h3>Segurança</h3><p class="muted">A chave da IA deve ficar no servidor, nunca dentro do APK. O acesso deverá respeitar o perfil do usuário.</p></div>
+</section>
+<section id="diagnosticoNuvem" class="tab hidden">
+<h2>Diagnóstico e Sincronização</h2>
+<div class="panel"><h3>Conexão com Firebase</h3><p class="muted">Área administrativa para verificar a conexão e solicitar sincronização. Não cria máquinas ou registros fictícios.</p><p id="firebaseDiagnosticStatus" class="tag">Aguardando verificação</p><div class="actions"><button class="primary" onclick="runFirebaseDiagnostic()">Verificar conexão e sincronizar</button></div><p id="firebaseDiagnosticDetail" class="muted" aria-live="polite">Nenhum teste executado.</p></div>
+</section>
+</main>
+<section id="adminUsers" class="panel" style="display:none;margin:12px 15px;max-width:950px">
+ <h3>Usuários e permissões</h3><p class="muted">Somente o administrador pode cadastrar acessos.</p>
+ <div class="formgrid"><div><label>Nome</label><input id="newUserName" placeholder="Nome completo"></div><div><label>E-mail</label><input id="newUserEmail" type="email" placeholder="usuario@empresa.com"></div><div><label>Senha inicial</label><input id="newUserPassword" type="password" minlength="6" placeholder="Mínimo de 6 caracteres"></div><div><label>Perfil</label><select id="newUserRole"><option value="supervisor">Supervisor</option><option value="electrician">Eletricista</option><option value="production">Produção</option></select></div></div>
+ <div class="actions"><button class="primary" onclick="createRvtecUser()">Cadastrar usuário</button></div><p id="userAdminMessage" class="muted"></p>
+</section>
+<footer>Manutenção Industrial 1.0 • RVTEC</footer>
+
+<script src="https://www.gstatic.com/firebasejs/12.1.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.1.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore-compat.js"></script>
+
+
+<script>
+const LEGACY_KEY='manutencaoIndustrial10';
+let KEY=LEGACY_KEY;
+const EMPTY_DB={machines:[],stops:[],orders:[],preventives:[],diagnostics:[],technicalMemory:[],failures:[],staff:[],stock:[],stopDeletions:[],notifications:[],settings:{}};
+let db=JSON.parse(localStorage.getItem(KEY)||JSON.stringify(EMPTY_DB));
+function rvtecLoadUserData(uid,role){
+ KEY=LEGACY_KEY+'_'+String(uid||'').replace(/[^a-zA-Z0-9_-]/g,'_');
+ const saved=localStorage.getItem(KEY);
+ if(saved){try{db={...EMPTY_DB,...JSON.parse(saved)};}catch(e){db={...EMPTY_DB};}}
+ else{
+  const legacy=localStorage.getItem(LEGACY_KEY);
+  if(role==='admin'&&legacy){
+   try{db={...EMPTY_DB,...JSON.parse(legacy)};localStorage.setItem(KEY,JSON.stringify(db));localStorage.setItem(KEY+'_migrated','1');}
+   catch(e){db={...EMPTY_DB};}
+  }else db={...EMPTY_DB};
+ }
+ db.diagnostics=db.diagnostics||[];db.technicalMemory=db.technicalMemory||[];db.stock=db.stock||[];db.failures=db.failures||[];db.staff=db.staff||[];db.stopDeletions=db.stopDeletions||[];db.notifications=db.notifications||[];db.settings=db.settings||{};
+}
+db.diagnostics=db.diagnostics||[]; db.technicalMemory=db.technicalMemory||[]; db.stock=db.stock||[]; db.failures=db.failures||[]; db.staff=db.staff||[]; db.stopDeletions=db.stopDeletions||[]; db.settings=db.settings||{};
+
+// Firebase Authentication + Firestore (RVTEC)
+const firebaseConfig={apiKey:'AIzaSyCNqRK8qcEP1dA4T0dFoFzbE2Lotfpq1K0',authDomain:'rvtech-cfd2e.firebaseapp.com',projectId:'rvtech-cfd2e',storageBucket:'rvtech-cfd2e.firebasestorage.app',messagingSenderId:'171095099635',appId:'1:171095099635:web:58017bc059de606f7ecf86',measurementId:'G-5KR4W30QZM'};
+firebase.initializeApp(firebaseConfig);
+const rvtecAuth=firebase.auth();
+const rvtecStore=firebase.firestore();
+const ADMIN_EMAIL='reginaldovsantos@gmail.com';
+let cloudUser=null, userProfile=null, cloudBusy=false, cloudReady=false, cloudPushQueued=false;
+const roleNames={admin:'Administrador',supervisor:'Supervisor',electrician:'Eletricista',production:'Produção'};
+function setCloudStatus(msg){const el=document.getElementById('cloudStatus');if(el)el.textContent=msg;}
+function showLoginMessage(msg){const el=document.getElementById('loginMessage');if(el)el.textContent=msg;}
+function appAccess(yes){document.body.classList.toggle('authenticated',!!yes);$('loginGate').style.display=yes?'none':'flex';$('logoutButton').style.display=yes?'inline-block':'none';}
+function canEditData(){return !!userProfile&&['admin','supervisor','electrician'].includes(userProfile.role);}
+function applyPermissions(){
+ const role=userProfile?.role||'';
+ document.querySelectorAll('[data-write]').forEach(el=>{el.style.display=canEditData()?'':'none'});
+ document.querySelectorAll('nav button').forEach(el=>{if(el.dataset.tab==='usuarios')el.style.display=role==='admin'?'':'none'});const cloudTab=$('adminCloudTab');if(cloudTab)cloudTab.style.display=role==='admin'?'':'none';
+ const aiTab=document.querySelector('nav button[data-tab="iaRvtec"]');if(aiTab)aiTab.style.display=role==='production'?'none':'';const ai=$('accountInfo');if(ai)ai.textContent=cloudUser?(cloudUser.email+' • '+(roleNames[role]||role)):'';const adminPanel=$('adminUsers');if(adminPanel)adminPanel.style.display=role==='admin'?'block':'none';
+}
+async function rvtecLogin(){
+ const email=$('loginEmail').value.trim(),password=$('loginPassword').value;
+ if(!email||!password)return showLoginMessage('Informe e-mail e senha.');
+ $('loginButton').disabled=true;showLoginMessage('Conectando...');
+ try{await rvtecAuth.signInWithEmailAndPassword(email,password);}
+ catch(e){showLoginMessage(firebaseError(e));}
+ finally{$('loginButton').disabled=false;}
+}
+async function rvtecResetPassword(){const email=$('loginEmail').value.trim();if(!email)return showLoginMessage('Digite seu e-mail para receber o link de redefinição.');try{await rvtecAuth.sendPasswordResetEmail(email);showLoginMessage('Enviamos um link de redefinição para seu e-mail.');}catch(e){showLoginMessage(firebaseError(e));}}
+async function rvtecLogout(){try{await rvtecAuth.signOut();}catch(e){alert(firebaseError(e));}}
+function firebaseError(e){const map={'auth/invalid-email':'E-mail inválido.','auth/user-not-found':'Usuário não encontrado.','auth/wrong-password':'Senha incorreta.','auth/invalid-credential':'E-mail ou senha incorretos.','auth/too-many-requests':'Muitas tentativas. Aguarde e tente novamente.','auth/network-request-failed':'Falha de internet. Verifique a conexão.'};return map[e.code]||e.message||'Não foi possível concluir.';}
+async function ensureProfile(user){
+ const ref=rvtecStore.collection('rvtec_users').doc(user.uid);let snap=await ref.get();
+ if(!snap.exists&&user.email?.toLowerCase()===ADMIN_EMAIL){const profile={name:'Administrador',email:user.email,role:'admin',active:true,createdAt:firebase.firestore.FieldValue.serverTimestamp()};await ref.set(profile);snap=await ref.get();}
+ if(!snap.exists)throw new Error('Seu usuário ainda não tem perfil no RVTEC. Peça ao administrador para cadastrá-lo.');
+ const profile=snap.data();if(profile.active!==true)throw new Error('Acesso desativado. Procure o administrador.');
+ if(!['admin','supervisor','electrician','production'].includes(profile.role))throw new Error('Perfil sem permissão válida.');return profile;
+}
+async function pushCloud(){
+ if(!cloudUser||!userProfile||!canEditData())return;
+ cloudPushQueued=true;
+ if(cloudBusy)return;
+ cloudBusy=true;
+ try{
+  while(cloudPushQueued&&cloudUser&&canEditData()){
+   cloudPushQueued=false;
+   const uid=cloudUser.uid, payload=JSON.parse(JSON.stringify(db));
+   await rvtecStore.collection('rvtec_data').doc('main').set({dados:payload,updatedAt:firebase.firestore.FieldValue.serverTimestamp(),updatedBy:uid},{merge:true});
+   if(!cloudUser||cloudUser.uid!==uid)break;
+   if(JSON.stringify(payload)!==JSON.stringify(db))cloudPushQueued=true;
+   setCloudStatus('Nuvem: sincronizado • '+new Date().toLocaleTimeString('pt-BR'));
+  }
+ }catch(e){cloudPushQueued=true;setCloudStatus('Erro ao salvar na nuvem: '+firebaseError(e));console.error(e);}
+ finally{cloudBusy=false;}
+}
+async function syncCloud(){
+ if(!cloudUser||!userProfile)return;
+ setCloudStatus('Nuvem: sincronizando...');
+ try{
+  const snap=await rvtecStore.collection('rvtec_data').doc('main').get();
+  if(snap.exists&&snap.data().dados){
+   const remote=snap.data().dados;
+   const localSnapshot=JSON.stringify(db);
+   const remoteSnapshot=JSON.stringify(remote);
+   if(localSnapshot!==remoteSnapshot)localStorage.setItem(KEY+'_backup_antes_sync',localSnapshot);
+   db={...EMPTY_DB,...remote};
+   for(const k of Object.keys(EMPTY_DB))if(Array.isArray(EMPTY_DB[k])&&!Array.isArray(db[k]))db[k]=[];
+   db.settings=db.settings||{};
+   localStorage.setItem(KEY,JSON.stringify(db));
+   render();if(typeof renderStock==='function')renderStock();
+  }else if(canEditData()){
+   await pushCloud();
+  }
+  setCloudStatus('Nuvem: conectado • '+(canEditData()?'sincronização ativa':'consulta somente'));
+ }catch(e){setCloudStatus('Falha na nuvem: '+firebaseError(e));console.error(e);}
+}
+window.addEventListener('online',()=>{if(cloudPushQueued)pushCloud();});
+async function runFirebaseDiagnostic(){
+ const status=$('firebaseDiagnosticStatus'),detail=$('firebaseDiagnosticDetail');
+ if(userProfile?.role!=='admin'){if(status)status.textContent='Acesso restrito';if(detail)detail.textContent='Somente o administrador pode executar este diagnóstico.';return;}
+ if(status)status.textContent='Testando...';if(detail)detail.textContent='Verificando autenticação, Firestore e sincronização.';
+ try{
+  if(!navigator.onLine)throw new Error('O aparelho está sem conexão com a internet.');
+  if(!rvtecAuth.currentUser)throw new Error('Sessão Firebase não autenticada.');
+  await rvtecStore.collection('rvtec_users').doc(rvtecAuth.currentUser.uid).get();
+  await syncCloud();
+  if(status)status.textContent='Conexão verificada';
+  if(detail)detail.textContent='Autenticação ativa, leitura do perfil no Firestore concluída e sincronização solicitada. Consulte o status da nuvem acima.';
+ }catch(e){if(status)status.textContent='Falha no diagnóstico';if(detail)detail.textContent=firebaseError(e);console.error(e);}
+}
+async function createRvtecUser(){
+ if(userProfile?.role!=='admin')return alert('Somente o administrador pode cadastrar usuários.');
+ const name=$('newUserName').value.trim(),email=$('newUserEmail').value.trim(),password=$('newUserPassword').value,role=$('newUserRole').value;
+ if(!name||!email||password.length<6)return alert('Preencha nome, e-mail e senha com pelo menos 6 caracteres.');
+ const msg=$('userAdminMessage');msg.textContent='Cadastrando...';
+ let secondary=null,createdUser=null,profileWritten=false;
+ try{
+  secondary=firebase.initializeApp(firebaseConfig,'rvtecUserCreator');
+  const credential=await secondary.auth().createUserWithEmailAndPassword(email,password);
+  createdUser=credential.user;
+  await rvtecStore.collection('rvtec_users').doc(createdUser.uid).set({name,email,role,active:true,createdAt:firebase.firestore.FieldValue.serverTimestamp(),createdBy:cloudUser.uid});
+  profileWritten=true;
+  await createdUser.sendEmailVerification().catch(()=>{});
+  await secondary.auth().signOut();await secondary.delete();
+  $('newUserName').value='';$('newUserEmail').value='';$('newUserPassword').value='';msg.textContent='Usuário cadastrado. O acesso já está liberado.';
+ }catch(e){
+  if(createdUser&&!profileWritten){try{await createdUser.delete();}catch(cleanupError){console.error('Falha ao remover conta sem perfil:',cleanupError);}}
+  if(secondary){try{await secondary.delete();}catch(_){}}
+  msg.textContent=firebaseError(e)+(createdUser&&!profileWritten?' A conta recém-criada foi removida; se a exclusão falhar, confira Usuários no Firebase Authentication.':'');
+ }
+}
+rvtecAuth.onAuthStateChanged(async user=>{
+ cloudUser=user;userProfile=null;cloudReady=false;
+ if(!user){
+  appAccess(false);setCloudStatus('Nuvem: faça login');
+  KEY=LEGACY_KEY+'_signedout';db={...EMPTY_DB};render();return;
+ }
+ try{
+  userProfile=await ensureProfile(user);
+  rvtecLoadUserData(user.uid,userProfile.role);
+  cloudReady=true;appAccess(true);applyPermissions();applyRvtecSettings();render();await syncCloud();
+ }catch(e){await rvtecAuth.signOut();appAccess(false);showLoginMessage(firebaseError(e));setCloudStatus('Acesso não autorizado');}
+});
+
+const $=id=>document.getElementById(id);
+let editingStopId=null;
+let editingStaffId=null;
+let editingMachineId=null;
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const save=()=>{if(userProfile&&!canEditData()){alert('Seu perfil tem acesso somente para consulta.');return;}localStorage.setItem(KEY,JSON.stringify(db));render();if(cloudUser&&canEditData())pushCloud();};
+const nowLocal=()=>{let d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,16)};
+$('stopStart').value=nowLocal();
+const RVTEC_DEFAULT_SETTINGS={appName:'Manutenção Industrial',schedule:'',shift:'',theme:'dark',accent:'#2496e8',chartStyle:'bar',chartType:'machineStops',menuVisibility:{},icons:{}};
+const RVTEC_TAB_LABELS={inicio:'Início',pecasFoto:'Peças por foto',estoque:'Estoque',paradas:'Paradas de Máquina',responsaveis:'Responsáveis',maquinas:'Máquinas',diagnosticos:'Diagnósticos',memoriaTecnica:'Memória Técnica',iaRvtec:'IA RVTEC',ordens:'Ordens',preventivas:'Preventivas',relatorios:'Relatórios',graficos:'Gráficos',diagnosticoNuvem:'Diagnóstico e Sincronização'};
+const RVTEC_ICON_OPTIONS=['⌂','📷','▦','⏱','👥','⚙️','🩺','📚','🤖','🧾','🛠️','📄','📊','☁️','🔧','💡','🏭','📈','🧰','🔍'];
+const RVTEC_DEFAULT_ICONS={inicio:'⌂',pecasFoto:'📷',estoque:'▦',paradas:'⏱',responsaveis:'👥',maquinas:'⚙️',diagnosticos:'🩺',memoriaTecnica:'📚',iaRvtec:'🤖',ordens:'🧾',preventivas:'🛠️',relatorios:'📄',graficos:'📊',diagnosticoNuvem:'☁️'};
+let rvtecCurrentTab='inicio',rvtecTabHistory=[];
+function rvtecSettings(){return {...RVTEC_DEFAULT_SETTINGS,...(db.settings||{}),menuVisibility:{...(db.settings?.menuVisibility||{})},icons:{...(db.settings?.icons||{})}};}
+function applyRvtecSettings(){
+ const st=rvtecSettings();document.body.dataset.theme=st.theme==='dark'?'dark':'light';
+ const accent=st.accent||'#1877b9';document.documentElement.style.setProperty('--blue',accent);
+ const heading=$('appHeading');if(heading)heading.textContent=st.appName||'Manutenção Industrial';document.title=st.appName||'RVTEC';
+ const sub=$('appSubheading');if(sub)sub.textContent=[st.shift,st.schedule].filter(Boolean).join(' • ')||'Painel de controle da equipe';
+ document.querySelectorAll('#nav button[data-tab]').forEach(btn=>{const id=btn.dataset.tab;if(id==='configuracoes')return;const visible=st.menuVisibility[id]!==false;btn.classList.toggle('settings-hidden',!visible);const label=RVTEC_TAB_LABELS[id]||btn.dataset.label||id;btn.textContent=(st.icons[id]||RVTEC_DEFAULT_ICONS[id]||'•')+' '+label;});
+ const back=$('rvtecBackButton');if(back)back.style.display=rvtecCurrentTab!=='inicio'?'inline-block':'none';
+}
+function renderSettings(){
+ const st=rvtecSettings(),screens=$('settingsScreens'),icons=$('settingsIcons');if(!screens||!icons)return;
+ $('settingsAppName').value=st.appName||'';$('settingsSchedule').value=st.schedule||'';$('settingsShift').value=st.shift||'';$('settingsTheme').value=st.theme||'dark';$('settingsAccent').value=st.accent||'#2496e8';$('settingsChartStyle').value=st.chartStyle||'bar';$('settingsChartType').value=st.chartType||'machineStops';
+ const entries=Object.entries(RVTEC_TAB_LABELS);
+ screens.innerHTML=entries.map(([id,label])=>`<div class="settings-row"><label for="screen_${id}">${esc(label)}</label><input type="checkbox" id="screen_${id}" ${id==='inicio'?'checked disabled':(st.menuVisibility[id]!==false?'checked':'')} aria-label="Mostrar ${esc(label)} no menu"></div>`).join('');
+ icons.innerHTML=entries.map(([id,label])=>`<div class="settings-row"><label for="icon_${id}">${esc(label)}</label><select id="icon_${id}">${RVTEC_ICON_OPTIONS.map(ic=>`<option value="${ic}" ${(st.icons[id]||RVTEC_DEFAULT_ICONS[id])===ic?'selected':''}>${ic}</option>`).join('')}</select></div>`).join('');
+ const machine=$('chartMachineFilter');if(machine){const current=machine.value||'all';machine.innerHTML='<option value="all">Todas as máquinas</option>'+db.machines.map(m=>`<option value="${esc(m.id)}">${esc(m.name)}</option>`).join('');machine.value=[...machine.options].some(o=>o.value===current)?current:'all';}
+}
+function saveRvtecSettings(){
+ const st=rvtecSettings();st.appName=$('settingsAppName').value.trim()||'Manutenção Industrial';st.schedule=$('settingsSchedule').value.trim();st.shift=$('settingsShift').value;st.theme=$('settingsTheme').value;st.accent=$('settingsAccent').value;st.chartStyle=$('settingsChartStyle').value;st.chartType=$('settingsChartType').value;
+ Object.keys(RVTEC_TAB_LABELS).forEach(id=>{st.menuVisibility[id]=id==='inicio'?true:$('screen_'+id)?.checked!==false;st.icons[id]=$('icon_'+id)?.value||RVTEC_DEFAULT_ICONS[id]||'';});db.settings=st;localStorage.setItem(KEY,JSON.stringify(db));applyRvtecSettings();renderSettings();if(cloudUser&&canEditData())pushCloud();$('settingsStatus').textContent='Configurações salvas neste aparelho'+(cloudUser&&canEditData()?' e sincronizadas com a nuvem.':'.');
+}
+function resetRvtecSettings(){if(!confirm('Restaurar as configurações visuais e do menu? Os dados de manutenção não serão apagados.'))return;db.settings={...RVTEC_DEFAULT_SETTINGS};saveRvtecSettings();}
+function rvtecBack(){let previous='inicio';while(rvtecTabHistory.length){const candidate=rvtecTabHistory.pop();if(candidate==='configuracoes'||rvtecSettings().menuVisibility[candidate]!==false){previous=candidate;break;}}if(rvtecCurrentTab!=='inicio'){tab(previous,false);return true;}if($('nav')?.classList.contains('open')){rvtecMenuToggle(false);return true;}return false;}
+function tab(id,addHistory=true){if(!cloudUser||!userProfile){appAccess(false);showLoginMessage('Faça login para acessar o RVTEC.');return;}if(id==='iaRvtec'&&(!cloudReady||!userProfile||!['admin','supervisor','electrician'].includes(userProfile.role))){showLoginMessage('A IA RVTEC está disponível para administrador, supervisor e eletricista.');return;}if(!document.getElementById(id)||!document.getElementById(id).classList.contains('tab'))return;if(id!=='configuracoes'&&rvtecSettings().menuVisibility[id]===false){alert('Esta tela está oculta. Reative-a em Configurações > Menu e telas.');return;}if(addHistory&&rvtecCurrentTab!==id)rvtecTabHistory.push(rvtecCurrentTab);rvtecCurrentTab=id;document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('hidden',x.id!==id));document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active',x.dataset.tab===id));applyRvtecSettings();rvtecMenuToggle(false);render();if(id==='estoque')renderStock();if(id==='configuracoes')renderSettings();if(id==='graficos')renderCharts();}
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>tab(b.dataset.tab));
+function machineOptions(id){let opts=db.machines.map(m=>`<option value="${m.id}">${esc(m.name)}</option>`).join('');$(id).innerHTML=opts||'<option value="">Cadastre uma máquina primeiro</option>'}
+function toLocalInput(value){if(!value)return '';let d=new Date(value);d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,16)}
+function editMachine(id){editingMachineId=id;render()}
+function cancelMachineEdit(){editingMachineId=null;render()}
+function saveMachineEdit(id){let m=db.machines.find(x=>x.id===id);if(!m)return;let name=$('editMName').value.trim(),hours=Number($('editMHours').value);if(!name)return alert('Informe o nome da máquina.');if(!hours||hours<1||hours>24)return alert('Informe as horas programadas por dia (de 1 a 24).');m.name=name;m.sector=$('editMSector').value.trim();m.code=$('editMCode').value.trim();m.owner=$('editMOwner').value.trim();m.kgH=Math.max(0,Number($('editMKgH').value)||0);m.hoursDay=hours;editingMachineId=null;save()}
+function deleteMachine(id){let m=db.machines.find(x=>x.id===id);if(!m)return;if(!confirm(`Excluir a máquina ${m.name}? O histórico de paradas, ordens e diagnósticos será preservado.`))return;db.machines=db.machines.filter(x=>x.id!==id);save()}
+function addMachine(){let name=$('mName').value.trim(),hours=Number($('mHoursDay').value);if(!name)return alert('Informe o nome da máquina.');if(!hours||hours<1||hours>24)return alert('Informe as horas programadas por dia (de 1 a 24).');db.machines.push({id:Date.now(),name,sector:$('mSector').value,code:$('mCode').value,owner:$('mOwner').value,kgH:Math.max(0,Number($('mKgH').value)||0),hoursDay:hours});['mName','mSector','mCode','mOwner','mKgH'].forEach(x=>$(x).value='');$('mHoursDay').value='24';save()}
+function shiftFor(value){let d=new Date(value),mins=d.getHours()*60+d.getMinutes();if(mins>=390&&mins<870)return '1º turno (06:30–14:30)';if(mins>=870&&mins<1350)return '2º turno (14:30–22:30)';return '3º turno (22:30–06:30)'}
+function rvtecRenderMachineStopAlert(){
+ const open=(db.stops||[]).filter(x=>!x.end);
+ const navBtn=document.querySelector('nav button[data-tab="maquinas"]');
+ if(navBtn)navBtn.classList.toggle('rvtec-machine-stopped',open.length>0);
+ const banner=document.getElementById('rvtecMachineStopBanner');
+ if(banner){banner.classList.toggle('show',open.length>0);banner.textContent=open.length?`⚠ ${open.length} máquina(s) parada(s). Verifique a aba Máquinas / Paradas de Máquina.`:'';}
+}
+function rvtecCheckMachineStopEscalations(){
+ let changed=false; const now=Date.now();
+ (db.stops||[]).filter(s=>!s.end&&!s.supervisorAlertedAt&&s.start).forEach(s=>{
+  const started=new Date(s.start).getTime(); if(!Number.isFinite(started)||now-started<10*60*1000)return;
+  s.supervisorAlertedAt=new Date(now).toISOString();
+  const shift=s.shift||((db.staff||[]).find(x=>x.name===s.owner)?.shift)||'';
+  const recipients=(db.staff||[]).filter(x=>x.shift===shift);
+  const channels=recipients.flatMap(x=>{const c=x.channels||{};const a=[];if(c.whatsapp&&x.whatsapp)a.push({staffId:x.id,channel:'WhatsApp',destination:x.whatsapp});if(c.email&&x.email)a.push({staffId:x.id,channel:'E-mail',destination:x.email});if(c.sms&&x.sms)a.push({staffId:x.id,channel:'SMS',destination:x.sms});if(c.phone&&x.phone)a.push({staffId:x.id,channel:'Ligação',destination:x.phone});return a;});
+  db.notifications=db.notifications||[];
+  db.notifications.unshift({id:Date.now()+Math.random(),kind:'machine_stop_escalation',stopId:s.id,createdAt:s.supervisorAlertedAt,status:'aviso_no_app',shift,recipients:recipients.map(x=>x.id),channels,message:`Máquina ${mname(s.machine)} parada há pelo menos 10 minutos. Turno: ${shift||'não definido'}. Responsável: ${recipients.map(x=>x.name).join(', ')||'não cadastrado'}.`});
+  changed=true;
+  if(typeof Notification!=='undefined'&&Notification.permission==='granted')try{new Notification('RVTEC — máquina parada',{body:`${mname(s.machine)} parada há 10 minutos. Turno ${shift||'não definido'}.`});}catch(e){}
+ });
+ if(changed){localStorage.setItem(KEY,JSON.stringify(db));if(cloudUser&&canEditData())pushCloud();}
+ rvtecRenderMachineStopAlert();
+}
+function addStop(){let machine=+$('stopMachine').value,cause=$('stopCause').value.trim(),start=$('stopStart').value;if(!machine||!cause||!start)return alert('Preencha máquina, início e causa.');let owner=$('stopOwner').value,staff=db.staff.find(x=>x.name===owner);let stop={id:Date.now(),machine,cause,owner,notes:$('stopNotes').value,solution:$('stopSolution').value,start,status:'Aberta',end:null,shift:staff?.shift||'',supervisorAlertedAt:null};db.stops.unshift(stop);$('stopCause').value='';$('stopOwner').value='';$('stopNotes').value='';$('stopSolution').value='';save();let startDate=new Date(stop.start);let msg=[stop.shift?`*${stop.shift.toUpperCase()} — PARADA DE MÁQUINA*`:'*PARADA DE MÁQUINA*','',`Máquina: ${mname(stop.machine)}`,stop.owner?.trim()?`Técnico: ${stop.owner.trim()}`:'',`Data: ${startDate.toLocaleDateString('pt-BR')}`,`Início: ${startDate.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`,stop.end?`Fim: ${new Date(stop.end).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`:'',stop.end?`Tempo total: ${duration(stop)}`:'',`Causa: ${stop.cause}`,stop.solution?.trim()?`Ação corretiva: ${stop.solution.trim()}`:''].filter(Boolean).join('\n');let url='https://wa.me/?text='+encodeURIComponent(msg);window.location.href=url}
+function shareSingleStop(id){
+  let s=db.stops.find(x=>x.id===id);
+  if(!s)return;
+  let startDate=new Date(s.start);
+  let lines=[
+    s.shift?`*${s.shift.toUpperCase()} — PARADA DE MÁQUINA*`:'*PARADA DE MÁQUINA*','',
+    `Máquina: ${mname(s.machine)}`,
+    s.owner?.trim()?`Técnico: ${s.owner.trim()}`:'',
+    `Data: ${startDate.toLocaleDateString('pt-BR')}`,
+    `Início: ${startDate.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`,
+    s.end?`Fim: ${new Date(s.end).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`:'',
+    s.end?`Tempo total: ${duration(s)}`:'',
+    s.cause?.trim()?`Causa: ${s.cause.trim()}`:'',
+    s.solution?.trim()?`Ação corretiva: ${s.solution.trim()}`:''
+  ].filter(Boolean);
+  window.location.assign('https://wa.me/?text='+encodeURIComponent(lines.join('\n')));
+}
+function shareStopsWhatsApp(){
+  if(!db.stops.length)return alert('Ainda não há paradas registradas.');
+  let lines=[];
+  db.stops.forEach((s,i)=>{
+    let startDate=new Date(s.start);
+    if(i)lines.push('');
+    lines.push(s.shift?`*${s.shift.toUpperCase()} — PARADA DE MÁQUINA*`:'*PARADA DE MÁQUINA*');
+    lines.push(`Máquina: ${mname(s.machine)}`);
+    if(s.owner?.trim())lines.push(`Técnico: ${s.owner.trim()}`);
+    lines.push(`Data: ${startDate.toLocaleDateString('pt-BR')}`);
+    lines.push(`Início: ${startDate.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`);
+    if(s.end)lines.push(`Fim: ${new Date(s.end).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`);
+    if(s.end)lines.push(`Tempo total: ${duration(s)}`);
+    if(s.cause?.trim())lines.push(`Causa: ${s.cause.trim()}`);
+    if(s.solution?.trim())lines.push(`Ação corretiva: ${s.solution.trim()}`);
+  });
+  window.open('https://wa.me/?text='+encodeURIComponent(lines.join('\n')),'_blank');
+}
+function finishStop(id){let s=db.stops.find(x=>x.id===id);if(!s||s.end)return; if(!confirm('Finalizar esta parada agora?'))return;s.end= new Date().toISOString();s.status='Finalizada';save()}
+function removeStop(id){let s=db.stops.find(x=>x.id===id);if(!s)return;let reason=prompt('Informe o motivo da remoção desta parada:');if(reason===null)return;if(!reason.trim())return alert('Informe o motivo para continuar.');if(!confirm(`Remover o registro da parada de ${mname(s.machine)}? Esta ação não poderá ser desfeita.`))return;db.stopDeletions.unshift({id:Date.now(),stopId:s.id,machine:mname(s.machine),cause:s.cause,reason:reason.trim(),removedAt:new Date().toISOString(),removedBy:cloudUser?.email||'Usuário local'});db.stops=db.stops.filter(x=>x.id!==id);if(editingStopId===id)editingStopId=null;save();alert('Parada removida. O motivo ficou registrado no histórico de remoções.')}
+function editStop(id){editingStopId=id;render()}
+function cancelStopEdit(){editingStopId=null;render()}
+function saveStopEdit(id){let s=db.stops.find(x=>x.id===id);if(!s)return;let sd=$('editStartDate').value,st=$('editStartTime').value,ed=$('editEndDate').value,et=$('editEndTime').value;if(!sd||!st)return alert('Informe a data e a hora de início.');let start=sd+'T'+st;let end=(ed||et)?(ed+'T'+et):'';if((ed&&!et)||(!ed&&et))return alert('Preencha a data e a hora do término.');if(end&&new Date(end)<new Date(start))return alert('A hora de parada não pode ser anterior ao início.');s.start=start;s.end=end?new Date(end).toISOString():null;s.cause=$('editStopCause').value.trim()||s.cause;s.solution=$('editStopSolution').value.trim();s.status=s.end?'Finalizada':'Aberta';editingStopId=null;save()}
+function addOrder(){let machine=+$('orderMachine').value,desc=$('orderDesc').value.trim();if(!machine||!desc)return alert('Preencha máquina e descrição.');db.orders.unshift({id:Date.now(),machine,priority:$('orderPriority').value,requester:$('orderRequester').value,area:$('orderArea').value,desc,status:'Aberta',created:new Date().toISOString()});$('orderDesc').value='';$('orderRequester').value='';$('orderArea').value='';save()}
+function finishOrder(id){let o=db.orders.find(x=>x.id===id);if(o){o.status='Concluída';o.finished=new Date().toISOString();save()}}
+function addPrev(){let machine=+$('prevMachine').value,task=$('prevTask').value.trim();if(!machine||!task)return alert('Preencha máquina e atividade.');db.preventives.unshift({id:Date.now(),machine,date:$('prevDate').value,period:$('prevPeriod').value,owner:$('prevOwner').value,task});$('prevTask').value='';$('prevOwner').value='';save()}
+
+
+function addDiagnosis(){
+ let machine=+$('diagMachine').value, symptom=$('diagSymptom').value.trim();
+ if(!machine||!symptom)return alert('Preencha a máquina e a descrição da falha.');
+ const record={id:Date.now(),machine,part:$('diagPart').value.trim(),code:$('diagCode').value.trim(),owner:$('diagOwner').value,symptom,tests:$('diagTests').value.trim(),cause:$('diagCause').value.trim(),solution:$('diagSolution').value.trim(),validation:$('diagValidation').value,date:new Date().toISOString()};
+ db.diagnostics.unshift(record);
+ if(record.validation==='confirmed'){
+   if(!record.cause||!record.solution){db.diagnostics.shift();return alert('Para validar, informe a causa confirmada e a solução aplicada.');}
+   db.technicalMemory.unshift({id:record.id,diagnosisId:record.id,machine:record.machine,part:record.part,code:record.code,symptom:record.symptom,tests:record.tests,cause:record.cause,solution:record.solution,owner:record.owner,validatedBy:cloudUser?.email||record.owner||'Técnico',validatedAt:new Date().toISOString(),outcome:'resolved',recurrence:'unknown',occurrences:1});
+ }
+ ['diagPart','diagCode','diagOwner','diagSymptom','diagTests','diagCause','diagSolution'].forEach(x=>$(x).value='');$('diagValidation').value='pending';save();
+}
+
+function promoteDiagnosis(id){const d=db.diagnostics.find(x=>x.id===id);if(!d)return;if(!d.cause?.trim()||!d.solution?.trim())return alert('Preencha causa confirmada e solução antes de validar este caso.');if(db.technicalMemory.some(x=>String(x.diagnosisId)===String(id)))return alert('Este diagnóstico já está na Memória Técnica.');if(!confirm('Confirmar que a causa e a solução foram verificadas pelo técnico e incluir na Memória Técnica?'))return;d.validation='confirmed';db.technicalMemory.unshift({id:d.id,diagnosisId:d.id,machine:d.machine,part:d.part||'',code:d.code||'',symptom:d.symptom||'',tests:d.tests||'',cause:d.cause,solution:d.solution,owner:d.owner||'',validatedBy:cloudUser?.email||d.owner||'Técnico',validatedAt:new Date().toISOString(),outcome:'resolved',recurrence:'unknown',occurrences:1});save();}
+function updateMemoryOutcome(id){const m=db.technicalMemory.find(x=>x.id===id);if(!m)return;const outcome=$('memoryOutcome_'+id).value,recurrence=$('memoryRecurrence_'+id).value,previousRecurrence=m.recurrence||'unknown';m.outcome=outcome;m.recurrence=recurrence;if(recurrence==='yes'&&previousRecurrence!=='yes')m.occurrences=Math.max(2,Number(m.occurrences||1)+1);m.lastReviewedAt=new Date().toISOString();m.lastReviewedBy=cloudUser?.email||'Técnico';save();}
+function renderTechnicalMemory(){const list=$('memoryList');if(!list)return;const cases=db.technicalMemory||[];$('memoryCount').textContent=cases.length;$('memoryMachines').textContent=new Set(cases.map(x=>String(x.machine))).size;$('memoryRecurrences').textContent=cases.filter(x=>x.recurrence==='yes').length;list.innerHTML=cases.length?cases.map(m=>`<div class="item" style="display:block"><h3>${esc(mname(m.machine))} — ${esc(m.part||'Componente não informado')}</h3><div class="muted">${m.code?'Falha '+esc(m.code)+' • ':''}Validado por ${esc(m.validatedBy||'Técnico')} • ${m.validatedAt?new Date(m.validatedAt).toLocaleString('pt-BR'):'Data não informada'}</div><p><b>Sintoma:</b> ${esc(m.symptom)}</p><p><b>Causa confirmada:</b> ${esc(m.cause)}</p><p><b>Solução aplicada:</b> ${esc(m.solution)}</p>${m.tests?`<p class="muted"><b>Testes:</b> ${esc(m.tests)}</p>`:''}<div class="formgrid"><div><label>Resultado do reparo</label><select id="memoryOutcome_${m.id}"><option value="resolved" ${m.outcome==='resolved'?'selected':''}>Resolvido</option><option value="partial" ${m.outcome==='partial'?'selected':''}>Melhora parcial</option><option value="not_resolved" ${m.outcome==='not_resolved'?'selected':''}>Não resolveu</option></select></div><div><label>A falha voltou?</label><select id="memoryRecurrence_${m.id}"><option value="unknown" ${!m.recurrence||m.recurrence==='unknown'?'selected':''}>Ainda não verificado</option><option value="no" ${m.recurrence==='no'?'selected':''}>Não voltou</option><option value="yes" ${m.recurrence==='yes'?'selected':''}>Sim, voltou</option></select></div></div><div class="actions"><button class="primary" onclick="updateMemoryOutcome(${m.id})">Atualizar aprendizado</button></div></div>`).join(''):'<div class="empty">Ainda não há casos validados. Registre um diagnóstico e confirme a causa e a solução para iniciar a memória técnica.</div>'; }
+
+function mname(id){return db.machines.find(m=>m.id===id)?.name||'Máquina removida'}
+function duration(s){let end=s.end?new Date(s.end):new Date(),mins=Math.max(0,Math.round((end-new Date(s.start))/60000));let h=Math.floor(mins/60),m=mins%60;return h?`${h}h ${m}min`:`${m} min`}
+function staffOptions(id){let el=$(id);if(!el)return;let current=el.value;el.innerHTML='<option value="">Selecione um responsável</option>'+db.staff.map(x=>`<option value="${esc(x.name)}">${esc(x.name)} — ${esc(x.role)}</option>`).join('');if(current)el.value=current;}
+function addStaff(){let name=$('staffName').value.trim(),role=$('staffRole').value.trim(),shift=$('staffShift').value;if(!name||!role||!shift)return alert('Informe nome, função técnica e turno.');if(db.staff.some(x=>x.name.toLowerCase()===name.toLowerCase()))return alert('Este responsável já está cadastrado.');db.staff.push({id:Date.now(),name,role,shift});$('staffName').value='';$('staffRole').value='';$('staffShift').value='';save();}
+function editStaff(id){editingStaffId=id;render()}
+function cancelStaffEdit(){editingStaffId=null;render()}
+function saveStaffEdit(id){let x=db.staff.find(v=>v.id===id);if(!x)return;let name=$('editStaffName').value.trim(),role=$('editStaffRole').value.trim(),shift=$('editStaffShift').value;if(!name)return alert('Informe o nome do responsável.');if(!role)return alert('Informe a função / cargo técnico.');if(!shift)return alert('Selecione o turno.');if(db.staff.some(v=>v.id!==id&&v.name.toLowerCase()===name.toLowerCase()))return alert('Já existe um responsável com esse nome.');x.name=name;x.role=role;x.shift=shift;editingStaffId=null;save();}
+function deleteStaff(id){let x=db.staff.find(v=>v.id===id);if(!x)return;if(!confirm(`Excluir ${x.name} da lista de responsáveis? Os registros antigos serão preservados.`))return;db.staff=db.staff.filter(v=>v.id!==id);save();}
+function render(){
+applyRvtecSettings();renderSettings();
+['stopMachine','orderMachine','prevMachine','diagMachine'].forEach(machineOptions);
+['stopOwner','prevOwner','diagOwner'].forEach(staffOptions);
+$('staffList').innerHTML=db.staff.length?db.staff.map(x=>editingStaffId===x.id?`<div class="item"><div style="flex:1"><label>Nome do responsável</label><input id="editStaffName" value="${esc(x.name)}"><label>Função / cargo técnico</label><input id="editStaffRole" value="${esc(x.role)}"><label>Turno</label><select id="editStaffShift"><option value="1º turno" ${x.shift==='1º turno'?'selected':''}>1º turno (06:30–14:30)</option><option value="2º turno" ${x.shift==='2º turno'?'selected':''}>2º turno (14:30–22:30)</option><option value="3º turno" ${x.shift==='3º turno'?'selected':''}>3º turno (22:30–06:30)</option><option value="ADM" ${x.shift==='ADM'?'selected':''}>ADM (06:30–18:30)</option></select><label>WhatsApp</label><input id="editStaffWhatsapp" value="${esc(x.whatsapp||'')}"><label>E-mail</label><input id="editStaffEmail" value="${esc(x.email||'')}"><label>SMS</label><input id="editStaffSms" value="${esc(x.sms||'')}"><label>Telefone</label><input id="editStaffPhone" value="${esc(x.phone||'')}"><div class="actions"><label><input type="checkbox" id="editStaffChannelWhatsApp" ${x.channels?.whatsapp!==false?'checked':''}> WhatsApp</label><label><input type="checkbox" id="editStaffChannelEmail" ${x.channels?.email!==false?'checked':''}> E-mail</label><label><input type="checkbox" id="editStaffChannelSms" ${x.channels?.sms?'checked':''}> SMS</label><label><input type="checkbox" id="editStaffChannelPhone" ${x.channels?.phone?'checked':''}> Ligação</label></div><div class="actions"><button class="primary" onclick="saveStaffEdit(${x.id})">Salvar alterações</button><button class="secondary" onclick="cancelStaffEdit()">Cancelar</button></div></div></div>`:`<div class="item"><div><h3>${esc(x.name)}</h3><div class="muted">${esc(x.role)} • ${esc(x.shift||'Turno não definido')}</div></div><div class="actions"><button class="secondary" onclick="editStaff(${x.id})">Editar</button><button class="secondary" onclick="deleteStaff(${x.id})">Excluir</button></div></div>`).join(''):'<div class="empty">Nenhum responsável cadastrado.</div>';
+$('machineList').innerHTML=db.machines.length?db.machines.map(m=>{let stopped=db.stops.some(s=>String(s.machine)===String(m.id)&&!s.end);return editingMachineId===m.id?`<div class="item"><div style="flex:1"><h3>Editar máquina</h3><label>Nome / identificação *</label><input id="editMName" value="${esc(m.name)}"><label>Setor</label><input id="editMSector" value="${esc(m.sector||'')}"><label>Patrimônio / código</label><input id="editMCode" value="${esc(m.code||'')}"><label>Responsável</label><input id="editMOwner" value="${esc(m.owner||'')}"><label>Produção / peso (kg/h)</label><input id="editMKgH" type="number" min="0" step="0.1" value="${Number(m.kgH||0)||''}"><label>Horas programadas por dia *</label><input id="editMHours" type="number" min="1" max="24" step="0.5" value="${Number(m.hoursDay||24)}"><div class="actions"><button class="primary" onclick="saveMachineEdit(${m.id})">Salvar alterações</button><button class="secondary" onclick="cancelMachineEdit()">Cancelar</button></div></div></div>`:`<div class="item"><div><h3>${esc(m.name)}</h3><div class="muted">${esc(m.sector||'Sem setor')} • ${esc(m.code||'Sem código')} • ${esc(m.owner||'Sem responsável')} • ${Number(m.kgH||0)>0?Number(m.kgH).toLocaleString('pt-BR')+' kg/h • ':''}${Number(m.hoursDay||24)} h/dia</div></div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="tag ${stopped?'stopped':'active'}">${stopped?'PARADA':'ATIVA'}</span><button class="secondary" onclick="editMachine(${m.id})">Editar</button><button class="secondary" onclick="deleteMachine(${m.id})">Excluir</button></div></div>`}).join(''):'<div class="empty">Nenhuma máquina cadastrada.</div>';
+$('diagnosisList').innerHTML=db.diagnostics.length?db.diagnostics.map(d=>`<div class="item"><div><h3>${esc(mname(d.machine))} — ${esc(d.part||'Componente não informado')}</h3><div class="muted">${d.code?'Falha: '+esc(d.code)+' • ':''}${esc(d.symptom)}<br>Responsável: ${esc(d.owner||'Não informado')} • ${new Date(d.date).toLocaleString('pt-BR')}</div>${d.tests?`<p class="muted"><b>Testes:</b> ${esc(d.tests)}</p>`:''}${d.cause?`<p class="muted"><b>Causa:</b> ${esc(d.cause)}</p>`:''}${d.solution?`<p class="muted"><b>Ação corretiva:</b> ${esc(d.solution)}</p>`:''}<div class="actions">${d.validation==='confirmed'?'<span class="tag done">Validado na memória técnica</span>':`<button class="secondary" onclick="promoteDiagnosis(${d.id})">Validar e incluir na memória</button>`}</div></div><span class="tag">${d.validation==='confirmed'?'Confirmado':'Em análise'}</span></div>`).join(''):'<div class="empty">Nenhum diagnóstico registrado. Cadastre o primeiro diagnóstico para iniciar o histórico técnico.</div>';
+ $('stopList').innerHTML=db.stops.length?db.stops.map(s=>{let a=toLocalInput(s.start),b=s.end?toLocalInput(s.end):'';return `<div class="item"><div style="flex:1;min-width:0"><h3>${esc(mname(s.machine))} — ${esc(s.cause)}</h3><div class="muted">Turno: <b>${esc(s.shift||'Não definido')}</b><br>Início: ${new Date(s.start).toLocaleString('pt-BR')}<br>Término: ${s.end?new Date(s.end).toLocaleString('pt-BR'):'Em aberto'} • ${esc(s.owner||'Sem responsável')}<br>Tempo: <b>${duration(s)}</b>${s.solution?'<br><b>Ação corretiva:</b> '+esc(s.solution):'<br><b>Ação corretiva:</b> Não informado'}${s.notes?'<br>Observações: '+esc(s.notes):''}</div>${editingStopId===s.id?`<div class="time-edit"><strong>Editar data e hora da parada</strong><div class="time-edit-grid"><div><label>Data de início</label><input id="editStartDate" type="date" value="${a.slice(0,10)}"></div><div><label>Hora de início</label><input id="editStartTime" type="time" value="${a.slice(11,16)}"></div><div><label>Data de término</label><input id="editEndDate" type="date" value="${b?b.slice(0,10):''}"></div><div><label>Hora de término</label><input id="editEndTime" type="time" value="${b?b.slice(11,16):''}"></div></div><div><label>Causa</label><input id="editStopCause" value="${esc(s.cause||'')}"></div><div><label>Ação corretiva</label><textarea id="editStopSolution" placeholder="Descreva o serviço realizado...">${esc(s.solution||'')}</textarea></div><div class="muted">Se a parada continua aberta, deixe data e hora de término vazias.</div><div class="actions"><button class="primary" onclick="saveStopEdit(${s.id})">Salvar horários</button><button class="secondary" onclick="cancelStopEdit()">Cancelar</button></div></div>`:''}</div><div style="display:flex;flex-direction:column;gap:8px;align-items:stretch;margin-top:12px"><span class="tag ${s.end?'done':'open'}">${s.status}</span><button class="whatsapp" style="width:100%" onclick="shareSingleStop(${s.id})">Comunicar parada pelo WhatsApp</button><div class="actions"><button class="secondary" onclick="editStop(${s.id})">Editar horários</button><button class="secondary" onclick="removeStop(${s.id})">Remover parada</button>${s.end?'':`<button class="primary" onclick="finishStop(${s.id})">Finalizar</button>`}</div></div></div>`}).join(''):'<div class="empty">Nenhuma parada registrada.</div>';
+$('orderList').innerHTML=db.orders.length?db.orders.map(o=>`<div class="item"><div><h3>OS #${o.id.toString().slice(-5)} — ${esc(mname(o.machine))}</h3><div class="muted">${esc(o.desc)}<br>Prioridade: ${esc(o.priority)} • Área responsável: ${esc(o.area||'Não definida')}</div></div><div style="text-align:right"><span class="tag ${o.status==='Concluída'?'done':'open'}">${o.status}</span>${o.status!=='Concluída'?`<div class="actions"><button class="secondary" onclick="finishOrder(${o.id})">Concluir</button></div>`:''}</div></div>`).join(''):'<div class="empty">Nenhuma ordem cadastrada.</div>';
+renderTechnicalMemory();
+$('prevList').innerHTML=db.preventives.length?db.preventives.map(p=>`<div class="item"><div><h3>${esc(mname(p.machine))}</h3><div class="muted">${esc(p.task)}<br>Periodicidade: ${esc(p.period)} • Próxima data: ${p.date?new Date(p.date+'T12:00:00').toLocaleDateString('pt-BR'):'Não definida'} • ${esc(p.owner||'Sem responsável')}</div></div><span class="tag">Programada</span></div>`).join(''):'<div class="empty">Nenhuma preventiva cadastrada.</div>';
+let openStops=db.stops.filter(s=>!s.end);
+let today=new Date();let todayKey=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
+let todayStops=db.stops.filter(s=>{let d=new Date(s.start);return d.getFullYear()===today.getFullYear()&&d.getMonth()===today.getMonth()&&d.getDate()===today.getDate()});
+let stoppedMachines=new Set(openStops.map(s=>s.machine)).size;
+let overduePrev=db.preventives.filter(p=>p.date&&p.date<todayKey).length;
+$('sMachines').textContent=db.machines.length;
+$('sStoppedMachines').textContent=stoppedMachines;
+$('sTodayStops').textContent=todayStops.length;
+$('sOrders').textContent=db.orders.filter(o=>o.status!=='Concluída').length;
+$('sOverduePrev').textContent=overduePrev;
+$('sPrev').textContent=db.preventives.length;
+$('rStops').textContent=db.stops.length;$('rDone').textContent=db.orders.filter(o=>o.status==='Concluída').length;$('rPending').textContent=db.orders.filter(o=>o.status!=='Concluída').length;
+let total=db.stops.reduce((a,s)=>a+Math.max(0,Math.round(((s.end?new Date(s.end):new Date())-new Date(s.start))/60000)),0);
+$('rTime').textContent=total>=60?`${Math.floor(total/60)}h ${total%60}min`:`${total} min`;
+$('stopSummary').innerHTML=db.stops.length?`<table><tr><th>Máquina</th><th>Causa</th><th>Status</th><th>Tempo</th></tr>${db.stops.map(s=>`<tr><td>${esc(mname(s.machine))}</td><td>${esc(s.cause)}</td><td>${s.status}</td><td>${duration(s)}</td></tr>`).join('')}</table>`:'Sem dados.';
+// Indicadores dos últimos 30 dias. Paradas abertas contam até o momento atual.
+const periodMs=30*24*60*60*1000, periodStart=Date.now()-periodMs;
+let kpis=db.machines.map(m=>{
+  let scheduledHours=Number(m.hoursDay||24)*30;
+  let machineStops=db.stops.filter(s=>String(s.machine)===String(m.id)&&new Date(s.start).getTime()<Date.now()&&(!s.end||new Date(s.end).getTime()>periodStart));
+  let downtimeHours=machineStops.reduce((sum,s)=>{
+    let a=Math.max(new Date(s.start).getTime(),periodStart),b=Math.min(s.end?new Date(s.end).getTime():Date.now(),Date.now());
+    return sum+Math.max(0,b-a)/3600000;
+  },0);
+  let failures=machineStops.filter(s=>(s.end?new Date(s.end).getTime():Date.now())>=periodStart).length;
+  let uptimeHours=Math.max(0,scheduledHours-downtimeHours);
+  let mtbf=failures?uptimeHours/failures:null;
+  let mttr=failures?downtimeHours/failures:null;
+  let availability=scheduledHours?uptimeHours/scheduledHours*100:null;
+  let reliability=mtbf&&Number(m.hoursDay||24)>0?Math.exp(-Number(m.hoursDay||24)/mtbf)*100:null;
+  return {name:m.name,mtbf,mttr,availability,reliability,failures,downtimeHours};
+});
+let valid=kpis.filter(x=>x.mtbf!==null);
+const avg=key=>valid.length?valid.reduce((a,x)=>a+x[key],0)/valid.length:null;
+const fmtHours=v=>v===null?'—':`${v.toFixed(1)} h`;
+$('rMTBF').textContent=fmtHours(avg('mtbf'));
+$('rMTTR').textContent=fmtHours(avg('mttr'));
+$('rAvailability').textContent=avg('availability')===null?'—':`${avg('availability').toFixed(1)}%`;
+$('rReliability').textContent=avg('reliability')===null?'—':`${avg('reliability').toFixed(1)}%`;
+$('reliabilitySummary').innerHTML=kpis.length?`<table><tr><th>Máquina</th><th>MTBF</th><th>MTTR</th><th>Disponibilidade</th><th>Confiabilidade</th></tr>${kpis.map(x=>`<tr><td>${esc(x.name)}</td><td>${fmtHours(x.mtbf)}</td><td>${fmtHours(x.mttr)}</td><td>${x.availability===null?'—':x.availability.toFixed(1)+'%'}</td><td>${x.reliability===null?'—':x.reliability.toFixed(1)+'%'}</td></tr>`).join('')}</table>`:'Cadastre máquinas para calcular os indicadores.';
+
+let recent=[...db.stops.slice(0,3).map(s=>`Parada: ${mname(s.machine)} — ${s.cause}`),...db.orders.slice(0,2).map(o=>`OS: ${mname(o.machine)} — ${o.status}`)].slice(0,5);
+$('recent').innerHTML=recent.length?recent.map(x=>`• ${esc(x)}`).join('<br>'):'Nenhuma movimentação registrada.';
+rvtecRenderMachineStopAlert();if(!$('graficos')?.classList.contains('hidden'))renderCharts();}
+function renderCharts(){
+ const canvas=$('rvtecChart'),empty=$('chartEmpty'),summary=$('chartSummary');if(!canvas)return;
+ const st=rvtecSettings(),days=$('chartPeriod')?.value||'30',type=$('chartType')?.value||st.chartType||'machineStops';
+ const startInput=$('chartStartDate')?.value||'',endInput=$('chartEndDate')?.value||'';
+ let earliestRecorded=(db.stops||[]).filter(s=>s.start).reduce((min,s)=>Math.min(min,new Date(s.start).getTime()),Date.now());
+ let startTime=startInput?new Date(startInput+'T00:00:00').getTime():(days==='all'?earliestRecorded:Date.now()-Number(days)*86400000);
+ let endTime=endInput?new Date(endInput+'T23:59:59.999').getTime():Date.now();
+ if(startTime>endTime){empty.classList.remove('hidden');empty.textContent='A data inicial não pode ser posterior à data final.';summary.textContent='';return;}
+ const machineId=$('chartMachineFilter')?.value||'all';
+ const machines=db.machines.filter(m=>machineId==='all'||String(m.id)===String(machineId));
+ const allStops=(db.stops||[]).filter(s=>{const a=new Date(s.start).getTime(),b=s.end?new Date(s.end).getTime():Date.now();return s.start&&a<=endTime&&b>=startTime&&(machineId==='all'||String(s.machine)===machineId);});
+ let labels=[],values=[],unit='paradas',title='';
+ const overlapHours=s=>{const a=Math.max(new Date(s.start).getTime(),startTime),b=Math.min(s.end?new Date(s.end).getTime():Date.now(),endTime);return Math.max(0,b-a)/3600000;};
+ if(type==='machineStops'){
+  title='Paradas por máquina';unit='paradas';labels=machines.map(m=>m.name);values=machines.map(m=>allStops.filter(s=>String(s.machine)===String(m.id)).length);
+ }else if(type==='causes'){
+  title='Falhas por causa';unit='ocorrências';const counts={};allStops.forEach(s=>{const k=(s.cause||'Não informada').trim();counts[k]=(counts[k]||0)+1});const sorted=Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,12);labels=sorted.map(x=>x[0]);values=sorted.map(x=>x[1]);
+ }else if(type==='downtime'){
+  title='Horas paradas por máquina';unit='horas';labels=machines.map(m=>m.name);values=machines.map(m=>allStops.filter(s=>String(s.machine)===String(m.id)).reduce((sum,s)=>sum+overlapHours(s),0));
+ }else if(type==='recurrences'){
+  title='Falhas reincidentes por máquina';unit='reincidências';const mem=(db.technicalMemory||[]).filter(m=>m.recurrence==='yes'&&(!m.validatedAt||new Date(m.validatedAt).getTime()>=startTime&&new Date(m.validatedAt).getTime()<=endTime)&&(machineId==='all'||String(m.machine)===machineId));labels=machines.map(m=>m.name);values=machines.map(m=>mem.filter(x=>String(x.machine)===String(m.id)).length);
+ }else{
+  title=type==='mtbf'?'MTBF por máquina':'MTTR por máquina';unit='horas';const periodHours=Math.max(0,(endTime-startTime)/3600000);labels=machines.map(m=>m.name);values=machines.map(m=>{const list=allStops.filter(s=>String(s.machine)===String(m.id));const down=list.reduce((sum,s)=>sum+overlapHours(s),0);const failures=list.length;const scheduled=Number(m.hoursDay||24)*(periodHours/24);const up=Math.max(0,scheduled-down);return failures?(type==='mtbf'?up/failures:down/failures):0;});
+ }
+ const data=labels.map((label,i)=>({label,value:Number(values[i]||0)})).filter(x=>x.value>0).sort((a,b)=>b.value-a.value).slice(0,12);
+ const ctx=canvas.getContext('2d'),w=Math.max(300,canvas.clientWidth),h=Math.max(220,canvas.clientHeight),dpr=window.devicePixelRatio||1;canvas.width=w*dpr;canvas.height=h*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);
+ if(!data.length){empty.classList.remove('hidden');empty.textContent='Ainda não há registros suficientes para este indicador e período.';summary.textContent='';return}empty.classList.add('hidden');
+ const left=42,right=12,top=18,bottom=58,plotW=w-left-right,plotH=h-top-bottom,max=Math.max(1,...data.map(x=>x.value));
+ ctx.strokeStyle='#dbe4ec';ctx.fillStyle='#68798a';ctx.font='11px system-ui';ctx.lineWidth=1;
+ for(let i=0;i<=4;i++){const y=top+plotH*i/4;ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(w-right,y);ctx.stroke();ctx.textAlign='right';ctx.fillText((max*(4-i)/4).toFixed(max<5?1:0),left-7,y+4)}
+ const gap=Math.min(16,plotW/data.length*.22),barW=Math.max(8,(plotW-gap*(data.length-1))/data.length),points=[];
+ if(st.chartStyle==='line'){
+  data.forEach((item,i)=>{const x=left+(data.length===1?plotW/2:i*plotW/(data.length-1)),y=top+plotH-(item.value/max)*(plotH-5);points.push({x,y,item});});
+  ctx.strokeStyle=st.accent||'#1877b9';ctx.lineWidth=3;ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.stroke();
+  points.forEach(p=>{ctx.fillStyle=st.accent||'#1877b9';ctx.beginPath();ctx.arc(p.x,p.y,4,0,Math.PI*2);ctx.fill();ctx.fillStyle='#24384a';ctx.textAlign='center';ctx.font='bold 11px system-ui';ctx.fillText(p.item.value.toFixed(['downtime','mtbf','mttr'].includes(type)?1:0),p.x,Math.max(12,p.y-9));ctx.save();ctx.translate(p.x,top+plotH+12);ctx.rotate(-Math.PI/5);ctx.textAlign='right';ctx.font='10px system-ui';ctx.fillText(p.item.label.length>20?p.item.label.slice(0,18)+'…':p.item.label,0,0);ctx.restore();});
+ }else{
+  data.forEach((item,i)=>{const x=left+i*(barW+gap),bh=item.value/max*(plotH-5),y=top+plotH-bh;ctx.fillStyle=st.accent||'#1877b9';ctx.beginPath();ctx.roundRect(x,y,barW,bh,[5,5,0,0]);ctx.fill();ctx.fillStyle='#24384a';ctx.textAlign='center';ctx.font='bold 11px system-ui';ctx.fillText(item.value.toFixed(['downtime','mtbf','mttr'].includes(type)?1:0),x+barW/2,Math.max(12,y-5));ctx.save();ctx.translate(x+barW/2,top+plotH+12);ctx.rotate(-Math.PI/5);ctx.textAlign='right';ctx.font='10px system-ui';ctx.fillText(item.label.length>20?item.label.slice(0,18)+'…':item.label,0,0);ctx.restore();});
+ }
+ let compareHtml='';
+ if($('chartCompare')?.checked){
+  const span=endTime-startTime,prevStart=startTime-span,prevEnd=startTime-1;
+  const prevStops=(db.stops||[]).filter(s=>{const a=new Date(s.start).getTime(),b=s.end?new Date(s.end).getTime():Date.now();return s.start&&a<=prevEnd&&b>=prevStart&&(machineId==='all'||String(s.machine)===machineId);});
+  const prevOverlap=s=>{const a=Math.max(new Date(s.start).getTime(),prevStart),b=Math.min(s.end?new Date(s.end).getTime():Date.now(),prevEnd);return Math.max(0,b-a)/3600000;};
+  const prevMap={};
+  if(type==='machineStops'||type==='downtime'||type==='mtbf'||type==='mttr')machines.forEach(m=>{const list=prevStops.filter(s=>String(s.machine)===String(m.id));const down=list.reduce((sum,s)=>sum+prevOverlap(s),0);const failures=list.length;const scheduled=Number(m.hoursDay||24)*(span/86400000);prevMap[m.name]=type==='machineStops'?failures:type==='downtime'?down:failures?(type==='mtbf'?Math.max(0,scheduled-down)/failures:down/failures):0;});
+  else if(type==='causes')prevStops.forEach(s=>{const k=(s.cause||'Não informada').trim();prevMap[k]=(prevMap[k]||0)+1;});
+  else {const mem=(db.technicalMemory||[]).filter(m=>m.recurrence==='yes'&&m.validatedAt&&new Date(m.validatedAt).getTime()>=prevStart&&new Date(m.validatedAt).getTime()<=prevEnd&&(machineId==='all'||String(m.machine)===machineId));machines.forEach(m=>prevMap[m.name]=mem.filter(x=>String(x.machine)===String(m.id)).length);}
+  const comparisons=data.map(x=>{const before=Number(prevMap[x.label]||0),delta=x.value-before,pct=before?`${(delta/before*100).toFixed(1)}%`:x.value?'novo':'0%';return `${esc(x.label)}: ${before.toFixed(['downtime','mtbf','mttr'].includes(type)?1:0)} → ${x.value.toFixed(['downtime','mtbf','mttr'].includes(type)?1:0)} (${delta>=0?'+':''}${delta.toFixed(['downtime','mtbf','mttr'].includes(type)?1:0)}; ${pct})`;});
+  compareHtml='<br><br><b>Comparação com o período anterior:</b><br>'+comparisons.join('<br>');
+ }
+ const rangeLabel=(startInput||days==='all'?'':`Últimos ${days} dias`);summary.innerHTML='<b>'+title+'</b>'+(rangeLabel?' • '+rangeLabel:'')+'<br>'+data.map(x=>`${esc(x.label)}: <b>${x.value.toFixed(['downtime','mtbf','mttr'].includes(type)?1:0)} ${unit}</b>`).join(' &nbsp; • &nbsp; ')+compareHtml;
+}
+window.addEventListener('resize',()=>{if(!$('graficos')?.classList.contains('hidden'))renderCharts()});
+function toggleReportSelection(checked){document.querySelectorAll('.report-choice').forEach(el=>el.checked=checked)}
+function shareSelectedReportWhatsApp(){
+ const selected=[...document.querySelectorAll('.report-choice:checked')].map(el=>el.value);
+ if(!selected.length)return alert('Marque pelo menos uma informação para enviar.');
+ const lines=['*RVTEC — RELATÓRIO DE MANUTENÇÃO*',`Gerado em: ${new Date().toLocaleString('pt-BR')}`,''];
+ if(selected.includes('machines')){
+  lines.push('*MÁQUINAS CADASTRADAS*');
+  lines.push(db.machines.length?db.machines.map(m=>`• ${m.name}${m.sector?' — '+m.sector:''}${Number(m.kgH||0)>0?' — '+Number(m.kgH).toLocaleString('pt-BR')+' kg/h':''}`).join('\n'):'Nenhuma máquina cadastrada.','');
+ }
+ if(selected.includes('stops')){
+  lines.push('*HISTÓRICO DE PARADAS*');
+  lines.push(db.stops.length?db.stops.slice(0,30).map(s=>`• ${mname(s.machine)} | ${s.cause} | ${s.status|| (s.end?'Finalizada':'Aberta')} | ${duration(s)} | ${new Date(s.start).toLocaleString('pt-BR')}`).join('\n'):'Nenhuma parada registrada.','');
+  if(db.stops.length>30)lines.push(`(Mostrando as 30 mais recentes de ${db.stops.length} paradas.)`,'');
+ }
+ if(selected.includes('orders')){
+  lines.push('*ORDENS DE SERVIÇO*');
+  lines.push(db.orders.length?db.orders.slice(0,30).map(o=>`• OS #${String(o.id).slice(-5)} | ${mname(o.machine)} | ${o.status} | ${o.desc||''}`).join('\n'):'Nenhuma ordem cadastrada.','');
+  if(db.orders.length>30)lines.push(`(Mostrando as 30 primeiras de ${db.orders.length} ordens.)`,'');
+ }
+ if(selected.includes('preventives')){
+  lines.push('*MANUTENÇÕES PREVENTIVAS*');
+  lines.push(db.preventives.length?db.preventives.map(p=>`• ${mname(p.machine)} | ${p.task} | ${p.period} | Próxima: ${p.date||'Não definida'} | ${p.owner||'Sem responsável'}`).join('\n'):'Nenhuma preventiva cadastrada.','');
+ }
+ if(selected.includes('diagnostics')){
+  lines.push('*DIAGNÓSTICOS TÉCNICOS*');
+  lines.push(db.diagnostics.length?db.diagnostics.slice(0,30).map(d=>`• ${mname(d.machine)} | ${d.part||'Componente não informado'} | Falha: ${d.code||'Não informada'} | Sintoma: ${d.symptom||'Não informado'} | Causa: ${d.cause||'Não informada'} | Ação: ${d.solution||'Não informada'}`).join('\n'):'Nenhum diagnóstico cadastrado.','');
+  if(db.diagnostics.length>30)lines.push(`(Mostrando os 30 primeiros de ${db.diagnostics.length} diagnósticos.)`,'');
+ }
+ if(selected.includes('indicators')){
+  const totalMinutes=db.stops.reduce((sum,s)=>sum+Math.max(0,Math.round(((s.end?new Date(s.end):new Date())-new Date(s.start))/60000)),0);
+  lines.push('*INDICADORES GERAIS*',`Total de paradas: ${db.stops.length}`,`Tempo total parado: ${Math.floor(totalMinutes/60)}h ${totalMinutes%60}min`,`Ordens concluídas: ${db.orders.filter(o=>o.status==='Concluída').length}`,`Ordens pendentes: ${db.orders.filter(o=>o.status!=='Concluída').length}`,`MTBF médio: ${$('rMTBF').textContent}`,`MTTR médio: ${$('rMTTR').textContent}`,`Disponibilidade: ${$('rAvailability').textContent}`,`Confiabilidade: ${$('rReliability').textContent}`,'');
+ }
+ const url='https://wa.me/?text='+encodeURIComponent(lines.join('\n'));
+ window.open(url,'_blank');
+}
+function exportCSV(){let rows=[['Maquina','Causa','Responsavel','Inicio','Fim','Status','Duracao']];db.stops.forEach(s=>rows.push([mname(s.machine),s.cause,s.owner,new Date(s.start).toLocaleString('pt-BR'),s.end?new Date(s.end).toLocaleString('pt-BR'):'',s.status,duration(s)]));let csv='\ufeff'+rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\n');let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='relatorio_paradas.csv';a.click();URL.revokeObjectURL(a.href)}
+// Assistente IA RVTEC: chamada direta via Firebase AI Logic + Gemini Developer API.
+const RVTEC_AI_MODEL = 'gemini-4-hydrogen';
+const RVTEC_AI_ENABLED_KEY = 'rvtec_ai_enabled';
+let rvtecAIEnabled = localStorage.getItem(RVTEC_AI_ENABLED_KEY) === 'true';
+let rvtecSpeechRecognition = null;
+let rvtecVoiceEnabled = true;
+function rvtecApplyAIState(){
+ const toggle=$('aiMasterToggle'), status=$('aiMasterStatus');
+ const controls=['aiQuestion','aiSendButton'];
+ controls.forEach(id=>{const el=$(id);if(el)el.disabled=!rvtecAIEnabled;});
+ document.querySelectorAll('#iaRvtec .actions button').forEach(el=>{if(el.id!=='aiMasterToggle')el.disabled=!rvtecAIEnabled;});
+ if(toggle)toggle.textContent=rvtecAIEnabled?'Desativar IA':'Ativar IA';
+ if(status)status.textContent=rvtecAIEnabled?'IA ativada. Gemini via Firebase AI Logic.':'IA desligada. Ative quando quiser usar o assistente.';
+}
+function rvtecToggleAI(){
+ rvtecAIEnabled=!rvtecAIEnabled;
+ localStorage.setItem(RVTEC_AI_ENABLED_KEY,String(rvtecAIEnabled));
+ if(!rvtecAIEnabled&&rvtecSpeechRecognition){try{rvtecSpeechRecognition.stop();}catch(e){}rvtecSpeechRecognition=null;}
+ if(!rvtecAIEnabled&&window.speechSynthesis)window.speechSynthesis.cancel();
+ rvtecApplyAIState();
+}
+function rvtecAppendMessage(who,message){const box=$('aiConversation');const item=document.createElement('div');item.className='item';const inner=document.createElement('div');const title=document.createElement('h3');title.textContent=who;const body=document.createElement('div');body.className='muted';body.textContent=message;inner.append(title,body);item.append(inner);box.append(item);}
+function rvtecToggleVoice(){if(!rvtecAIEnabled)return;rvtecVoiceEnabled=!rvtecVoiceEnabled;$('aiVoiceButton').textContent=rvtecVoiceEnabled?'🔊 Voz: ligada':'🔇 Voz: desligada';}
+function rvtecSpeak(message){if(!rvtecVoiceEnabled||!window.speechSynthesis)return;window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(message);u.lang='pt-BR';window.speechSynthesis.speak(u);}
+function rvtecToggleMic(){if(!rvtecAIEnabled)return;const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){$('aiStatus').textContent='Reconhecimento de voz indisponível neste WebView. Digite sua pergunta.';return;}if(rvtecSpeechRecognition){rvtecSpeechRecognition.stop();rvtecSpeechRecognition=null;return;}const rec=new SR();rvtecSpeechRecognition=rec;rec.lang='pt-BR';rec.interimResults=false;rec.onresult=e=>{$('aiQuestion').value=e.results[0][0].transcript;$('aiStatus').textContent='Pergunta transcrita. Toque em Enviar pergunta.';};rec.onerror=e=>$('aiStatus').textContent='Falha no microfone: '+e.error;rec.onend=()=>rvtecSpeechRecognition=null;$('aiStatus').textContent='Ouvindo…';try{rec.start();}catch(e){rvtecSpeechRecognition=null;$('aiStatus').textContent='Não foi possível iniciar o microfone. Verifique a permissão.';}}
+async function rvtecAskAI(){if(!cloudUser||!userProfile){$('aiStatus').textContent='Faça login para usar a IA RVTEC.';appAccess(false);return;}if(!rvtecAIEnabled){$('aiStatus').textContent='Ative a IA para enviar uma pergunta.';return;}if(!['admin','supervisor','electrician'].includes(userProfile.role)){ $('aiStatus').textContent='Seu perfil não tem acesso à IA RVTEC.';return;}const question=$('aiQuestion').value.trim();if(!question){$('aiStatus').textContent='Digite ou dite uma pergunta.';return;}$('aiSendButton').disabled=true;$('aiStatus').textContent='Consultando Gemini…';rvtecAppendMessage('Você',question);try{if(!window.rvtecGeminiReady)throw new Error('Módulo Gemini não foi carregado. Verifique a conexão.');await window.rvtecGeminiReady;const context={machines:db.machines,stops:db.stops.slice(0,30),orders:db.orders.slice(0,30),diagnostics:db.diagnostics.slice(0,30),technicalMemory:(db.technicalMemory||[]).slice(0,40),preventives:db.preventives.slice(0,30)};const answer=String(await window.rvtecGeminiGenerate(question,context,userProfile.role));if(!answer.trim())throw new Error('O Gemini não retornou resposta.');rvtecAppendMessage('IA RVTEC',answer);rvtecSpeak(answer);$('aiQuestion').value='';$('aiStatus').textContent='Resposta recebida pelo Gemini.';}catch(e){$('aiStatus').textContent='Erro ao consultar IA: '+(e?.message||String(e));}finally{$('aiSendButton').disabled=false;}}
+
+let rvtecSelectedPhoto=false, rvtecLastPartResult='';
+function rvtecMenuToggle(force){const nav=$('nav'),shade=$('navShade');nav.classList.remove('open');if(shade)shade.classList.remove('show');document.body.classList.remove('rvtec-menu-open');}
+function rvtecChoosePhoto(source){if(!window.RVTECNative||!window.RVTECNative.choosePhoto){$('partPhotoStatus').textContent='Atualize o aplicativo para habilitar câmera e galeria.';return;}window.RVTECNative.choosePhoto(source);}
+window.rvtecPhotoSelected=function(ok,message){rvtecSelectedPhoto=!!ok;$('partAnalyzeBtn').disabled=!ok;$('partPhotoStatus').textContent=message|| (ok?'Foto pronta para análise.':'Não foi possível abrir a imagem.');};
+window.rvtecPartPhotoResult=function(id,answer,error){const p=window.rvtecPartPending&&window.rvtecPartPending[id];if(!p)return;delete window.rvtecPartPending[id];if(error)p.reject(new Error(error));else p.resolve(answer||'');};
+window.rvtecPartPending={};
+async function rvtecAnalyzePart(){if(!cloudUser||!userProfile){$('partPhotoStatus').textContent='Faça login para usar a identificação por foto.';return;}if(!['admin','supervisor','electrician'].includes(userProfile.role)){ $('partPhotoStatus').textContent='Seu perfil não tem permissão para identificar peças.';return;}if(!rvtecSelectedPhoto){$('partPhotoStatus').textContent='Selecione uma foto primeiro.';return;}const btn=$('partAnalyzeBtn');btn.disabled=true;$('partPhotoStatus').textContent='Analisando imagem com Gemini…';try{const id='part-'+Date.now()+'-'+Math.random().toString(36).slice(2);const question=$('partPhotoQuestion').value.trim();const prompt='Você é especialista em manutenção industrial de embalagens plásticas: extrusão, impressão flexográfica e corte e solda. Analise a foto do componente/etiqueta. Identifique somente o que for visualmente sustentado. Organize em: tipo de componente; fabricante; modelo/código exatamente legível; dados elétricos/mecânicos legíveis; provável aplicação industrial; cuidados de compatibilidade; nível de confiança. Separe claramente dados lidos de hipóteses. Se não conseguir confirmar, diga “não identificado” e peça foto mais nítida. Nunca invente código, tensão ou corrente. '+(question||'Identifique esta peça e seus dados técnicos visíveis.');const answer=await new Promise((resolve,reject)=>{window.rvtecPartPending[id]={resolve,reject};try{window.RVTECNative.identifyPhoto(id,prompt);}catch(e){delete window.rvtecPartPending[id];reject(e);}setTimeout(()=>{if(window.rvtecPartPending[id]){delete window.rvtecPartPending[id];reject(new Error('Tempo esgotado na análise da imagem.'));}},90000);});rvtecLastPartResult=answer;$('partResult').textContent=answer;$('partResultPanel').style.display='block';$('partPhotoStatus').textContent='Análise concluída. Confira os dados antes de cadastrar.';const nameMatch=answer.match(/(?:tipo de componente|componente)\s*:?\s*([^\n]+)/i);const codeMatch=answer.match(/(?:modelo\/código|modelo|código)\s*:?\s*([^\n]+)/i);$('partStockName').value=nameMatch?nameMatch[1].trim():'';$('partStockCode').value=codeMatch?codeMatch[1].trim():'';}catch(e){$('partPhotoStatus').textContent='Falha na identificação: '+(e.message||e);}finally{btn.disabled=!rvtecSelectedPhoto;}}
+function rvtecSaveIdentifiedPart(){const name=$('partStockName').value.trim();if(!name){alert('Informe o nome confirmado da peça.');return;}db.stock.unshift({id:Date.now(),name,code:$('partStockCode').value.trim(),qty:Number($('partStockQty').value||0),location:$('partStockLocation').value.trim(),source:'foto',analysis:rvtecLastPartResult,createdAt:new Date().toISOString()});localStorage.setItem(KEY,JSON.stringify(db));renderStock();alert('Peça salva neste aparelho.');}
+function rvtecAddStock(){const name=$('stockName').value.trim();if(!name){alert('Informe o nome da peça.');return;}db.stock.unshift({id:Date.now(),name,code:$('stockCode').value.trim(),qty:Number($('stockQty').value||0),location:$('stockLocation').value.trim(),source:'manual',createdAt:new Date().toISOString()});localStorage.setItem(KEY,JSON.stringify(db));$('stockName').value='';$('stockCode').value='';$('stockQty').value='1';$('stockLocation').value='';renderStock();}
+function renderStock(){const el=$('stockList');if(!el)return;el.innerHTML=db.stock.length?db.stock.map(x=>`<div class="stockRow"><div><strong>${esc(x.name)}</strong><div class="muted">${esc(x.code||'Sem código')} • ${esc(x.location||'Sem localização')}</div></div><strong>${Number(x.qty||0)}</strong></div>`).join(''):'Nenhuma peça cadastrada.';}
+
+
+// ===== Fluxo de OS RVTEC: turnos, aceite, escalonamento e trilha de auditoria =====
+db.notifications=db.notifications||[];
+function rvtecShiftAt(dateValue){
+ const d=new Date(dateValue), minutes=d.getHours()*60+d.getMinutes();
+ if(minutes>=390&&minutes<870)return '1º turno';
+ if(minutes>=870&&minutes<1350)return '2º turno';
+ return '3º turno';
+}
+function rvtecAreaMatches(staff,area){
+ const role=(staff.role||'').toLowerCase(), a=(area||'').toLowerCase();
+ if(!a)return true;
+ if(a==='elétrica')return /eletric|eletrotécn|instrument/.test(role);
+ if(a==='mecânica')return /mec[aâ]nic/.test(role);
+ if(a==='pneumática')return /pneum|mec[aâ]nic/.test(role);
+ if(a==='hidráulica')return /hid[rra]ul|mec[aâ]nic/.test(role);
+ return true;
+}
+function rvtecOrderLog(o,event,detail){
+ o.history=o.history||[];
+ o.history.unshift({at:new Date().toISOString(),event,detail:detail||'',by:cloudUser?.email||userProfile?.name||'Usuário'});
+}
+function rvtecNotifyOrder(o,kind){
+ const recipients=(db.staff||[]).filter(s=>s.shift===o.shift&&rvtecAreaMatches(s,o.area));
+ const channels=[];
+ recipients.forEach(s=>{
+  const prefs=s.channels||{whatsapp:true,email:true,sms:false,phone:false};
+  if(prefs.whatsapp&&s.whatsapp)channels.push({staffId:s.id,name:s.name,channel:'WhatsApp',destination:s.whatsapp});
+  if(prefs.email&&s.email)channels.push({staffId:s.id,name:s.name,channel:'E-mail',destination:s.email});
+  if(prefs.sms&&s.sms)channels.push({staffId:s.id,name:s.name,channel:'SMS',destination:s.sms});
+  if(prefs.phone&&s.phone)channels.push({staffId:s.id,name:s.name,channel:'Ligação',destination:s.phone});
+ });
+ const n={id:Date.now()+Math.random(),orderId:o.id,kind,shift:o.shift,area:o.area,recipients:recipients.map(s=>s.id),channels,createdAt:new Date().toISOString(),status:'registrado'};
+ db.notifications.unshift(n);
+ return recipients;
+}
+function addOrder(){
+ const machine=+$('orderMachine').value,desc=$('orderDesc').value.trim();
+ if(!machine||!desc)return alert('Preencha máquina e descrição.');
+ const created=new Date().toISOString(),shift=rvtecShiftAt(created);
+ const o={id:Date.now(),machine,priority:$('orderPriority').value,requester:$('orderRequester').value,area:$('orderArea').value,desc,status:'Aberta',created,shift,escalationMinutes:Number($('orderEscalation')?.value||15),acknowledgedAt:null,assignee:null,startedAt:null,finished:null,diagnosis:'',parts:'',workDone:'',history:[]};
+ rvtecOrderLog(o,'OS aberta',`Turno ${shift}; área ${o.area||'não definida'}`);
+ const team=rvtecNotifyOrder(o,'abertura');
+ o.notifiedStaff=team.map(s=>s.id);
+ db.orders.unshift(o);
+ $('orderDesc').value='';$('orderRequester').value='';$('orderArea').value='';
+ save();
+ alert(`OS criada para ${shift}. ${team.length} profissional(is) cadastrado(s) correspondem ao turno e à especialidade. Preferências de canais registradas; envio externo depende da integração.`);
+}
+function rvtecAcknowledgeOrder(id){
+ const o=db.orders.find(x=>x.id===id);if(!o||o.status==='Concluída')return;
+ if(o.acknowledgedAt)return alert('Esta ordem já foi assumida por '+(o.assignee||'outro responsável')+'.');
+ o.acknowledgedAt=new Date().toISOString();o.assignee=cloudUser?.email||userProfile?.name||'Responsável conectado';o.status='Em atendimento';
+ rvtecOrderLog(o,'Recebimento confirmado',o.assignee);save();
+}
+function rvtecStartOrder(id){const o=db.orders.find(x=>x.id===id);if(!o)return;if(!o.acknowledgedAt)rvtecAcknowledgeOrder(id);if(!o.startedAt){o.startedAt=new Date().toISOString();rvtecOrderLog(o,'Atendimento iniciado',o.assignee);save();}}
+function rvtecSaveOrderDetails(id){
+ const o=db.orders.find(x=>x.id===id);if(!o)return;
+ const diagnosis=$('rvdiag'+id)?.value||'',parts=$('rvparts'+id)?.value||'',work=$('rvwork'+id)?.value||'';
+ o.diagnosis=diagnosis.trim();o.parts=parts.trim();o.workDone=work.trim();
+ rvtecOrderLog(o,'Atualização técnica','Diagnóstico, peças e serviço atualizados');save();
+}
+function rvtecFinishOrder(id){
+ const o=db.orders.find(x=>x.id===id);if(!o)return;
+ if(!confirm('Confirmar encerramento da OS e retorno da máquina à operação?'))return;
+ o.status='Concluída';o.finished=new Date().toISOString();o.returnedAt=o.finished;
+ rvtecOrderLog(o,'OS encerrada / máquina liberada',`Tempo total: ${duration({start:o.created,end:o.finished})}`);
+ save();
+}
+function rvtecCheckEscalations(){
+ let changed=false;const now=Date.now();
+ db.orders.filter(o=>o.status!=='Concluída'&&!o.acknowledgedAt&&!o.escalatedAt).forEach(o=>{
+  const due=new Date(o.created).getTime()+(Number(o.escalationMinutes||15)*60000);
+  if(now>=due){
+   o.escalatedAt=new Date().toISOString();rvtecOrderLog(o,'Escalonada ao supervisor','Prazo para assumir a OS expirou.');
+   const supervisors=(db.staff||[]).filter(s=>/supervisor/i.test((s.role||'').toLowerCase()));
+   db.notifications.unshift({id:Date.now()+Math.random(),orderId:o.id,kind:'escalonamento',createdAt:o.escalatedAt,status:'aviso_no_app',recipients:supervisors.map(s=>s.id),message:`OS #${String(o.id).slice(-5)} sem recebimento no prazo.`,channels:supervisors.flatMap(s=>{const p=s.channels||{};const a=[];if(p.whatsapp&&s.whatsapp)a.push({staffId:s.id,channel:'WhatsApp',destination:s.whatsapp});if(p.email&&s.email)a.push({staffId:s.id,channel:'E-mail',destination:s.email});if(p.sms&&s.sms)a.push({staffId:s.id,channel:'SMS',destination:s.sms});return a;})});
+   changed=true;
+  }
+ });
+ if(changed){localStorage.setItem(KEY,JSON.stringify(db));if(cloudUser&&canEditData())pushCloud();rvtecRenderOrders();}
+ rvtecUpdateOsAlertPanel();
+}
+
+// Alertas visuais e sonoros locais para OS abertas.
+const RVTEC_OS_MUTE_KEY='rvtec_os_sound_muted_until';
+let rvtecOsAudio=null, rvtecLastBeepAt=0, rvtecOsAudioUnlocked=false;
+function rvtecUnlockOsAudio(){
+ try{
+  const Ctx=window.AudioContext||window.webkitAudioContext;if(!Ctx)return;
+  rvtecOsAudio=rvtecOsAudio||new Ctx();
+  if(rvtecOsAudio.state==='suspended')rvtecOsAudio.resume();
+  rvtecOsAudioUnlocked=true;
+  window.removeEventListener('pointerdown',rvtecUnlockOsAudio);
+  window.removeEventListener('touchstart',rvtecUnlockOsAudio);
+  window.removeEventListener('keydown',rvtecUnlockOsAudio);
+  rvtecUpdateOsAlertPanel();
+ }catch(e){console.warn('Não foi possível habilitar o áudio de alertas',e);}
+}
+window.addEventListener('pointerdown',rvtecUnlockOsAudio,{once:true});
+window.addEventListener('touchstart',rvtecUnlockOsAudio,{once:true,passive:true});
+window.addEventListener('keydown',rvtecUnlockOsAudio,{once:true});
+function rvtecMuteOsSound(){
+ const until=Date.now()+10*60*1000;
+ localStorage.setItem(RVTEC_OS_MUTE_KEY,String(until));
+ rvtecUpdateOsAlertPanel();
+}
+function rvtecOsSoundMuted(){return Date.now()<Number(localStorage.getItem(RVTEC_OS_MUTE_KEY)||0);}
+function rvtecBeepOsAlert(){
+ if(rvtecOsSoundMuted()||document.hidden||!rvtecOsAudioUnlocked)return;
+ const now=Date.now();if(now-rvtecLastBeepAt<3500)return;rvtecLastBeepAt=now;
+ try{
+  const Ctx=window.AudioContext||window.webkitAudioContext;if(!Ctx)return;
+  rvtecOsAudio=rvtecOsAudio||new Ctx();
+  if(rvtecOsAudio.state==='suspended')rvtecOsAudio.resume();
+  const osc=rvtecOsAudio.createOscillator(),gain=rvtecOsAudio.createGain();
+  osc.type='sine';osc.frequency.value=880;gain.gain.setValueAtTime(0.0001,rvtecOsAudio.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.12,rvtecOsAudio.currentTime+0.02);
+  gain.gain.exponentialRampToValueAtTime(0.0001,rvtecOsAudio.currentTime+0.28);
+  osc.connect(gain);gain.connect(rvtecOsAudio.destination);osc.start();osc.stop(rvtecOsAudio.currentTime+0.3);
+ }catch(e){console.warn('Som de alerta indisponível neste aparelho',e);}
+}
+function rvtecUpdateOsAlertPanel(){
+ const panel=$('rvtecOsAlertPanel');if(!panel)return;
+ const waiting=(db.orders||[]).filter(o=>o.status!=='Concluída'&&!o.acknowledgedAt);
+ const escalated=(db.orders||[]).filter(o=>o.status!=='Concluída'&&o.escalatedAt);
+ const text=$('rvtecOsAlertText'),status=$('rvtecOsSoundStatus');
+ panel.style.display=(waiting.length||escalated.length)?'block':'none';
+ if(text)text.textContent=`${waiting.length} OS aguardando recebimento • ${escalated.length} escalonada(s) ao supervisor.`;
+ if(status)status.textContent=rvtecOsSoundMuted()?`Som silenciado até ${new Date(Number(localStorage.getItem(RVTEC_OS_MUTE_KEY))).toLocaleTimeString('pt-BR')}. O alerta visual permanece.`:'Aviso sonoro ativo.';
+ if(waiting.length)rvtecBeepOsAlert();
+}
+function rvtecRenderOrders(){
+ const el=$('orderList');if(!el)return;
+ el.innerHTML=db.orders.length?db.orders.map(o=>{
+  const open=o.status!=='Concluída',ack=!!o.acknowledgedAt;
+  const cls=open?(ack?'rvtec-os-fixed':'rvtec-os-alert'):'';
+  const history=(o.history||[]).slice(0,8).map(x=>`${new Date(x.at).toLocaleString('pt-BR')} — ${esc(x.event)}${x.detail?' — '+esc(x.detail):''}`).join('<br>');
+  const elapsed=open?duration({start:o.created}):duration({start:o.created,end:o.finished});
+  return `<div class="item ${cls}"><div style="flex:1"><h3>${open?'<span class="rvtec-alert-dot"></span>':''}OS #${String(o.id).slice(-5)} — ${esc(mname(o.machine))}</h3><div class="muted">${esc(o.desc)}<br>Prioridade: ${esc(o.priority)} • Área: ${esc(o.area||'Não definida')} • ${esc(o.shift||rvtecShiftAt(o.created||new Date().toISOString()))}<br>Aberta: ${new Date(o.created).toLocaleString('pt-BR')} • ${open?'Parada/aberta há: '+elapsed:'Duração: '+elapsed}<br>Responsável: ${esc(o.assignee||'Aguardando aceite')}</div>
+  <div class="rvtec-os-detail"><div><label>Diagnóstico</label><textarea id="rvdiag${o.id}" rows="2">${esc(o.diagnosis||'')}</textarea></div><div><label>Peças utilizadas</label><textarea id="rvparts${o.id}" rows="2">${esc(o.parts||'')}</textarea></div><div style="grid-column:1/-1"><label>Serviço executado</label><textarea id="rvwork${o.id}" rows="2">${esc(o.workDone||'')}</textarea></div></div>
+  <div class="rvtec-os-actions">${open&&!ack?`<button class="primary" onclick="rvtecAcknowledgeOrder(${o.id})">Confirmar recebimento / assumir</button>`:''}${open&&ack&&!o.startedAt?`<button class="secondary" onclick="rvtecStartOrder(${o.id})">Iniciar atendimento</button>`:''}<button class="secondary" onclick="rvtecSaveOrderDetails(${o.id})">Salvar histórico técnico</button>${open?`<button class="primary" onclick="rvtecFinishOrder(${o.id})">Concluir e liberar máquina</button>`:''}</div>
+  <div class="rvtec-os-history"><strong>Histórico da OS</strong><br>${history||'Abertura registrada.'}${o.escalatedAt?'<br><strong>Escalonada:</strong> '+new Date(o.escalatedAt).toLocaleString('pt-BR'):''}</div>
+  </div><div style="text-align:right"><span class="tag ${o.status==='Concluída'?'done':'open'}">${esc(o.status)}</span></div></div>`;
+ }).join(''):'<div class="empty">Nenhuma ordem cadastrada.</div>';
+ rvtecUpdateOsAlertPanel();
+}
+const rvtecOriginalRender=render;
+render=function(){rvtecOriginalRender();rvtecRenderOrders();};
+const rvtecOriginalAddStaff=addStaff;
+addStaff=function(){
+ const name=$('staffName').value.trim(),role=$('staffRole').value.trim(),shift=$('staffShift').value;
+ if(!name||!role||!shift)return alert('Informe nome, função e turno.');
+ if(db.staff.some(x=>x.name.toLowerCase()===name.toLowerCase()))return alert('Este responsável já está cadastrado.');
+ db.staff.push({id:Date.now(),name,role,shift,whatsapp:$('staffWhatsapp')?.value.trim()||'',email:$('staffEmail')?.value.trim()||'',sms:$('staffSms')?.value.trim()||'',phone:$('staffPhone')?.value.trim()||'',channels:{whatsapp:!!$('staffChannelWhatsApp')?.checked,email:!!$('staffChannelEmail')?.checked,sms:!!$('staffChannelSms')?.checked,phone:!!$('staffChannelPhone')?.checked}});
+ ['staffName','staffRole','staffShift','staffWhatsapp','staffEmail','staffSms','staffPhone'].forEach(id=>{if($(id))$(id).value='';});
+ save();
+};
+
+const rvtecOriginalSaveStaffEdit=saveStaffEdit;
+saveStaffEdit=function(id){
+ const x=db.staff.find(v=>v.id===id);if(!x)return;
+ const name=$('editStaffName').value.trim(),role=$('editStaffRole').value.trim(),shift=$('editStaffShift').value;
+ if(!name||!role||!shift)return alert('Preencha nome, função e turno.');
+ if(db.staff.some(v=>v.id!==id&&v.name.toLowerCase()===name.toLowerCase()))return alert('Já existe responsável com esse nome.');
+ x.name=name;x.role=role;x.shift=shift;x.whatsapp=$('editStaffWhatsapp')?.value.trim()||'';x.email=$('editStaffEmail')?.value.trim()||'';x.sms=$('editStaffSms')?.value.trim()||'';x.phone=$('editStaffPhone')?.value.trim()||'';
+ x.channels={whatsapp:!!$('editStaffChannelWhatsApp')?.checked,email:!!$('editStaffChannelEmail')?.checked,sms:!!$('editStaffChannelSms')?.checked,phone:!!$('editStaffChannelPhone')?.checked};
+ editingStaffId=null;save();
+};
+const rvtecOriginalFinishOrder=finishOrder;
+finishOrder=rvtecFinishOrder;
+window.addEventListener('load',()=>{setInterval(rvtecCheckEscalations,30000);setInterval(rvtecUpdateOsAlertPanel,2500);setInterval(rvtecCheckMachineStopEscalations,15000);rvtecCheckEscalations();rvtecCheckMachineStopEscalations();rvtecRenderMachineStopAlert();});
+
+render();
+renderStock();
+rvtecApplyAIState();
+// Guardar operaciones de escritura por perfil; las funciones originales y pantallas se conservan.
+['addMachine','saveMachineEdit','deleteMachine','addStop','finishStop','removeStop','saveStopEdit','addOrder','finishOrder','addPrev','addDiagnosis','addStaff','saveStaffEdit','deleteStaff'].forEach(fn=>{if(typeof window[fn]==='function'){const original=window[fn];window[fn]=function(...args){if(!canEditData()){alert('Seu perfil não tem permissão para alterar dados.');return;}return original.apply(this,args);};}});
+</script>
+
+<script>
+// Firebase AI Logic é chamado pelo SDK Android nativo para compartilhar o App Check Play Integrity.
+window.rvtecGeminiNativeResult = function(id, answer, error) {
+  const pending = window.rvtecGeminiPending && window.rvtecGeminiPending[id];
+  if (!pending) return;
+  delete window.rvtecGeminiPending[id];
+  if (error) pending.reject(new Error(error)); else pending.resolve(answer || '');
+};
+window.rvtecGeminiPending = {};
+window.rvtecGeminiReady = Promise.resolve();
+window.rvtecGeminiGenerate = async function(question, context, role) {
+  if (!['admin','supervisor','electrician'].includes(String(role || '').toLowerCase())) {
+    throw new Error('Perfil sem permissão para usar a IA RVTEC.');
+  }
+  if (!window.RVTECNative || typeof window.RVTECNative.ask !== 'function') {
+    throw new Error('Integração nativa do Firebase AI Logic não encontrada. Atualize o aplicativo.');
+  }
+  const safeContext = {
+    machines: Array.isArray(context?.machines) ? context.machines.slice(0, 30) : [],
+    stops: Array.isArray(context?.stops) ? context.stops.slice(0, 15) : [],
+    orders: Array.isArray(context?.orders) ? context.orders.slice(0, 15) : [],
+    diagnostics: Array.isArray(context?.diagnostics) ? context.diagnostics.slice(0, 15) : [],
+    technicalMemory: Array.isArray(context?.technicalMemory) ? context.technicalMemory.slice(0, 30) : [],
+    preventives: Array.isArray(context?.preventives) ? context.preventives.slice(0, 15) : []
+  };
+  const system = 'Você é a RVTEC IA, especialista em manutenção elétrica, eletromecânica e automação de INDÚSTRIA PLÁSTICA, com FOCO PRINCIPAL em EXTRUSÃO DE FILME PLÁSTICO. Use os casos em technicalMemory como histórico da fábrica. Ao citar caso anterior, informe máquina, data, causa e solução; não generalize um caso isolado. Separe sempre: fatos confirmados, hipóteses, testes para confirmar e recomendações. Se recurrence=yes, outcome=partial ou outcome=not_resolved, avise que houve reincidência ou que a solução não foi definitiva. Nunca registre hipótese como aprendizado: somente técnicos validam casos na Memória Técnica. PRIORIDADE TÉCNICA: (1) extrusoras de filme: roscas, cilindro, zonas de aquecimento, resistências, termopares/PT100, controle de temperatura, motores, redutores, pressão e processo; (2) puxadores: velocidade, tração, rolos, acionamentos e sincronismo; (3) bobinadores: controle de tensão, diâmetro, torque, dançarino, célula de carga, servo/inversor e acompanhamento do puxador; (4) automação da linha: inversores WEG CFW300/500/700/11, CLP Siemens/WEG, IHM, sensores PNP/NPN, encoders/PPR, comunicação industrial e segurança; (5) áreas complementares: impressão flexográfica, corte e solda, tratamento Corona, injeção, sopro, refrigeração, compressores e utilidades. Responda em português brasileiro, de forma prática e técnica. Antes de concluir, identifique máquina/etapa, sintoma, quando ocorre, alarmes, alterações recentes e condições de processo; se faltarem dados essenciais, faça perguntas objetivas. Estruture o diagnóstico em: entendimento do problema; causas prováveis classificadas por prioridade; verificações em sequência; pontos de medição e valores esperados somente quando houver dados confiáveis do equipamento; correção sugerida; teste de validação e critérios de retorno à produção. Nunca invente parâmetros, códigos ou valores. Priorize NR-10, NR-12, bloqueio e etiquetagem, descarga de energia armazenada e ausência de tensão; não oriente bypass de proteções nem trabalho energizado inseguro.';
+  const prompt = system + '\n\nPergunta do profissional: ' + String(question).slice(0, 5000) + '\n\nContexto operacional RVTEC: ' + JSON.stringify(safeContext).slice(0, 14000);
+  const id = 'rvtec-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+  return await new Promise((resolve, reject) => {
+    window.rvtecGeminiPending[id] = {resolve, reject};
+    try { window.RVTECNative.ask(id, prompt); }
+    catch (e) { delete window.rvtecGeminiPending[id]; reject(e); }
+    setTimeout(() => {
+      if (window.rvtecGeminiPending[id]) {
+        delete window.rvtecGeminiPending[id];
+        reject(new Error('Tempo esgotado ao consultar Gemini. Verifique internet e App Check.'));
+      }
+    }, 90000);
+  });
+};
+</script>
+
+
+<style id="rvtec-stock-os-v158">
+.rvtec-stock-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}
+.rvtec-stock-actions select{flex:1;min-width:150px}
+.rvtec-stock-actions input{width:90px}
+.rvtec-stock-used{font-size:12px;color:var(--muted);margin-top:6px}
+</style>
+<script id="rvtec-v158-stock-os-patch">
+/* RVTEC 1.5.8 — edição/exclusão de estoque e baixa vinculada à OS. */
+let rvtecEditingStockId = null;
+
+function renderStock(){
+  const el=$('stockList');
+  if(!el)return;
+  el.innerHTML=db.stock.length?db.stock.map(x=>`
+    <div class="stockRow">
+      <div style="flex:1;min-width:0">
+        <strong>${esc(x.name)}</strong>
+        <div class="muted">${esc(x.code||'Sem código')} • ${esc(x.location||'Sem localização')}</div>
+      </div>
+      <div style="text-align:right">
+        <strong>${Number(x.qty||0)}</strong>
+        <div class="rvtec-stock-actions">
+          <button class="secondary" type="button" onclick="rvtecEditStock(${Number(x.id)})">Editar</button>
+          <button class="danger" type="button" onclick="rvtecDeleteStock(${Number(x.id)})">Excluir</button>
+        </div>
+      </div>
+    </div>`).join(''):'Nenhuma peça cadastrada.';
+}
+
+function rvtecEditStock(id){
+  if(!canEditData())return alert('Seu perfil não tem permissão para alterar o estoque.');
+  const p=db.stock.find(x=>String(x.id)===String(id));
+  if(!p)return;
+  const name=prompt('Nome da peça:',p.name||'');
+  if(name===null)return;
+  if(!name.trim())return alert('Informe o nome da peça.');
+  const code=prompt('Código / modelo:',p.code||'');
+  if(code===null)return;
+  const qtyText=prompt('Quantidade atual:',String(Number(p.qty||0)));
+  if(qtyText===null)return;
+  const qty=Number(qtyText);
+  if(!Number.isFinite(qty)||qty<0)return alert('Quantidade inválida.');
+  const location=prompt('Localização:',p.location||'');
+  if(location===null)return;
+  p.name=name.trim();p.code=code.trim();p.qty=qty;p.location=location.trim();
+  p.updatedAt=new Date().toISOString();
+  save();
+  renderStock();
+}
+
+function rvtecDeleteStock(id){
+  if(!canEditData())return alert('Seu perfil não tem permissão para alterar o estoque.');
+  const p=db.stock.find(x=>String(x.id)===String(id));
+  if(!p)return;
+  if(!confirm(`Excluir "${p.name}" do estoque? O histórico de consumo nas ordens será preservado.`))return;
+  db.stock=db.stock.filter(x=>String(x.id)!==String(id));
+  save();
+  renderStock();
+}
+
+function rvtecAddStock(){
+  if(!canEditData())return alert('Seu perfil não tem permissão para alterar o estoque.');
+  const name=$('stockName').value.trim();
+  if(!name)return alert('Informe o nome da peça.');
+  const qty=Number($('stockQty').value||0);
+  if(!Number.isFinite(qty)||qty<0)return alert('Informe uma quantidade válida.');
+  db.stock.unshift({id:Date.now(),name,code:$('stockCode').value.trim(),qty,location:$('stockLocation').value.trim(),source:'manual',createdAt:new Date().toISOString()});
+  $('stockName').value='';$('stockCode').value='';$('stockQty').value='1';$('stockLocation').value='';
+  save();renderStock();
+}
+
+function rvtecSaveIdentifiedPart(){
+  if(!canEditData())return alert('Seu perfil não tem permissão para alterar o estoque.');
+  const name=$('partStockName').value.trim();
+  if(!name)return alert('Informe o nome confirmado da peça.');
+  const qty=Number($('partStockQty').value||0);
+  if(!Number.isFinite(qty)||qty<0)return alert('Quantidade inválida.');
+  db.stock.unshift({id:Date.now(),name,code:$('partStockCode').value.trim(),qty,location:$('partStockLocation').value.trim(),source:'foto',analysis:rvtecLastPartResult,createdAt:new Date().toISOString()});
+  save();renderStock();
+  alert('Peça cadastrada e sincronizada conforme as permissões da conta.');
+}
+
+function rvtecConsumeStockForOrder(orderId){
+  if(!canEditData())return alert('Seu perfil não tem permissão para baixar peças.');
+  const order=db.orders.find(x=>String(x.id)===String(orderId));
+  if(!order||order.status==='Concluída')return alert('A ordem não está aberta para movimentação.');
+  const select=$('rvtecStockSelect_'+orderId);
+  const qtyInput=$('rvtecStockQty_'+orderId);
+  const stockId=select?.value;
+  const qty=Number(qtyInput?.value||0);
+  const part=db.stock.find(x=>String(x.id)===String(stockId));
+  if(!part)return alert('Selecione uma peça do estoque.');
+  if(!Number.isFinite(qty)||qty<=0)return alert('Informe uma quantidade maior que zero.');
+  if(Number(part.qty||0)<qty)return alert(`Estoque insuficiente. Disponível: ${Number(part.qty||0)}.`);
+  if(!confirm(`Baixar ${qty} unidade(s) de "${part.name}" para a OS #${String(order.id).slice(-5)}?`))return;
+
+  part.qty=Number(part.qty||0)-qty;
+  part.updatedAt=new Date().toISOString();
+  order.stockUsage=order.stockUsage||[];
+  order.stockUsage.push({id:Date.now(),stockId:part.id,name:part.name,code:part.code||'',qty,at:new Date().toISOString(),by:cloudUser?.email||userProfile?.name||'Técnico'});
+  const description=`${qty} × ${part.name}${part.code?' ('+part.code+')':''}`;
+  order.parts=[order.parts,description].filter(Boolean).join('\n');
+  rvtecOrderLog(order,'Baixa de estoque',description);
+  save();
+  renderStock();
+  rvtecRenderOrders();
+}
+
+const rvtecRenderOrdersV157=rvtecRenderOrders;
+rvtecRenderOrders=function(){
+  rvtecRenderOrdersV157();
+  const el=$('orderList');
+  if(!el)return;
+  db.orders.forEach(o=>{
+    const cards=[...el.querySelectorAll('.item')];
+    const card=cards.find(c=>c.textContent.includes('OS #'+String(o.id).slice(-5)));
+    if(!card)return;
+    const detail=card.querySelector('.rvtec-os-detail');
+    if(!detail)return;
+    const usage=o.stockUsage||[];
+    const box=document.createElement('div');
+    box.style.cssText='grid-column:1/-1;margin-top:8px;padding:10px;border:1px solid var(--line);border-radius:10px';
+    box.innerHTML=`
+      <strong>Peças baixadas do estoque</strong>
+      <div class="rvtec-stock-used">${usage.length?usage.map(u=>`${esc(u.qty)} × ${esc(u.name)} — ${new Date(u.at).toLocaleString('pt-BR')}`).join('<br>'):'Nenhuma peça baixada nesta OS.'}</div>
+      ${o.status!=='Concluída'?`
+        <div class="rvtec-stock-actions">
+          <select id="rvtecStockSelect_${o.id}" aria-label="Peça para baixar">
+            <option value="">Selecionar peça</option>
+            ${db.stock.map(p=>`<option value="${p.id}">${esc(p.name)} — disponível: ${Number(p.qty||0)}</option>`).join('')}
+          </select>
+          <input id="rvtecStockQty_${o.id}" type="number" min="0.01" step="0.01" value="1" aria-label="Quantidade">
+          <button class="secondary" type="button" onclick="rvtecConsumeStockForOrder(${o.id})">Baixar peça</button>
+        </div>`:''}`;
+    detail.appendChild(box);
+  });
+};
+</script>
+
+</body></html>
