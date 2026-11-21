@@ -377,7 +377,7 @@ function rvtecLoadUserData(uid,role){
  else{
   const legacy=localStorage.getItem(LEGACY_KEY);
   if(role==='admin'&&legacy){
-   try{db={...EMPTY_DB,...JSON.parse(legacy)};localStorage.setItem(KEY,JSON.stringify(db));localStorage.setItem(KEY+'_migrated','1');localStorage.removeItem(LEGACY_KEY);}
+   try{db={...EMPTY_DB,...JSON.parse(legacy)};localStorage.setItem(KEY,JSON.stringify(db));localStorage.setItem(KEY+'_migrated','1');localStorage.setItem(LEGACY_KEY+'_backup',legacy);}
    catch(e){db={...EMPTY_DB};}
   }else db={...EMPTY_DB};
  }
