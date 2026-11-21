@@ -46,6 +46,13 @@ jobs:
           s=p.read_text()
           s=re.sub(r"versionCode\s+\d+", "versionCode 12", s, count=1)
           s=re.sub(r"versionName\s+['\"][^'\"]+['\"]", "versionName '1.4.9'", s, count=1)
+          if "buildConfig true" not in s and "buildConfig = true" not in s:
+              marker="android {"
+              pos=s.find(marker)
+              if pos < 0:
+                  raise SystemExit("Bloco android não encontrado")
+              pos += len(marker)
+              s=s[:pos] + "\n    buildFeatures { buildConfig true }" + s[pos:]
           p.write_text(s)
           html=Path("app/src/main/assets/index.html").read_text()
           assert 'id="configuracoes"' in html
