@@ -35,7 +35,7 @@ jobs:
           import re
           from pathlib import Path
           html = Path("RVTEC_1.5.9.html").read_text()
-          scripts = re.findall(r'<script\\b(?![^>]*\\bsrc=)[^>]*>(.*?)</script>', html, re.I | re.S)
+          scripts = re.findall(r'<script\b(?![^>]*\bsrc=)[^>]*>(.*?)</script>', html, re.I | re.S)
           if not scripts:
               raise SystemExit("Nenhum script inline encontrado para validar.")
           for i, script in enumerate(scripts):
