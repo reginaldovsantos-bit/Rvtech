@@ -360,6 +360,7 @@ nav button.rvtec-machine-stopped{animation:rvtecStopBlink .9s infinite;border:2p
 <footer>Manutenção Industrial 1.0 • RVTEC</footer>
 
 <script src="https://www.gstatic.com/firebasejs/12.1.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.1.0/firebase-app-check-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.1.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore-compat.js"></script>
 
@@ -387,6 +388,22 @@ db.diagnostics=db.diagnostics||[]; db.technicalMemory=db.technicalMemory||[]; db
 // Firebase Authentication + Firestore (RVTEC)
 const firebaseConfig={apiKey:'AIzaSyCNqRK8qcEP1dA4T0dFoFzbE2Lotfpq1K0',authDomain:'rvtech-cfd2e.firebaseapp.com',projectId:'rvtech-cfd2e',storageBucket:'rvtech-cfd2e.firebasestorage.app',messagingSenderId:'171095099635',appId:'1:171095099635:web:58017bc059de606f7ecf86',measurementId:'G-5KR4W30QZM'};
 firebase.initializeApp(firebaseConfig);
+// Reutiliza o token App Check emitido pelo SDK Android nativo (Play Integrity/debug).
+const rvtecAppCheckPending={};
+window.rvtecAppCheckNativeResult=function(id,token,expireTimeMillis,error){
+ const pending=rvtecAppCheckPending[id];if(!pending)return;delete rvtecAppCheckPending[id];
+ if(error)pending.reject(new Error(error));else pending.resolve({token,expireTimeMillis});
+};
+const rvtecNativeAppCheckProvider={
+ getToken:()=>new Promise((resolve,reject)=>{
+  if(!window.RVTECNative||typeof window.RVTECNative.getAppCheckToken!=='function'){reject(new Error('Ponte nativa do App Check não encontrada.'));return;}
+  const id='appcheck-'+Date.now()+'-'+Math.random().toString(36).slice(2);
+  rvtecAppCheckPending[id]={resolve,reject};
+  try{window.RVTECNative.getAppCheckToken(id);}catch(e){delete rvtecAppCheckPending[id];reject(e);return;}
+  setTimeout(()=>{if(rvtecAppCheckPending[id]){delete rvtecAppCheckPending[id];reject(new Error('Tempo esgotado ao obter token App Check nativo.'));}},20000);
+ })
+};
+firebase.appCheck().activate(rvtecNativeAppCheckProvider,true);
 const rvtecAuth=firebase.auth();
 const rvtecStore=firebase.firestore();
 const ADMIN_EMAIL='reginaldovsantos@gmail.com';
