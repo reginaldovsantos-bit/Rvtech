@@ -1139,19 +1139,28 @@ async function rvtecLoadRequests(){
  }catch(e){el.innerHTML='<div class="empty">Falha ao carregar solicitações: '+esc(firebaseError(e))+'</div>';console.error(e);}
  finally{rvtecRequestLoading=false;}
 }
+const rvtecConvertingRequests=new Set();
 async function rvtecConvertRequestToOrder(requestId){
  if(!['admin','supervisor','electrician'].includes(userProfile?.role))return alert('Sem permissão para converter solicitações.');
+ if(rvtecConvertingRequests.has(requestId))return;
+ rvtecConvertingRequests.add(requestId);
  const ref=rvtecStore.collection('rvtec_solicitacoes').doc(requestId);
  try{
   const snap=await ref.get();if(!snap.exists)return alert('Solicitação não encontrada.');
-  const req=snap.data();if(req.status!=='Pendente')return alert('Esta solicitação já foi atendida ou convertida.');
-  const created=new Date().toISOString(),id=Date.now(),shift=rvtecShiftAt(created);
-  const o={id,machine:Number(req.machine),priority:req.priority||'Normal',requester:req.requesterName||req.requesterEmail||'Operador',area:req.area||'Não definida',desc:req.description,status:'Aberta',created,shift,escalationMinutes:15,acknowledgedAt:null,assignee:null,startedAt:null,finished:null,diagnosis:'',parts:'',workDone:'',history:[],requestId};
-  rvtecOrderLog(o,'OS criada a partir de solicitação','Protocolo '+requestId.slice(-6).toUpperCase());
-  db.orders.unshift(o);save();
-  await ref.update({status:'Convertida em OS',convertedOrderId:id,updatedAt:firebase.firestore.FieldValue.serverTimestamp(),updatedBy:cloudUser.uid});
-  alert('OS #'+String(id).slice(-5)+' criada com sucesso.');await rvtecLoadRequests();tab('ordens');
+  const req=snap.data();
+  if(req.status!=='Pendente'&&req.status!=='Convertida em OS')return alert('Esta solicitação já foi atendida.');
+  let o=db.orders.find(x=>String(x.requestId)===String(requestId));
+  if(!o){
+   if(req.status!=='Pendente')return alert('A solicitação já foi convertida. Atualize a lista para localizar a OS.');
+   const created=new Date().toISOString(),id=Date.now(),shift=rvtecShiftAt(created);
+   o={id,machine:Number(req.machine),priority:req.priority||'Normal',requester:req.requesterName||req.requesterEmail||'Operador',area:req.area||'Não definida',desc:req.description,status:'Aberta',created,shift,escalationMinutes:15,acknowledgedAt:null,assignee:null,startedAt:null,finished:null,diagnosis:'',parts:'',workDone:'',history:[],requestId};
+   rvtecOrderLog(o,'OS criada a partir de solicitação','Protocolo '+requestId.slice(-6).toUpperCase());
+   db.orders.unshift(o);save();
+  }
+  if(req.status==='Pendente')await ref.update({status:'Convertida em OS',convertedOrderId:o.id,updatedAt:firebase.firestore.FieldValue.serverTimestamp(),updatedBy:cloudUser.uid});
+  alert('OS #'+String(o.id).slice(-5)+' vinculada à solicitação.');await rvtecLoadRequests();tab('ordens');
  }catch(e){alert('Falha ao converter: '+firebaseError(e));console.error(e);}
+ finally{rvtecConvertingRequests.delete(requestId);}
 }
 
 const rvtecOriginalRender=render;
