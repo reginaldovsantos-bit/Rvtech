@@ -456,7 +456,8 @@ async function syncCloud(){
    await pushCloud();
   }
   setCloudStatus('Nuvem: conectado • '+(canEditData()?'sincronização ativa':'consulta somente'));
- }catch(e){setCloudStatus('Falha na nuvem: '+firebaseError(e));console.error(e);}
+  return true;
+ }catch(e){setCloudStatus('Falha na nuvem: '+firebaseError(e));console.error(e);return false;}
 }
 window.addEventListener('online',()=>{if(cloudPushQueued)pushCloud();});
 async function runFirebaseDiagnostic(){
@@ -467,7 +468,8 @@ async function runFirebaseDiagnostic(){
   if(!navigator.onLine)throw new Error('O aparelho está sem conexão com a internet.');
   if(!rvtecAuth.currentUser)throw new Error('Sessão Firebase não autenticada.');
   await rvtecStore.collection('rvtec_users').doc(rvtecAuth.currentUser.uid).get();
-  await syncCloud();
+  const synced=await syncCloud();
+  if(!synced)throw new Error('O Firestore recusou ou não concluiu a sincronização. Confira App Check, regras e conexão.');
   if(status)status.textContent='Conexão verificada';
   if(detail)detail.textContent='Autenticação ativa, leitura do perfil no Firestore concluída e sincronização solicitada. Consulte o status da nuvem acima.';
  }catch(e){if(status)status.textContent='Falha no diagnóstico';if(detail)detail.textContent=firebaseError(e);console.error(e);}
