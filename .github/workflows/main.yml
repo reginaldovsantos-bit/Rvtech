@@ -1,10 +1,12 @@
-name: Compilar APK RVTEC - perfis exclusivos
+name: Compilar APK RVTEC 1.4.5
 
 on:
   workflow_dispatch:
   push:
+    branches: [ main ]
     paths:
-      - '.github/workflows/**'
+      - 'RVTEC_1.4.5_MENU_ROLAGEM_CORRIGIDA_FONTE.zip'
+      - '.github/workflows/main.yml'
 
 jobs:
   build:
@@ -19,129 +21,44 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Extrair projeto
-        run: |
-          unzip -o RVTEC_LOGIN_SEPARADO_PREPARADO.zip -d .
-
-
-      - name: Atualizar login com Técnico, Produção e Gerência
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          p=Path("RVTEC_Android/app/src/main/assets/login.html")
-          s=p.read_text()
-          s=s.replace(
-            '<label for="email">E-mail</label>',
-            '<label for="profile">Perfil de acesso</label><select id="profile" required><option value="">Selecione seu perfil</option><option value="tecnico">Técnico</option><option value="producao">Produção</option><option value="gerencia">Gerência</option></select>\\n<label for="email">E-mail</label>',
-            1
-          )
-          s=s.replace(
-            'input{width:100%;padding:13px;border:1px solid #d3dde6;border-radius:10px;font:inherit}',
-            'input,select{width:100%;padding:13px;border:1px solid #d3dde6;border-radius:10px;font:inherit;background:#fff}',
-            1
-          )
-          new_validate="""async function validateAndOpen(user){
-           if(!user)return;
-           const selected=document.getElementById('profile').value;
-           if(!selected){msg('Selecione Técnico, Produção ou Gerência antes de entrar.');return;}
-           try{
-            const d=await db.collection('rvtec_users').doc(user.uid).get();
-            if(!d.exists||d.data().active===false){await auth.signOut();msg('Usuário sem perfil ativo. Procure a gerência.');return;}
-            const actual=d.data().role;
-            const allowed={tecnico:['electrician'],producao:['production'],gerencia:['supervisor','admin']};
-            if(!(allowed[selected]||[]).includes(actual)){
-             await auth.signOut();
-             msg('O perfil selecionado não corresponde ao seu cadastro no RVTEC. Selecione o perfil correto ou procure a gerência.');
-             return;
-            }
-            if(window.RVTECNative)RVTECNative.openApp();
-           }catch(e){msg('Não foi possível validar seu perfil: '+(e.message||e));}
-          }"""
-          import re
-          s,n=re.subn(r"async function validateAndOpen\(user\)\{.*?\n\}",new_validate,s,count=1,flags=re.S)
-          if n!=1: raise SystemExit("Função de validação original não encontrada; login não alterado.")
-          s=s.replace(
-            "async function login(){const b=document.getElementById('enter');b.disabled=true;msg('Validando acesso...');",
-            "async function login(){const b=document.getElementById('enter');if(!document.getElementById('profile').value){msg('Selecione seu perfil de acesso.');return;}b.disabled=true;msg('Validando acesso...');",
-            1
-          )
-          if 'value="tecnico">Técnico' not in s or 'value="gerencia">Gerência' not in s:
-           raise SystemExit("Não foi possível confirmar as três opções do login.")
-          p.write_text(s)
-          PY
-
-      - name: Aplicar telas exclusivas por perfil
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
-          p=Path("RVTEC_Android/app/src/main/assets/index.html")
-          s=p.read_text()
-          roles="""const roleTabs={
-           admin:['inicio','solicitacoes','paradas','responsaveis','maquinas','diagnosticos','iaRvtec','ordens','preventivas','relatorios','diagnosticoNuvem'],
-           supervisor:['inicio','solicitacoes','paradas','responsaveis','maquinas','diagnosticos','iaRvtec','ordens','preventivas','relatorios'],
-           electrician:['solicitacoes','paradas','diagnosticos','iaRvtec','ordens','preventivas'],
-           production:['solicitacoes']
-          };"""
-          s,n=re.subn(r"const roleTabs\s*=\s*\{.*?\};",roles,s,count=1,flags=re.S)
-          if n!=1: raise SystemExit("Não foi possível localizar a matriz de permissões.")
-          s=s.replace(
-            '<span id="accountInfo"></span>',
-            '<span id="accountInfo"></span><button id="adminUsersButton" class="secondary" onclick="toggleAdminUsers(true)" style="display:none;padding:6px 9px;font-size:11px">Gestão de Usuários</button>',
-            1
-          )
-          s=s.replace(
-            '<h3>Gestão de Usuários</h3>',
-            '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h3>Usuários e permissões</h3><button class="secondary" onclick="toggleAdminUsers(false)">Fechar</button></div>',
-            1
-          )
-          s=s.replace(
-            "const adminPanel=$('adminUsers');if(adminPanel)adminPanel.style.display=role==='admin'?'block':'none';",
-            "const adminPanel=$('adminUsers');if(adminPanel)adminPanel.style.display='none';const adminButton=$('adminUsersButton');if(adminButton)adminButton.style.display=['admin','supervisor'].includes(role)?'inline-block':'none';",
-            1
-          )
-          s=s.replace(
-            'function tab(id){if(!canOpenTab(id)){',
-            "function toggleAdminUsers(open){const panel=$('adminUsers');if(!panel)return;if(!userProfile||!['admin','supervisor'].includes(userProfile.role)){panel.style.display='none';return;}panel.style.display=open?'block':'none';if(open)panel.scrollIntoView({behavior:'smooth',block:'start'});}\nfunction tab(id){if(!canOpenTab(id)){",
-            1
-          )
-          if "function toggleAdminUsers(open)" not in s or "adminButton.style.display=['admin','supervisor'].includes(role)?'inline-block':'none'" not in s:
-           raise SystemExit("Não foi possível validar o acesso administrativo discreto.")
-          p.write_text(s)
-          PY
-
-      - name: Corrigir ponte nativa do WebView
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          p=Path("RVTEC_Android/app/src/main/java/com/rvtec/manutencao/MainActivity.java")
-          s=p.read_text()
-          if "class Bridge" not in s:
-              pos=s.rfind("}")
-              if pos < 0: raise SystemExit("MainActivity.java inválido")
-              bridge='''
-              private class Bridge {
-                  @android.webkit.JavascriptInterface
-                  public void returnToLogin() {
-                      runOnUiThread(() -> finish());
-                  }
-              }
-          '''
-              s=s[:pos]+bridge+s[pos:]
-              p.write_text(s)
-          PY
-
-      - name: Configurar Gradle
-        uses: gradle/actions/setup-gradle@v6
+      - name: Preparar Gradle
+        uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
 
-      - name: Compilar APK
-        run: gradle -p RVTEC_Android assembleDebug
+      - name: Extrair projeto RVTEC 1.4.5
+        run: unzip -o RVTEC_1.4.5_MENU_ROLAGEM_CORRIGIDA_FONTE.zip -d buildsrc
 
-      - name: Publicar APK para download
+      - name: Atualizar versão e habilitar BuildConfig
+        working-directory: buildsrc/RVTEC_Android
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f app/build.gradle
+          test -f app/src/main/AndroidManifest.xml
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("app/build.gradle")
+          s = p.read_text()
+          s = s.replace("versionCode 10", "versionCode 11")
+          s = s.replace("versionName '1.4.4'", "versionName '1.4.5'")
+          if "buildConfig true" not in s and "buildConfig = true" not in s:
+              marker = "android {"
+              pos = s.find(marker)
+              if pos < 0:
+                  raise SystemExit("Bloco android não encontrado")
+              pos += len(marker)
+              s = s[:pos] + "\\n    buildFeatures { buildConfig true }" + s[pos:]
+          p.write_text(s)
+          PY
+
+      - name: Compilar APK debug
+        working-directory: buildsrc/RVTEC_Android
+        run: gradle assembleDebug
+
+      - name: Publicar APK
         uses: actions/upload-artifact@v4
         with:
-          name: RVTEC-APK-PERFIS-EXCLUSIVOS
-          path: RVTEC_Android/app/build/outputs/apk/debug/app-debug.apk
+          name: RVTEC-1.4.5-debug
+          path: buildsrc/RVTEC_Android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
