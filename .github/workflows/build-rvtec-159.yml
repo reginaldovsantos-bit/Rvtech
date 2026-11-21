@@ -140,6 +140,7 @@ jobs:
                         "if (safePrompt.length() > 30000) safePrompt = safePrompt.substring(0, 30000);")
           p.write_text(s)
           PY
+          python3 scripts/patch_android_159.py "$APP"
           grep -n "versionCode\|versionName\|AUDIO_PERMISSION\|30000" "$APP/app/build.gradle" "$APP/app/src/main/java/com/rvtec/manutencao/MainActivity.java"
       - name: Compile debug APK
         working-directory: buildsrc/RVTEC_Android
