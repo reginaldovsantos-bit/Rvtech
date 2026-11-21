@@ -48,7 +48,7 @@ jobs:
               if pos < 0:
                   raise SystemExit("Bloco android não encontrado")
               pos += len(marker)
-              s = s[:pos] + "\\n    buildFeatures { buildConfig true }" + s[pos:]
+              s = s[:pos] + "\n    buildFeatures { buildConfig true }" + s[pos:]
           p.write_text(s)
           PY
 
