@@ -30,6 +30,33 @@ jobs:
           test -f "$APP/app/src/main/java/com/rvtec/manutencao/MainActivity.java"
           test -f "$APP/app/google-services.json"
           cp RVTEC_1.5.9.html "$APP/app/src/main/assets/index.html"
+          mkdir -p buildsrc/jscheck
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          html = Path("RVTEC_1.5.9.html").read_text()
+          scripts = re.findall(r'<script\\b(?![^>]*\\bsrc=)[^>]*>(.*?)</script>', html, re.I | re.S)
+          if not scripts:
+              raise SystemExit("Nenhum script inline encontrado para validar.")
+          for i, script in enumerate(scripts):
+              Path(f"buildsrc/jscheck/script_{i}.js").write_text(script)
+          print(f"{len(scripts)} scripts inline extraídos.")
+          PY
+          for js in buildsrc/jscheck/*.js; do node --check "$js"; done
+          python3 - <<'PY'
+          from html.parser import HTMLParser
+          from collections import Counter
+          from pathlib import Path
+          class Check(HTMLParser):
+              def __init__(self): super().__init__(); self.ids=[]
+              def handle_starttag(self, tag, attrs):
+                  value=dict(attrs).get("id")
+                  if value: self.ids.append(value)
+          p=Check();p.feed(Path("RVTEC_1.5.9.html").read_text())
+          duplicates=[x for x,n in Counter(p.ids).items() if n>1]
+          if duplicates: raise SystemExit("IDs HTML duplicados: "+", ".join(duplicates))
+          print("IDs HTML sem duplicidade.")
+          PY
           python3 - <<'PY'
           from pathlib import Path
           gradle = Path("buildsrc/RVTEC_Android/app/build.gradle")
