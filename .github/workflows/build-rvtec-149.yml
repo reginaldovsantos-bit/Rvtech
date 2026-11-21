@@ -1,4 +1,4 @@
-name: Compilar APK RVTEC 1.5.3 - reversão da IA
+name: Compilar APK RVTEC 1.5.7 - Configurações
 
 on:
   workflow_dispatch:
@@ -26,7 +26,7 @@ jobs:
           gradle-version: '8.9'
       - name: Extrair projeto-base 1.4.8
         run: unzip -o RVTEC_1.4.8_GRAFICOS_FONTE.zip -d buildsrc
-      - name: Aplicar alterações anteriores e novo visual
+      - name: Aplicar alterações anteriores e telas de Configurações
         shell: bash
         run: |
           set -euo pipefail
@@ -47,7 +47,7 @@ jobs:
           gzip -t rvtec-151.gz
           gzip -dc rvtec-151.gz > rvtec-151.patch
           patch --batch -p1 -d buildsrc < rvtec-151.patch
-      - name: Atualizar versão e validar projeto
+      - name: Atualizar versão e validar Configurações
         working-directory: buildsrc/RVTEC_Android
         shell: bash
         run: |
@@ -56,37 +56,32 @@ jobs:
           test -f app/src/main/java/com/rvtec/manutencao/MainActivity.java
           python3 - <<'PY'
           from pathlib import Path
-          import re
           p=Path("app/build.gradle")
           s=p.read_text()
-          s=s.replace("versionCode 14", "versionCode 16", 1)
-          s=s.replace("versionName '1.5.1'", "versionName '1.5.3'", 1)
+          s=s.replace("versionCode 14", "versionCode 17", 1)
+          s=s.replace("versionName '1.5.1'", "versionName '1.5.7'", 1)
           if "buildConfig true" not in s and "buildConfig = true" not in s:
               marker="android {"
               pos=s.find(marker)
               if pos < 0:
                   raise SystemExit("Bloco android não encontrado")
               pos += len(marker)
-              s=s[:pos] + "\n    buildFeatures { buildConfig true }" + s[pos:]
+              s=s[:pos] + "\\n    buildFeatures { buildConfig true }" + s[pos:]
           p.write_text(s)
           html=Path("app/src/main/assets/index.html").read_text()
-          assert 'id="configuracoes"' in html
-          assert 'data-tab="configuracoes"' in html
-          assert 'id="solicitacoes"' not in html
-          assert 'value="mtbf"' in html and 'value="mttr"' in html
-          assert 'chartCompare' in html
-          assert 'rvtec-visual-redesign-150' not in html
-          assert 'rvtec-original-horizontal-tabs-fix' in html
-          assert 'touch-action:pan-x!important' in html
+          required = ['id="configuracoes"', 'data-tab="configuracoes"', 'settingsTheme', 'settingsAccent', 'settingsScreens', 'saveRvtecSettings', 'settingsSchedule', 'settingsShift', 'settingsChartStyle', 'icon_']
+          missing=[x for x in required if x not in html]
+          if missing:
+              raise SystemExit("Faltam recursos de Configurações: " + ", ".join(missing))
           assert 'rvtecSettingsTop' in html
-          print("RVTEC 1.5.3 - IA restaurada ao prompt anterior e validada")
+          print("RVTEC 1.5.7: telas e controles de Configurações validados")
           PY
       - name: Compilar APK debug
         working-directory: buildsrc/RVTEC_Android
         run: gradle assembleDebug
-      - name: Disponibilizar APK de teste RVTEC 1.5.3 (reversão IA; não publicar)
+      - name: Publicar APK de teste RVTEC 1.5.7
         uses: actions/upload-artifact@v4
         with:
-          name: RVTEC-1.5.3-APK-TESTE-NAO-PUBLICADO
+          name: RVTEC-1.5.7-APK-TESTE
           path: buildsrc/RVTEC_Android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
