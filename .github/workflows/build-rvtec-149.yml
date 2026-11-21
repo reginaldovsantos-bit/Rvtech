@@ -1,4 +1,4 @@
-name: Compilar APK RVTEC 1.5.2 - build corrigido
+name: Compilar APK RVTEC 1.5.3 - reversão da IA
 
 on:
   workflow_dispatch:
@@ -9,7 +9,6 @@ on:
       - 'rvtec-149b.patch.gz.b64'
       - 'rvtec-150.patch.gz.b64'
       - 'rvtec-151.patch.gz.b64'
-      - 'rvtec-152-specialize.py'
       - 'RVTEC_1.4.8_GRAFICOS_FONTE.zip'
       - '.github/workflows/build-rvtec-149.yml'
 
@@ -48,8 +47,6 @@ jobs:
           gzip -t rvtec-151.gz
           gzip -dc rvtec-151.gz > rvtec-151.patch
           patch --batch -p1 -d buildsrc < rvtec-151.patch
-      - name: Especializar Gemini para indústria plástica
-        run: python3 rvtec-152-specialize.py
       - name: Atualizar versão e validar projeto
         working-directory: buildsrc/RVTEC_Android
         shell: bash
@@ -62,8 +59,8 @@ jobs:
           import re
           p=Path("app/build.gradle")
           s=p.read_text()
-          s=s.replace("versionCode 14", "versionCode 15", 1)
-          s=s.replace("versionName '1.5.1'", "versionName '1.5.2'", 1)
+          s=s.replace("versionCode 14", "versionCode 16", 1)
+          s=s.replace("versionName '1.5.1'", "versionName '1.5.3'", 1)
           if "buildConfig true" not in s and "buildConfig = true" not in s:
               marker="android {"
               pos=s.find(marker)
@@ -82,16 +79,14 @@ jobs:
           assert 'rvtec-original-horizontal-tabs-fix' in html
           assert 'touch-action:pan-x!important' in html
           assert 'rvtecSettingsTop' in html
-          assert "FOCO PRINCIPAL em EXTRUSÃO DE FILME PLÁSTICO" in html
-          assert "previousRecurrence" in html
-          print("RVTEC 1.5.2 validado")
+          print("RVTEC 1.5.3 - IA restaurada ao prompt anterior e validada")
           PY
       - name: Compilar APK debug
         working-directory: buildsrc/RVTEC_Android
         run: gradle assembleDebug
-      - name: Disponibilizar APK de teste RVTEC 1.5.2 (não publicar)
+      - name: Disponibilizar APK de teste RVTEC 1.5.3 (reversão IA; não publicar)
         uses: actions/upload-artifact@v4
         with:
-          name: RVTEC-1.5.2-APK-TESTE-NAO-PUBLICADO
+          name: RVTEC-1.5.3-APK-TESTE-NAO-PUBLICADO
           path: buildsrc/RVTEC_Android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
