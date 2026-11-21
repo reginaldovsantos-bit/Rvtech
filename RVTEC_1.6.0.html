@@ -142,6 +142,7 @@ nav button.rvtec-machine-stopped{animation:rvtecStopBlink .9s infinite;border:2p
 </style>
 <div id="rvtecMachineStopBanner" role="status" aria-live="polite"></div>
 
+<p id="rvtecBackHint" role="status" class="muted" style="display:none;margin:6px 15px"></p>
 <div id="cloudBar" style="background:#eaf4fb;border-bottom:1px solid #d5e5f1;padding:8px 15px;display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px">
  <span id="cloudStatus">Nuvem: aguardando login</span>
  <span id="accountInfo"></span><button class="secondary" id="logoutButton" onclick="rvtecLogout()" style="display:none;padding:6px 10px">Sair</button>
@@ -312,6 +313,7 @@ nav button.rvtec-machine-stopped{animation:rvtecStopBlink .9s infinite;border:2p
 <div class="panel"><h3>Menu e telas</h3><p class="muted">Desmarque uma tela para ocultá-la do menu. Isso não apaga registros, históricos nem dados na nuvem. Você pode reativá-la a qualquer momento.</p><div id="settingsScreens"></div></div>
 <div class="panel"><h3>Ícones dos módulos</h3><p class="muted">Escolha o ícone que aparece ao lado de cada módulo nas abas superiores.</p><div id="settingsIcons"></div></div>
 <div class="actions"><button class="primary" onclick="saveRvtecSettings()">Salvar configurações</button><button class="secondary" onclick="resetRvtecSettings()">Restaurar padrão</button></div><p id="settingsStatus" class="muted" role="status"></p>
+<div class="panel" id="adminSecurityPanel" style="display:none"><h3>Segurança e permissões</h3><p class="muted">A chave da IA deve ficar no servidor, nunca dentro do APK. O acesso respeita o perfil do usuário. Somente o administrador pode gerenciar os acessos da equipe.</p></div>
 <div class="panel" id="adminUsers" style="display:none"><h3>Usuários e permissões</h3><p class="muted">Somente o administrador pode cadastrar acessos.</p><div class="formgrid"><div><label>Nome</label><input id="newUserName" placeholder="Nome completo"></div><div><label>E-mail</label><input id="newUserEmail" type="email" placeholder="usuario@empresa.com"></div><div><label>Senha inicial</label><input id="newUserPassword" type="password" minlength="6" placeholder="Mínimo de 6 caracteres"></div><div><label>Perfil</label><select id="newUserRole"><option value="supervisor">Supervisor</option><option value="electrician">Eletricista</option><option value="production">Produção</option></select></div></div><div class="actions"><button class="primary" onclick="createRvtecUser()">Cadastrar usuário</button></div><p id="userAdminMessage" class="muted"></p></div>
 <div class="panel" id="adminCloudPanel" style="display:none"><h3>Diagnóstico e sincronização</h3><p class="muted">Verifique a conexão com Firebase e solicite sincronização. Este teste não cria registros fictícios.</p><p id="firebaseDiagnosticStatus" class="tag">Aguardando verificação</p><div class="actions"><button class="primary" onclick="runFirebaseDiagnostic()">Verificar conexão e sincronizar</button></div><p id="firebaseDiagnosticDetail" class="muted" aria-live="polite">Nenhum teste executado.</p></div>
 </section>
@@ -347,7 +349,7 @@ nav button.rvtec-machine-stopped{animation:rvtecStopBlink .9s infinite;border:2p
 <div class="actions"><button class="primary" id="aiSendButton" onclick="rvtecAskAI()">Enviar pergunta</button><button class="secondary" onclick="rvtecToggleMic()">🎙 Falar</button><button class="secondary" id="aiVoiceButton" onclick="rvtecToggleVoice()">🔊 Voz: ligada</button></div>
 <p id="aiStatus" class="muted" role="status">Aguardando configuração segura do serviço de IA.</p>
 </div>
-<div class="panel"><h3>Segurança</h3><p class="muted">A chave da IA deve ficar no servidor, nunca dentro do APK. O acesso deverá respeitar o perfil do usuário.</p></div>
+
 </section>
 </main>
 <footer>Manutenção Industrial 1.0 • RVTEC</footer>
@@ -553,7 +555,7 @@ function saveRvtecSettings(){
  Object.keys(RVTEC_TAB_LABELS).forEach(id=>{st.menuVisibility[id]=id==='inicio'?true:$('screen_'+id)?.checked!==false;st.icons[id]=$('icon_'+id)?.value||RVTEC_DEFAULT_ICONS[id]||'';});db.settings=st;localStorage.setItem(KEY,JSON.stringify(db));applyRvtecSettings();renderSettings();if(cloudUser&&canEditData())pushCloud();$('settingsStatus').textContent='Configurações salvas neste aparelho'+(cloudUser&&canEditData()?' e sincronizadas com a nuvem.':'.');
 }
 function resetRvtecSettings(){if(!confirm('Restaurar as configurações visuais e do menu? Os dados de manutenção não serão apagados.'))return;db.settings={...RVTEC_DEFAULT_SETTINGS};saveRvtecSettings();}
-function rvtecBack(){let previous='inicio';while(rvtecTabHistory.length){const candidate=rvtecTabHistory.pop();if(candidate==='configuracoes'||rvtecSettings().menuVisibility[candidate]!==false){previous=candidate;break;}}if(rvtecCurrentTab!=='inicio'){tab(previous,false);return true;}if($('nav')?.classList.contains('open')){rvtecMenuToggle(false);return true;}return true;}
+function rvtecBack(){if($('nav')?.classList.contains('open')){rvtecMenuToggle(false);return true;}if(rvtecCurrentTab!=='inicio'){let previous='inicio';while(rvtecTabHistory.length){const candidate=rvtecTabHistory.pop();if(candidate==='configuracoes'||rvtecSettings().menuVisibility[candidate]!==false){previous=candidate;break;}}tab(previous,false);return true;}const msg=$('rvtecBackHint');if(msg){msg.textContent='Você está na tela inicial. Use “Sair” para encerrar sua sessão.';msg.style.display='block';}return true;}
 window.rvtecBackFromAndroid=function(){return rvtecBack();};
 function tab(id,addHistory=true){if(!cloudUser||!userProfile){appAccess(false);showLoginMessage('Faça login para acessar o RVTEC.');return;}if(id==='iaRvtec'&&(!cloudReady||!userProfile||!['admin','supervisor','electrician'].includes(userProfile.role))){showLoginMessage('A IA RVTEC está disponível para administrador, supervisor e eletricista.');return;}if(!document.getElementById(id)||!document.getElementById(id).classList.contains('tab'))return;if(id!=='configuracoes'&&rvtecSettings().menuVisibility[id]===false){alert('Esta tela está oculta. Reative-a em Configurações > Menu e telas.');return;}if(addHistory&&rvtecCurrentTab!==id)rvtecTabHistory.push(rvtecCurrentTab);rvtecCurrentTab=id;document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('hidden',x.id!==id));document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active',x.dataset.tab===id));applyRvtecSettings();rvtecMenuToggle(false);render();if(id==='estoque')renderStock();if(id==='configuracoes')renderSettings();if(id==='graficos')renderCharts();}
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>tab(b.dataset.tab));
