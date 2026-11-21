@@ -1,4 +1,4 @@
-name: Build RVTEC 1.5.8 APK (Firebase AI Logic)
+name: Build RVTEC 1.5.8 APK (Firebase AI Logic) - source complete
 on:
   workflow_dispatch:
   push:
