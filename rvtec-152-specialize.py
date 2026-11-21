@@ -27,3 +27,16 @@ for marker in required:
         raise SystemExit(f"Validação falhou: {marker}")
 p.write_text(s, encoding="utf-8")
 print("Especialização industrial aplicada e validada.")
+# Diagnóstico seguro de App Check: imprime apenas nomes de classes e configurações, nunca tokens/chaves.
+from pathlib import Path
+java_root = Path("buildsrc/RVTEC_Android/app/src/main")
+for f in list(java_root.rglob("*.java")) + list(java_root.rglob("*.kt")):
+    lines = f.read_text(encoding="utf-8", errors="ignore").splitlines()
+    for i, line in enumerate(lines):
+        if any(term in line.lower() for term in ("appcheck", "playintegrity", "debugappcheck", "appcheckprovider")):
+            print(f"APPCHECK_SOURCE {f}:{i+1}: " + " ".join(x.strip() for x in lines[max(0,i-1):min(len(lines),i+2)])[:400])
+for f in [Path("buildsrc/RVTEC_Android/app/src/main/AndroidManifest.xml"), Path("buildsrc/RVTEC_Android/app/build.gradle")]:
+    if f.exists():
+        for i, line in enumerate(f.read_text(encoding="utf-8", errors="ignore").splitlines()):
+            if any(term in line.lower() for term in ("appcheck", "applicationid", "signingconfig")):
+                print(f"APPCHECK_CONFIG {f}:{i+1}: {line.strip()[:250]}")
