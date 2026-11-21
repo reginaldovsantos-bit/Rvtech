@@ -5,7 +5,7 @@ on:
   push:
     branches: [ main ]
     paths:
-      - 'rvtec-149.patch.gz.b64'
+      - 'rvtec-149-base-*.b64'
       - 'rvtec-149b.patch.gz.b64'
       - 'RVTEC_1.4.8_GRAFICOS_FONTE.zip'
       - '.github/workflows/build-rvtec-149.yml'
@@ -28,9 +28,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          base64 -d rvtec-149.patch.gz.b64 | gzip -d > rvtec-149.patch
-          patch --batch -p1 -d buildsrc < rvtec-149.patch
-          base64 -d rvtec-149b.patch.gz.b64 | gzip -d > rvtec-149b.patch
+          cat rvtec-149-base-1.b64 rvtec-149-base-2.b64 rvtec-149-base-3.b64 rvtec-149-base-4.b64 > rvtec-149-base.b64
+          base64 -d rvtec-149-base.b64 > rvtec-149-base.gz
+          gzip -t rvtec-149-base.gz
+          gzip -dc rvtec-149-base.gz > rvtec-149-base.patch
+          patch --batch -p1 -d buildsrc < rvtec-149-base.patch
+          base64 -d rvtec-149b.patch.gz.b64 > rvtec-149b.gz
+          gzip -t rvtec-149b.gz
+          gzip -dc rvtec-149b.gz > rvtec-149b.patch
           patch --batch -p1 -d buildsrc < rvtec-149b.patch
       - name: Atualizar versão e validar projeto
         working-directory: buildsrc/RVTEC_Android
