@@ -500,7 +500,7 @@ async function ensureProfile(user){
  const profile=snap.data();if(profile.active!==true)throw new Error('Acesso desativado. Procure o administrador.');
  if(!['admin','supervisor','electrician','production'].includes(profile.role))throw new Error('Perfil sem permissão válida.');return profile;
 }
-async function pushCloud(){
+async async function pushCloud(){
  if(!cloudUser||!userProfile||!canEditData())return;
  cloudPushQueued=true;
  if(cloudBusy)return;
@@ -517,7 +517,7 @@ async function pushCloud(){
  }catch(e){cloudPushQueued=true;setCloudStatus('Erro ao salvar na nuvem: '+firebaseError(e));console.error(e);}
  finally{cloudBusy=false;}
 }
-async function syncCloud(){
+async async function syncCloud(){
  if(!cloudUser||!userProfile)return;
  setCloudStatus('Nuvem: sincronizando...');
  try{
@@ -897,7 +897,7 @@ function rvtecAppendMessage(who,message){const box=$('aiConversation');const ite
 function rvtecToggleVoice(){if(!rvtecAIEnabled)return;rvtecVoiceEnabled=!rvtecVoiceEnabled;$('aiVoiceButton').textContent=rvtecVoiceEnabled?'🔊 Voz: ligada':'🔇 Voz: desligada';}
 function rvtecSpeak(message){if(!rvtecVoiceEnabled||!window.speechSynthesis)return;window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(message);u.lang='pt-BR';window.speechSynthesis.speak(u);}
 function rvtecToggleMic(){if(!rvtecAIEnabled)return;const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){$('aiStatus').textContent='Reconhecimento de voz indisponível neste WebView. Digite sua pergunta.';return;}if(rvtecSpeechRecognition){rvtecSpeechRecognition.stop();rvtecSpeechRecognition=null;return;}const rec=new SR();rvtecSpeechRecognition=rec;rec.lang='pt-BR';rec.interimResults=false;rec.onresult=e=>{$('aiQuestion').value=e.results[0][0].transcript;$('aiStatus').textContent='Pergunta transcrita. Toque em Enviar pergunta.';};rec.onerror=e=>$('aiStatus').textContent='Falha no microfone: '+e.error;rec.onend=()=>rvtecSpeechRecognition=null;$('aiStatus').textContent='Ouvindo…';try{rec.start();}catch(e){rvtecSpeechRecognition=null;$('aiStatus').textContent='Não foi possível iniciar o microfone. Verifique a permissão.';}}
-async function rvtecAskAI(){if(!cloudUser||!userProfile){$('aiStatus').textContent='Faça login para usar a IA RVTEC.';appAccess(false);return;}if(!rvtecAIEnabled){$('aiStatus').textContent='Ative a IA para enviar uma pergunta.';return;}if(!['admin','supervisor','electrician'].includes(userProfile.role)){ $('aiStatus').textContent='Seu perfil não tem acesso à IA RVTEC.';return;}const question=$('aiQuestion').value.trim();if(!question){$('aiStatus').textContent='Digite ou dite uma pergunta.';return;}$('aiSendButton').disabled=true;$('aiStatus').textContent='Consultando Gemini…';rvtecAppendMessage('Você',question);try{if(!window.rvtecGeminiReady)throw new Error('Módulo Gemini não foi carregado. Verifique a conexão.');await window.rvtecGeminiReady;const context={machines:db.machines,stops:db.stops.slice(0,30),orders:db.orders.slice(0,30),diagnostics:db.diagnostics.slice(0,30),technicalMemory:(db.technicalMemory||[]).slice(0,40),preventives:db.preventives.slice(0,30)};const answer=String(await window.rvtecGeminiGenerate(question,context,userProfile.role));if(!answer.trim())throw new Error('O Gemini não retornou resposta.');rvtecAppendMessage('IA RVTEC',answer);rvtecSpeak(answer);$('aiQuestion').value='';$('aiStatus').textContent='Resposta recebida pelo Gemini.';}catch(e){$('aiStatus').textContent='Erro ao consultar IA: '+(e?.message||String(e));}finally{$('aiSendButton').disabled=false;}}
+async async function rvtecAskAI(){if(!cloudUser||!userProfile){$('aiStatus').textContent='Faça login para usar a IA RVTEC.';appAccess(false);return;}if(!rvtecAIEnabled){$('aiStatus').textContent='Ative a IA para enviar uma pergunta.';return;}if(!['admin','supervisor','electrician'].includes(userProfile.role)){ $('aiStatus').textContent='Seu perfil não tem acesso à IA RVTEC.';return;}const question=$('aiQuestion').value.trim();if(!question){$('aiStatus').textContent='Digite ou dite uma pergunta.';return;}$('aiSendButton').disabled=true;$('aiStatus').textContent='Consultando Gemini…';rvtecAppendMessage('Você',question);try{if(!window.rvtecGeminiReady)throw new Error('Módulo Gemini não foi carregado. Verifique a conexão.');await window.rvtecGeminiReady;const context={machines:db.machines,stops:db.stops.slice(0,30),orders:db.orders.slice(0,30),diagnostics:db.diagnostics.slice(0,30),technicalMemory:(db.technicalMemory||[]).slice(0,40),preventives:db.preventives.slice(0,30)};const answer=String(await window.rvtecGeminiGenerate(question,context,userProfile.role));if(!answer.trim())throw new Error('O Gemini não retornou resposta.');rvtecAppendMessage('IA RVTEC',answer);rvtecSpeak(answer);$('aiQuestion').value='';$('aiStatus').textContent='Resposta recebida pelo Gemini.';}catch(e){$('aiStatus').textContent='Erro ao consultar IA: '+(e?.message||String(e));}finally{$('aiSendButton').disabled=false;}}
 
 let rvtecSelectedPhoto=false, rvtecLastPartResult='';
 function rvtecMenuToggle(force){const nav=$('nav'),shade=$('navShade');nav.classList.remove('open');if(shade)shade.classList.remove('show');document.body.classList.remove('rvtec-menu-open');}
