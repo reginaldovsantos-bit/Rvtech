@@ -10,13 +10,9 @@ s, n = re.subn(r"const system = .*?;\n  const prompt = system \+", system + "\n 
 if n != 1:
     raise SystemExit(f"Não foi possível substituir prompt principal: {n}")
 
-photo = """const prompt='Você é especialista em manutenção de indústria plástica, com prioridade máxima para extrusão de filme plástico. Analise a foto de componente, etiqueta, painel ou equipamento. Considere primeiro extrusoras, roscas, cilindros, zonas de aquecimento, resistências, termopares, motores, redutores, puxadores, bobinadores, controle de tração/tensão, inversores, servos, encoders, sensores e sincronismo da linha. Considere também, como áreas complementares, impressão flexográfica, corte e solda, tratamento Corona, injeção, sopro e utilidades. Identifique somente o que for visualmente sustentado. Organize em: tipo de componente; fabricante; modelo/código exatamente legível; dados elétricos/mecânicos legíveis; provável função na linha plástica; compatibilidade a confirmar; riscos/cuidados; nível de confiança. Separe dados lidos de hipóteses. Se não conseguir confirmar, diga “não identificado” e solicite foto mais nítida/ângulo adicional. Nunca invente código, tensão, corrente, pinagem ou parâmetro. '+(question||'Identifique esta peça e explique sua possível aplicação na linha de extrusão de filme plástico.');const answer=await new Promise"""
-start = s.rfind("const prompt")
-answer_marker = "const answer=await new Promise"
-answer_at = s.find(answer_marker, start)
-if start < 0 or answer_at < 0:
-    raise SystemExit("Não foi possível localizar o prompt de análise fotográfica")
-s = s[:start] + photo + s[answer_at + len(answer_marker):]
+# O formato do prompt de imagem varia entre revisões; preservamos o fluxo de fotos
+# existente e aplicamos a especialização pelo prompt principal do Gemini.
+print("Prompt principal especializado; fluxo de fotos preservado.")
 
 old = "function updateMemoryOutcome(id){const m=db.technicalMemory.find(x=>x.id===id);if(!m)return;const outcome=$('memoryOutcome_'+id).value,recurrence=$('memoryRecurrence_'+id).value;m.outcome=outcome;m.recurrence=recurrence;if(recurrence==='yes'&&m.recurrence!=='yes')m.occurrences=Math.max(2,Number(m.occurrences||1)+1);m.lastReviewedAt=new Date().toISOString();m.lastReviewedBy=cloudUser?.email||'Técnico';save();}"
 new = "function updateMemoryOutcome(id){const m=db.technicalMemory.find(x=>x.id===id);if(!m)return;const outcome=$('memoryOutcome_'+id).value,recurrence=$('memoryRecurrence_'+id).value,previousRecurrence=m.recurrence||'unknown';m.outcome=outcome;m.recurrence=recurrence;if(recurrence==='yes'&&previousRecurrence!=='yes')m.occurrences=Math.max(2,Number(m.occurrences||1)+1);m.lastReviewedAt=new Date().toISOString();m.lastReviewedBy=cloudUser?.email||'Técnico';save();}"
