@@ -1,4 +1,4 @@
-name: Compilar APK RVTEC 1.4.9
+name: Compilar APK RVTEC 1.5.0
 
 on:
   workflow_dispatch:
@@ -7,6 +7,7 @@ on:
     paths:
       - 'rvtec-149-base-*.b64'
       - 'rvtec-149b.patch.gz.b64'
+      - 'rvtec-150.patch.gz.b64'
       - 'RVTEC_1.4.8_GRAFICOS_FONTE.zip'
       - '.github/workflows/build-rvtec-149.yml'
 
@@ -24,7 +25,7 @@ jobs:
           gradle-version: '8.9'
       - name: Extrair projeto-base 1.4.8
         run: unzip -o RVTEC_1.4.8_GRAFICOS_FONTE.zip -d buildsrc
-      - name: Aplicar alterações RVTEC 1.4.9
+      - name: Aplicar alterações anteriores e novo visual
         shell: bash
         run: |
           set -euo pipefail
@@ -37,6 +38,10 @@ jobs:
           gzip -t rvtec-149b.gz
           gzip -dc rvtec-149b.gz > rvtec-149b.patch
           patch --batch -p1 -d buildsrc < rvtec-149b.patch
+          base64 -d rvtec-150.patch.gz.b64 > rvtec-150.gz
+          gzip -t rvtec-150.gz
+          gzip -dc rvtec-150.gz > rvtec-150.patch
+          patch --batch -p1 -d buildsrc < rvtec-150.patch
       - name: Atualizar versão e validar projeto
         working-directory: buildsrc/RVTEC_Android
         shell: bash
@@ -49,15 +54,15 @@ jobs:
           import re
           p=Path("app/build.gradle")
           s=p.read_text()
-          s=re.sub(r"versionCode\s+\d+", "versionCode 12", s, count=1)
-          s=re.sub(r"versionName\s+['\"][^'\"]+['\"]", "versionName '1.4.9'", s, count=1)
+          s=re.sub(r"versionCode\\s+\\d+", "versionCode 13", s, count=1)
+          s=re.sub(r"versionName\\s+['\\\"][^'\\\"]+['\\\"]", "versionName '1.5.0'", s, count=1)
           if "buildConfig true" not in s and "buildConfig = true" not in s:
               marker="android {"
               pos=s.find(marker)
               if pos < 0:
                   raise SystemExit("Bloco android não encontrado")
               pos += len(marker)
-              s=s[:pos] + "\n    buildFeatures { buildConfig true }" + s[pos:]
+              s=s[:pos] + "\\n    buildFeatures { buildConfig true }" + s[pos:]
           p.write_text(s)
           html=Path("app/src/main/assets/index.html").read_text()
           assert 'id="configuracoes"' in html
@@ -65,14 +70,16 @@ jobs:
           assert 'id="solicitacoes"' not in html
           assert 'value="mtbf"' in html and 'value="mttr"' in html
           assert 'chartCompare' in html
-          print("RVTEC 1.4.9 validado")
+          assert 'rvtec-visual-redesign-150' in html
+          assert 'rvtecSettingsTop' in html
+          print("RVTEC 1.5.0 validado")
           PY
       - name: Compilar APK debug
         working-directory: buildsrc/RVTEC_Android
         run: gradle assembleDebug
-      - name: Publicar APK RVTEC 1.4.9
+      - name: Publicar APK RVTEC 1.5.0
         uses: actions/upload-artifact@v4
         with:
-          name: RVTEC-1.4.9-debug
+          name: RVTEC-1.5.0-debug
           path: buildsrc/RVTEC_Android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
