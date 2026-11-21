@@ -31,22 +31,27 @@ jobs:
           test -f app/src/main/AndroidManifest.xml
           python3 - <<'PY'
           from pathlib import Path
-          import re
           p = Path("app/build.gradle")
-          s = p.read_text()
-          if "versionName" in s:
-              s = re.sub(r"versionName\\s+['\"][^'\"]+['\"]", "versionName '1.4.7'", s, count=1)
-          else:
+          lines = p.read_text().splitlines()
+          found = False
+          for i, line in enumerate(lines):
+              if "versionName" in line:
+                  indent = line[:len(line) - len(line.lstrip())]
+                  lines[i] = indent + "versionName '1.4.7'"
+                  found = True
+                  break
+          if not found:
               raise SystemExit("versionName não encontrado em app/build.gradle")
+          s = "\n".join(lines)
           if "buildConfig true" not in s and "buildConfig = true" not in s:
               marker = "android {"
               pos = s.find(marker)
               if pos < 0:
                   raise SystemExit("Bloco android não encontrado")
               pos += len(marker)
-              s = s[:pos] + "\\n    buildFeatures { buildConfig true }" + s[pos:]
-          p.write_text(s)
-          print("Versão configurada:", re.search(r"versionName\\s+['\"]([^'\"]+)", s).group(1))
+              s = s[:pos] + "\n    buildFeatures { buildConfig true }" + s[pos:]
+          p.write_text(s + "\n")
+          print("Versão 1.4.7 configurada")
           PY
       - name: Compilar APK debug
         working-directory: buildsrc/RVTEC_Android
