@@ -365,8 +365,23 @@ nav button.rvtec-machine-stopped{animation:rvtecStopBlink .9s infinite;border:2p
 
 
 <script>
-const KEY='manutencaoIndustrial10';
-let db=JSON.parse(localStorage.getItem(KEY)||'{"machines":[],"stops":[],"orders":[],"preventives":[],"diagnostics":[],"technicalMemory":[],"failures":[],"staff":[],"stopDeletions":[]}');
+const LEGACY_KEY='manutencaoIndustrial10';
+let KEY=LEGACY_KEY;
+const EMPTY_DB={machines:[],stops:[],orders:[],preventives:[],diagnostics:[],technicalMemory:[],failures:[],staff:[],stock:[],stopDeletions:[],notifications:[],settings:{}};
+let db=JSON.parse(localStorage.getItem(KEY)||JSON.stringify(EMPTY_DB));
+function rvtecLoadUserData(uid,role){
+ KEY=LEGACY_KEY+'_'+String(uid||'').replace(/[^a-zA-Z0-9_-]/g,'_');
+ const saved=localStorage.getItem(KEY);
+ if(saved){try{db={...EMPTY_DB,...JSON.parse(saved)};}catch(e){db={...EMPTY_DB};}}
+ else{
+  const legacy=localStorage.getItem(LEGACY_KEY);
+  if(role==='admin'&&legacy){
+   try{db={...EMPTY_DB,...JSON.parse(legacy)};localStorage.setItem(KEY,JSON.stringify(db));localStorage.setItem(KEY+'_migrated','1');}
+   catch(e){db={...EMPTY_DB};}
+  }else db={...EMPTY_DB};
+ }
+ db.diagnostics=db.diagnostics||[];db.technicalMemory=db.technicalMemory||[];db.stock=db.stock||[];db.failures=db.failures||[];db.staff=db.staff||[];db.stopDeletions=db.stopDeletions||[];db.notifications=db.notifications||[];db.settings=db.settings||{};
+}
 db.diagnostics=db.diagnostics||[]; db.technicalMemory=db.technicalMemory||[]; db.stock=db.stock||[]; db.failures=db.failures||[]; db.staff=db.staff||[]; db.stopDeletions=db.stopDeletions||[]; db.settings=db.settings||{};
 
 // Firebase Authentication + Firestore (RVTEC)
@@ -375,7 +390,7 @@ firebase.initializeApp(firebaseConfig);
 const rvtecAuth=firebase.auth();
 const rvtecStore=firebase.firestore();
 const ADMIN_EMAIL='reginaldovsantos@gmail.com';
-let cloudUser=null, userProfile=null, cloudBusy=false, cloudReady=false;
+let cloudUser=null, userProfile=null, cloudBusy=false, cloudReady=false, cloudPushQueued=false;
 const roleNames={admin:'Administrador',supervisor:'Supervisor',electrician:'Eletricista',production:'Produção'};
 function setCloudStatus(msg){const el=document.getElementById('cloudStatus');if(el)el.textContent=msg;}
 function showLoginMessage(msg){const el=document.getElementById('loginMessage');if(el)el.textContent=msg;}
@@ -406,35 +421,89 @@ async function ensureProfile(user){
  if(!['admin','supervisor','electrician','production'].includes(profile.role))throw new Error('Perfil sem permissão válida.');return profile;
 }
 async function pushCloud(){
- if(!cloudUser||!userProfile||!canEditData()||cloudBusy)return;cloudBusy=true;
- try{await rvtecStore.collection('rvtec_data').doc('main').set({dados:db,updatedAt:firebase.firestore.FieldValue.serverTimestamp(),updatedBy:cloudUser.uid},{merge:true});setCloudStatus('Nuvem: sincronizado • '+new Date().toLocaleTimeString('pt-BR'));}
- catch(e){setCloudStatus('Erro ao salvar na nuvem: '+firebaseError(e));console.error(e);}finally{cloudBusy=false;}
+ if(!cloudUser||!userProfile||!canEditData())return;
+ cloudPushQueued=true;
+ if(cloudBusy)return;
+ cloudBusy=true;
+ try{
+  while(cloudPushQueued&&cloudUser&&canEditData()){
+   cloudPushQueued=false;
+   const uid=cloudUser.uid, payload=JSON.parse(JSON.stringify(db));
+   await rvtecStore.collection('rvtec_data').doc('main').set({dados:payload,updatedAt:firebase.firestore.FieldValue.serverTimestamp(),updatedBy:uid},{merge:true});
+   if(!cloudUser||cloudUser.uid!==uid)break;
+   if(JSON.stringify(payload)!==JSON.stringify(db))cloudPushQueued=true;
+   setCloudStatus('Nuvem: sincronizado • '+new Date().toLocaleTimeString('pt-BR'));
+  }
+ }catch(e){cloudPushQueued=true;setCloudStatus('Erro ao salvar na nuvem: '+firebaseError(e));console.error(e);}
+ finally{cloudBusy=false;}
 }
 async function syncCloud(){
- if(!cloudUser||!userProfile)return;setCloudStatus('Nuvem: sincronizando...');
- try{const snap=await rvtecStore.collection('rvtec_data').doc('main').get();if(snap.exists&&snap.data().dados){const remote=snap.data().dados;for(const k of ['machines','stops','orders','preventives','diagnostics','technicalMemory','failures','staff','stock','stopDeletions','notifications']){const local=Array.isArray(db[k])?db[k]:[],incoming=Array.isArray(remote[k])?remote[k]:[];const merged=new Map();incoming.forEach(x=>merged.set(String(x.id),x));local.forEach(x=>merged.set(String(x.id),x));db[k]=Array.from(merged.values());}db.settings={...(remote.settings||{}),...(db.settings||{})};localStorage.setItem(KEY,JSON.stringify(db));render();}if(canEditData())await pushCloud();setCloudStatus('Nuvem: conectado • '+(canEditData()?'sincronização ativa':'consulta somente'));}
- catch(e){setCloudStatus('Falha na nuvem: '+firebaseError(e));console.error(e);}
+ if(!cloudUser||!userProfile)return;
+ setCloudStatus('Nuvem: sincronizando...');
+ try{
+  const snap=await rvtecStore.collection('rvtec_data').doc('main').get();
+  if(snap.exists&&snap.data().dados){
+   const remote=snap.data().dados;
+   const localSnapshot=JSON.stringify(db);
+   const remoteSnapshot=JSON.stringify(remote);
+   if(localSnapshot!==remoteSnapshot)localStorage.setItem(KEY+'_backup_antes_sync',localSnapshot);
+   db={...EMPTY_DB,...remote};
+   for(const k of Object.keys(EMPTY_DB))if(Array.isArray(EMPTY_DB[k])&&!Array.isArray(db[k]))db[k]=[];
+   db.settings=db.settings||{};
+   localStorage.setItem(KEY,JSON.stringify(db));
+   render();if(typeof renderStock==='function')renderStock();
+  }else if(canEditData()){
+   await pushCloud();
+  }
+  setCloudStatus('Nuvem: conectado • '+(canEditData()?'sincronização ativa':'consulta somente'));
+ }catch(e){setCloudStatus('Falha na nuvem: '+firebaseError(e));console.error(e);}
+}
+window.addEventListener('online',()=>{if(cloudPushQueued)pushCloud();});
+async function runFirebaseDiagnostic(){
+ const status=$('firebaseDiagnosticStatus'),detail=$('firebaseDiagnosticDetail');
+ if(userProfile?.role!=='admin'){if(status)status.textContent='Acesso restrito';if(detail)detail.textContent='Somente o administrador pode executar este diagnóstico.';return;}
+ if(status)status.textContent='Testando...';if(detail)detail.textContent='Verificando autenticação, Firestore e sincronização.';
+ try{
+  if(!navigator.onLine)throw new Error('O aparelho está sem conexão com a internet.');
+  if(!rvtecAuth.currentUser)throw new Error('Sessão Firebase não autenticada.');
+  await rvtecStore.collection('rvtec_users').doc(rvtecAuth.currentUser.uid).get();
+  await syncCloud();
+  if(status)status.textContent='Conexão verificada';
+  if(detail)detail.textContent='Autenticação ativa, leitura do perfil no Firestore concluída e sincronização solicitada. Consulte o status da nuvem acima.';
+ }catch(e){if(status)status.textContent='Falha no diagnóstico';if(detail)detail.textContent=firebaseError(e);console.error(e);}
 }
 async function createRvtecUser(){
  if(userProfile?.role!=='admin')return alert('Somente o administrador pode cadastrar usuários.');
  const name=$('newUserName').value.trim(),email=$('newUserEmail').value.trim(),password=$('newUserPassword').value,role=$('newUserRole').value;
  if(!name||!email||password.length<6)return alert('Preencha nome, e-mail e senha com pelo menos 6 caracteres.');
  const msg=$('userAdminMessage');msg.textContent='Cadastrando...';
- let secondary=null;
+ let secondary=null,createdUser=null,profileWritten=false;
  try{
   secondary=firebase.initializeApp(firebaseConfig,'rvtecUserCreator');
   const credential=await secondary.auth().createUserWithEmailAndPassword(email,password);
-  await rvtecStore.collection('rvtec_users').doc(credential.user.uid).set({name,email,role,active:true,createdAt:firebase.firestore.FieldValue.serverTimestamp(),createdBy:cloudUser.uid});
-  await credential.user.sendEmailVerification().catch(()=>{});
+  createdUser=credential.user;
+  await rvtecStore.collection('rvtec_users').doc(createdUser.uid).set({name,email,role,active:true,createdAt:firebase.firestore.FieldValue.serverTimestamp(),createdBy:cloudUser.uid});
+  profileWritten=true;
+  await createdUser.sendEmailVerification().catch(()=>{});
   await secondary.auth().signOut();await secondary.delete();
   $('newUserName').value='';$('newUserEmail').value='';$('newUserPassword').value='';msg.textContent='Usuário cadastrado. O acesso já está liberado.';
- }catch(e){if(secondary){try{await secondary.delete();}catch(_){}}msg.textContent=firebaseError(e);}
+ }catch(e){
+  if(createdUser&&!profileWritten){try{await createdUser.delete();}catch(cleanupError){console.error('Falha ao remover conta sem perfil:',cleanupError);}}
+  if(secondary){try{await secondary.delete();}catch(_){}}
+  msg.textContent=firebaseError(e)+(createdUser&&!profileWritten?' A conta recém-criada foi removida; se a exclusão falhar, confira Usuários no Firebase Authentication.':'');
+ }
 }
 rvtecAuth.onAuthStateChanged(async user=>{
  cloudUser=user;userProfile=null;cloudReady=false;
- if(!user){appAccess(false);setCloudStatus('Nuvem: faça login');return;}
- try{userProfile=await ensureProfile(user);cloudReady=true;appAccess(true);applyPermissions();applyRvtecSettings();await syncCloud();}
- catch(e){await rvtecAuth.signOut();appAccess(false);showLoginMessage(firebaseError(e));setCloudStatus('Acesso não autorizado');}
+ if(!user){
+  appAccess(false);setCloudStatus('Nuvem: faça login');
+  KEY=LEGACY_KEY+'_signedout';db={...EMPTY_DB};render();return;
+ }
+ try{
+  userProfile=await ensureProfile(user);
+  rvtecLoadUserData(user.uid,userProfile.role);
+  cloudReady=true;appAccess(true);applyPermissions();applyRvtecSettings();render();await syncCloud();
+ }catch(e){await rvtecAuth.signOut();appAccess(false);showLoginMessage(firebaseError(e));setCloudStatus('Acesso não autorizado');}
 });
 
 const $=id=>document.getElementById(id);
