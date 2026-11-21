@@ -20,6 +20,22 @@ jobs:
           gradle-version: '8.9'
       - name: Extrair projeto com Gemini e App Check
         run: unzip -o RVTEC_Android_v1.3.3_GEMINI_APPCHECK.zip -d buildsrc
+      - name: Habilitar geração do BuildConfig
+        working-directory: buildsrc/RVTEC_Android
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p = Path("app/build.gradle")
+          s = p.read_text()
+          if not re.search(r'buildConfig\\s*(=|true)', s):
+              s, n = re.subn(r'(android\\s*\\{)', r'\\1\\n    buildFeatures { buildConfig true }', s, count=1)
+              if n != 1:
+                  raise SystemExit("Não encontrei o bloco android { em app/build.gradle")
+              p.write_text(s)
+          print("BuildConfig habilitado.")
+          PY
       - name: Compilar APK debug
         working-directory: buildsrc/RVTEC_Android
         run: gradle assembleDebug
