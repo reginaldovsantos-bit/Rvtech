@@ -1,0 +1,55 @@
+# RVTEC 1.6.0 — regras adicionais para solicitações
+# NÃO publique este trecho como arquivo firestore.rules isolado.
+# Mescle o match abaixo ao arquivo de regras já ativo no Firebase.
+# O repositório não contém as regras atuais; substituí-las sem inspeção pode bloquear
+# login, perfis e sincronização legada em rvtec_data/main.
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+    function profile() {
+      return get(/databases/$(database)/documents/rvtec_users/$(request.auth.uid)).data;
+    }
+    function activeUser() {
+      return signedIn() && profile().active == true;
+    }
+    function isProduction() {
+      return activeUser() && profile().role == 'production';
+    }
+    function isMaintenanceTeam() {
+      return activeUser() && profile().role in ['admin', 'supervisor', 'electrician'];
+    }
+
+    match /rvtec_solicitacoes/{requestId} {
+      allow create: if isProduction()
+        && request.resource.data.keys().hasOnly([
+          'machine', 'machineName', 'description', 'priority', 'area',
+          'status', 'createdBy', 'requesterName', 'requesterEmail',
+          'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.status == 'Pendente'
+        && request.resource.data.machine is number
+        && request.resource.data.description is string
+        && request.resource.data.description.size() > 0
+        && request.resource.data.description.size() <= 1200
+        && request.resource.data.priority in ['Baixa', 'Normal', 'Alta', 'Urgente'];
+
+      allow read: if (activeUser()
+        && (resource.data.createdBy == request.auth.uid || isMaintenanceTeam()));
+
+      allow update: if isMaintenanceTeam()
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['status', 'convertedOrderId', 'updatedAt', 'updatedBy'])
+        && resource.data.status == 'Pendente'
+        && request.resource.data.status == 'Convertida em OS'
+        && request.resource.data.convertedOrderId is number
+        && request.resource.data.updatedBy == request.auth.uid;
+
+      allow delete: if false;
+    }
+  }
+}
