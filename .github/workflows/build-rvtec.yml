@@ -1,10 +1,10 @@
-name: Build RVTEC 1.4.1 Memoria Tecnica
+name: Build RVTEC 1.4.4
 on:
   workflow_dispatch:
   push:
     branches: [ main ]
     paths:
-      - 'RVTEC_1.4.1_MEMORIA_TECNICA_TESTE.zip'
+      - 'RVTEC_1.4.4_APK_FONTE.zip'
       - '.github/workflows/build-rvtec.yml'
 jobs:
   build:
@@ -18,8 +18,8 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
-      - name: Extrair projeto RVTEC 1.4.1
-        run: unzip -o RVTEC_1.4.1_MEMORIA_TECNICA_TESTE.zip -d buildsrc
+      - name: Extrair projeto RVTEC 1.4.4
+        run: unzip -o RVTEC_1.4.4_APK_FONTE.zip -d buildsrc
       - name: Validar estrutura e habilitar BuildConfig
         working-directory: buildsrc/RVTEC_Android
         shell: bash
@@ -29,7 +29,6 @@ jobs:
           test -f app/src/main/AndroidManifest.xml
           python3 - <<'PY'
           from pathlib import Path
-          import re
           p = Path("app/build.gradle")
           s = p.read_text()
           if "buildConfig true" not in s and "buildConfig = true" not in s:
@@ -40,15 +39,14 @@ jobs:
               pos += len(marker)
               s = s[:pos] + "\n    buildFeatures { buildConfig true }" + s[pos:]
               p.write_text(s)
-          print("Configuração Gradle:")
-          print(p.read_text())
+          print("Gradle config validada")
           PY
       - name: Compilar APK debug
         working-directory: buildsrc/RVTEC_Android
         run: gradle assembleDebug
-      - name: Publicar APK 1.4.1
+      - name: Publicar APK 1.4.4
         uses: actions/upload-artifact@v4
         with:
-          name: RVTEC-1.4.1-Memoria-Tecnica-debug
+          name: RVTEC-1.4.4-debug
           path: buildsrc/RVTEC_Android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
