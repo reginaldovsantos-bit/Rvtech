@@ -1,4 +1,4 @@
-name: Compilar APK RVTEC 1.5.2
+name: Compilar APK RVTEC 1.5.2 - build corrigido
 
 on:
   workflow_dispatch:
