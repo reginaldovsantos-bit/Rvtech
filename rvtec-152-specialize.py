@@ -27,6 +27,20 @@ for marker in required:
         raise SystemExit(f"Validação falhou: {marker}")
 p.write_text(s, encoding="utf-8")
 print("Especialização industrial aplicada e validada.")
+# Fixar o modelo acordado para a IA nativa do RVTEC.
+java_root = Path("buildsrc/RVTEC_Android/app/src/main")
+model_old = "gemini-4-hydrogen"
+model_new = "gemini-2.5-flash"
+model_files = []
+for source_file in list(java_root.rglob("*.java")) + list(java_root.rglob("*.kt")):
+    source_text = source_file.read_text(encoding="utf-8", errors="ignore")
+    if model_old in source_text:
+        source_file.write_text(source_text.replace(model_old, model_new), encoding="utf-8")
+        model_files.append(str(source_file))
+if not model_files:
+    raise SystemExit("Modelo Gemini inesperado: gemini-4-hydrogen não foi encontrado no código nativo")
+print("Modelo da IA corrigido para gemini-2.5-flash em: " + ", ".join(model_files))
+
 # Diagnóstico seguro de App Check: imprime apenas nomes de classes e configurações, nunca tokens/chaves.
 from pathlib import Path
 java_root = Path("buildsrc/RVTEC_Android/app/src/main")
