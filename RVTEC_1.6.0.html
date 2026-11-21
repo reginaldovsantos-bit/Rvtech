@@ -471,6 +471,7 @@ const rvtecAuth=firebase.auth();
 const rvtecStore=firebase.firestore();
 const ADMIN_EMAIL='reginaldovsantos@gmail.com';
 let cloudUser=null, userProfile=null, cloudBusy=false, cloudReady=false, cloudPushQueued=false;
+let cloudConflictBlocked=false;
 const roleNames={admin:'Administrador',supervisor:'Supervisor',electrician:'Eletricista',production:'Produção'};
 function setCloudStatus(msg){const el=document.getElementById('cloudStatus');if(el)el.textContent=msg;}
 function showLoginMessage(msg){const el=document.getElementById('loginMessage');if(el)el.textContent=msg;}
@@ -501,7 +502,7 @@ async function ensureProfile(user){
  if(!['admin','supervisor','electrician','production'].includes(profile.role))throw new Error('Perfil sem permissão válida.');return profile;
 }
 async function pushCloud(){
- if(!cloudUser||!userProfile||!canEditData())return;
+ if(!cloudUser||!userProfile||!canEditData()||cloudConflictBlocked)return;
  cloudPushQueued=true;
  if(cloudBusy)return;
  cloudBusy=true;
@@ -526,7 +527,17 @@ async function syncCloud(){
    const remote=snap.data().dados;
    const localSnapshot=JSON.stringify(db);
    const remoteSnapshot=JSON.stringify(remote);
-   if(localSnapshot!==remoteSnapshot)localStorage.setItem(KEY+'_backup_antes_sync',localSnapshot);
+   const hasRecords=data=>Object.keys(EMPTY_DB).some(k=>Array.isArray(data?.[k])&&data[k].length>0);
+   const localHasRecords=hasRecords(db),remoteHasRecords=hasRecords(remote);
+   if(localSnapshot!==remoteSnapshot){
+    localStorage.setItem(KEY+'_backup_antes_sync',localSnapshot);
+    localStorage.setItem(KEY+'_backup_nuvem_conflito',remoteSnapshot);
+    if(localHasRecords&&remoteHasRecords){
+     const loadRemote=confirm('ATENÇÃO: existem dados diferentes neste aparelho e na nuvem. Foi criado backup dos dois lados.\n\nOK: carregar os dados da nuvem neste aparelho.\nCancelar: manter os dados locais e bloquear gravações na nuvem até nova decisão.');
+     if(!loadRemote){cloudConflictBlocked=true;setCloudStatus('Conflito de sincronização: dados locais preservados; gravação na nuvem bloqueada.');return false;}
+    }
+   }
+   cloudConflictBlocked=false;
    db={...EMPTY_DB,...remote};
    for(const k of Object.keys(EMPTY_DB))if(Array.isArray(EMPTY_DB[k])&&!Array.isArray(db[k]))db[k]=[];
    db.settings=db.settings||{};
