@@ -72,40 +72,16 @@ jobs:
           s = p.read_text()
           s = s.replace("import android.webkit.WebViewClient;", "import android.webkit.WebViewClient;\nimport android.webkit.WebResourceRequest;\nimport android.view.View;")
           s = s.replace("private static final int PHOTO_CAMERA = 703;", "private static final int PHOTO_CAMERA = 703;\n    private static final int AUDIO_PERMISSION = 701;\n    private PermissionRequest pendingAudioRequest;")
-          old = """        webView.setWebChromeClient(new WebChromeClient() {
-                      @Override public void onPermissionRequest(PermissionRequest request) {
-                          runOnUiThread(() -> {
-                              if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
-                                  request.grant(request.getResources());
-                              } else {
-                                  request.deny();
-                                  requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, 701);
-                              }
-                          });
-                      }
-                  });
-                  if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-                      requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, 701);
-                  }
-                  webView.setWebViewClient(new WebViewClient() {
-                      @Override public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                          if (url.startsWith("https://wa.me/") || url.startsWith("whatsapp://") ||
-                              url.startsWith("mailto:") || url.startsWith("tel:")) {
-                              try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url))); }
-                              catch (Exception ignored) { }
-                              return true;
-                          }
-                          return false;
-                      }
-                  });"""
-          new = """        webView.setWebChromeClient(new WebChromeClient() {
+          begin = s.index("        webView.setWebChromeClient(new WebChromeClient() {")
+          end = s.index("        setContentView(webView);", begin)
+          replacement = """        webView.setWebChromeClient(new WebChromeClient() {
             @Override public void onPermissionRequest(PermissionRequest request) {
                 runOnUiThread(() -> {
-                    boolean asksAudio = false;
+                    boolean audio = false;
                     for (String resource : request.getResources()) {
-                        if (PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(resource)) asksAudio = true;
+                        if (PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(resource)) audio = true;
                     }
-                    if (!asksAudio) { request.deny(); return; }
+                    if (!audio) { request.deny(); return; }
                     if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
                         request.grant(new String[]{PermissionRequest.RESOURCE_AUDIO_CAPTURE});
                     } else {
@@ -122,10 +98,10 @@ jobs:
         });
         webView.requestApplyInsets();
         webView.setWebViewClient(new WebViewClient() {
-            private boolean handleNavigation(String rawUrl) {
-                if ("file:///android_asset/index.html".equals(rawUrl)) return false;
+            private boolean navigate(String url) {
+                if ("file:///android_asset/index.html".equals(url)) return false;
                 try {
-                    Uri uri = Uri.parse(rawUrl);
+                    Uri uri = Uri.parse(url);
                     String scheme = uri.getScheme() == null ? "" : uri.getScheme().toLowerCase();
                     if ("https".equals(scheme) || "http".equals(scheme) || "whatsapp".equals(scheme)
                             || "mailto".equals(scheme) || "tel".equals(scheme)) {
@@ -135,15 +111,14 @@ jobs:
                 return true;
             }
             @Override public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                return handleNavigation(url);
+                return navigate(url);
             }
             @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                return handleNavigation(request.getUrl().toString());
+                return navigate(request.getUrl().toString());
             }
-        });"""
-          if old not in s:
-              raise SystemExit("Não localizei o bloco de permissões/navegação esperado em MainActivity.java; build interrompido.")
-          s = s.replace(old, new)
+        });
+"""
+          s = s[:begin] + replacement + s[end:]
           anchor = "    @Override\n    protected void onActivityResult(int requestCode, int resultCode, Intent data) {"
           permission = """    @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
