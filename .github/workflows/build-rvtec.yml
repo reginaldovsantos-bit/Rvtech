@@ -1,10 +1,10 @@
-name: Build RVTEC 1.3.3 Gemini App Check
+name: Build RVTEC 1.4.0 Foto IA
 on:
   workflow_dispatch:
   push:
     branches: [ main ]
     paths:
-      - 'RVTEC_Android_v1.3.3_GEMINI_APPCHECK.zip'
+      - 'RVTEC_Android_v1.4.0_FOTO_IA_FONTE.zip'
       - '.github/workflows/build-rvtec.yml'
 jobs:
   build:
@@ -19,7 +19,7 @@ jobs:
         with:
           gradle-version: '8.9'
       - name: Extrair projeto com Gemini e App Check
-        run: unzip -o RVTEC_Android_v1.3.3_GEMINI_APPCHECK.zip -d buildsrc
+        run: unzip -o RVTEC_Android_v1.4.0_FOTO_IA_FONTE.zip -d buildsrc
       - name: Habilitar geração do BuildConfig
         working-directory: buildsrc/RVTEC_Android
         shell: bash
@@ -44,6 +44,6 @@ jobs:
       - name: Publicar APK
         uses: actions/upload-artifact@v4
         with:
-          name: RVTEC-1.3.3-Gemini-AppCheck-debug
+          name: RVTEC-1.4.0-Foto-IA-debug
           path: buildsrc/RVTEC_Android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
