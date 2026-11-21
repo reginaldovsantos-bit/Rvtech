@@ -37,5 +37,23 @@ if "private void sendAppCheckTokenResult(" not in s:
         raise SystemExit("Ponto de retorno do App Check não encontrado.")
     s = s.replace(result_anchor, result_method + result_anchor)
 
+back_old = """    @Override public void onBackPressed() {
+        if (webView != null && webView.canGoBack()) webView.goBack(); else super.onBackPressed();
+    }"""
+back_new = """    @Override public void onBackPressed() {
+        if (webView == null) { super.onBackPressed(); return; }
+        webView.evaluateJavascript(
+            "(function(){return window.rvtecBackFromAndroid ? window.rvtecBackFromAndroid() : false;})()",
+            value -> {
+                if ("true".equals(value)) return;
+                if (webView != null && webView.canGoBack()) webView.goBack();
+                else MainActivity.super.onBackPressed();
+            });
+    }"""
+if "window.rvtecBackFromAndroid ? window.rvtecBackFromAndroid()" not in s:
+    if back_old not in s:
+        raise SystemExit("Método onBackPressed original não encontrado para atualização.")
+    s = s.replace(back_old, back_new)
+
 p.write_text(s)
-print("Ponte nativa App Check aplicada.")
+print("Ponte App Check e botão Voltar Android aplicados.")
