@@ -9,6 +9,7 @@ on:
       - 'rvtec-149b.patch.gz.b64'
       - 'rvtec-150.patch.gz.b64'
       - 'rvtec-151.patch.gz.b64'
+      - 'rvtec-152-specialize.py'
       - 'RVTEC_1.4.8_GRAFICOS_FONTE.zip'
       - '.github/workflows/build-rvtec-149.yml'
 
@@ -47,6 +48,8 @@ jobs:
           gzip -t rvtec-151.gz
           gzip -dc rvtec-151.gz > rvtec-151.patch
           patch --batch -p1 -d buildsrc < rvtec-151.patch
+      - name: Corrigir IA RVTEC e especializar diagnóstico industrial
+        run: python3 rvtec-152-specialize.py
       - name: Atualizar versão e validar Configurações
         working-directory: buildsrc/RVTEC_Android
         shell: bash
