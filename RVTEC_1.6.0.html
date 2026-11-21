@@ -500,7 +500,7 @@ async function ensureProfile(user){
  const profile=snap.data();if(profile.active!==true)throw new Error('Acesso desativado. Procure o administrador.');
  if(!['admin','supervisor','electrician','production'].includes(profile.role))throw new Error('Perfil sem permissão válida.');return profile;
 }
-async async function pushCloud(){
+async function pushCloud(){
  if(!cloudUser||!userProfile||!canEditData())return;
  cloudPushQueued=true;
  if(cloudBusy)return;
@@ -517,7 +517,7 @@ async async function pushCloud(){
  }catch(e){cloudPushQueued=true;setCloudStatus('Erro ao salvar na nuvem: '+firebaseError(e));console.error(e);}
  finally{cloudBusy=false;}
 }
-async async function syncCloud(){
+async function syncCloud(){
  if(!cloudUser||!userProfile)return;
  setCloudStatus('Nuvem: sincronizando...');
  try{
@@ -554,7 +554,7 @@ async function runFirebaseDiagnostic(){
   if(detail)detail.textContent='Autenticação ativa, leitura do perfil no Firestore concluída e sincronização solicitada. Consulte o status da nuvem acima.';
  }catch(e){if(status)status.textContent='Falha no diagnóstico';if(detail)detail.textContent=firebaseError(e);console.error(e);}
 }
-async function createRvtecUser(){
+async async function createRvtecUser(){
  if(userProfile?.role!=='admin')return alert('Somente o administrador pode cadastrar usuários.');
  const name=$('newUserName').value.trim(),email=$('newUserEmail').value.trim(),password=$('newUserPassword').value,role=$('newUserRole').value;
  if(!name||!email||password.length<6)return alert('Preencha nome, e-mail e senha com pelo menos 6 caracteres.');
@@ -699,7 +699,7 @@ function removeStop(id){let s=db.stops.find(x=>x.id===id);if(!s)return;let reaso
 function editStop(id){editingStopId=id;render()}
 function cancelStopEdit(){editingStopId=null;render()}
 function saveStopEdit(id){let s=db.stops.find(x=>x.id===id);if(!s)return;let sd=$('editStartDate').value,st=$('editStartTime').value,ed=$('editEndDate').value,et=$('editEndTime').value;if(!sd||!st)return alert('Informe a data e a hora de início.');let start=sd+'T'+st;let end=(ed||et)?(ed+'T'+et):'';if((ed&&!et)||(!ed&&et))return alert('Preencha a data e a hora do término.');if(end&&new Date(end)<new Date(start))return alert('A hora de parada não pode ser anterior ao início.');s.start=start;s.end=end?new Date(end).toISOString():null;s.cause=$('editStopCause').value.trim()||s.cause;s.solution=$('editStopSolution').value.trim();s.status=s.end?'Finalizada':'Aberta';editingStopId=null;save()}
-function addOrder(){let machine=+$('orderMachine').value,desc=$('orderDesc').value.trim();if(!machine||!desc)return alert('Preencha máquina e descrição.');db.orders.unshift({id:Date.now(),machine,priority:$('orderPriority').value,requester:$('orderRequester').value,area:$('orderArea').value,desc,status:'Aberta',created:new Date().toISOString()});$('orderDesc').value='';$('orderRequester').value='';$('orderArea').value='';save()}
+function addOrder(){let machine=+$('orderMachine').value,desc=$('orderDesc').value.trim();if(!machine||!desc)return alert('Preencha máquina e descrição.');const stop=db.stops.find(x=>String(x.machine)===String(machine)&&!x.end);if(stop){if(!confirm('Existe uma parada aberta para esta máquina. Deseja vincular esta OS à parada existente?'))return;rvtecCreateOrderFromStop(stop.id);$('orderDesc').value='';$('orderRequester').value='';$('orderArea').value='';return;}db.orders.unshift({id:Date.now(),machine,priority:$('orderPriority').value,requester:$('orderRequester').value,area:$('orderArea').value,desc,status:'Aberta',created:new Date().toISOString()});$('orderDesc').value='';$('orderRequester').value='';$('orderArea').value='';save()}
 function finishOrder(id){let o=db.orders.find(x=>x.id===id);if(o){o.status='Concluída';o.finished=new Date().toISOString();save()}}
 function addPrev(){let machine=+$('prevMachine').value,task=$('prevTask').value.trim();if(!machine||!task)return alert('Preencha máquina e atividade.');db.preventives.unshift({id:Date.now(),machine,date:$('prevDate').value,period:$('prevPeriod').value,owner:$('prevOwner').value,task});$('prevTask').value='';$('prevOwner').value='';save()}
 
@@ -897,7 +897,7 @@ function rvtecAppendMessage(who,message){const box=$('aiConversation');const ite
 function rvtecToggleVoice(){if(!rvtecAIEnabled)return;rvtecVoiceEnabled=!rvtecVoiceEnabled;$('aiVoiceButton').textContent=rvtecVoiceEnabled?'🔊 Voz: ligada':'🔇 Voz: desligada';}
 function rvtecSpeak(message){if(!rvtecVoiceEnabled||!window.speechSynthesis)return;window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(message);u.lang='pt-BR';window.speechSynthesis.speak(u);}
 function rvtecToggleMic(){if(!rvtecAIEnabled)return;const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){$('aiStatus').textContent='Reconhecimento de voz indisponível neste WebView. Digite sua pergunta.';return;}if(rvtecSpeechRecognition){rvtecSpeechRecognition.stop();rvtecSpeechRecognition=null;return;}const rec=new SR();rvtecSpeechRecognition=rec;rec.lang='pt-BR';rec.interimResults=false;rec.onresult=e=>{$('aiQuestion').value=e.results[0][0].transcript;$('aiStatus').textContent='Pergunta transcrita. Toque em Enviar pergunta.';};rec.onerror=e=>$('aiStatus').textContent='Falha no microfone: '+e.error;rec.onend=()=>rvtecSpeechRecognition=null;$('aiStatus').textContent='Ouvindo…';try{rec.start();}catch(e){rvtecSpeechRecognition=null;$('aiStatus').textContent='Não foi possível iniciar o microfone. Verifique a permissão.';}}
-async async function rvtecAskAI(){if(!cloudUser||!userProfile){$('aiStatus').textContent='Faça login para usar a IA RVTEC.';appAccess(false);return;}if(!rvtecAIEnabled){$('aiStatus').textContent='Ative a IA para enviar uma pergunta.';return;}if(!['admin','supervisor','electrician'].includes(userProfile.role)){ $('aiStatus').textContent='Seu perfil não tem acesso à IA RVTEC.';return;}const question=$('aiQuestion').value.trim();if(!question){$('aiStatus').textContent='Digite ou dite uma pergunta.';return;}$('aiSendButton').disabled=true;$('aiStatus').textContent='Consultando Gemini…';rvtecAppendMessage('Você',question);try{if(!window.rvtecGeminiReady)throw new Error('Módulo Gemini não foi carregado. Verifique a conexão.');await window.rvtecGeminiReady;const context={machines:db.machines,stops:db.stops.slice(0,30),orders:db.orders.slice(0,30),diagnostics:db.diagnostics.slice(0,30),technicalMemory:(db.technicalMemory||[]).slice(0,40),preventives:db.preventives.slice(0,30)};const answer=String(await window.rvtecGeminiGenerate(question,context,userProfile.role));if(!answer.trim())throw new Error('O Gemini não retornou resposta.');rvtecAppendMessage('IA RVTEC',answer);rvtecSpeak(answer);$('aiQuestion').value='';$('aiStatus').textContent='Resposta recebida pelo Gemini.';}catch(e){$('aiStatus').textContent='Erro ao consultar IA: '+(e?.message||String(e));}finally{$('aiSendButton').disabled=false;}}
+async function rvtecAskAI(){if(!cloudUser||!userProfile){$('aiStatus').textContent='Faça login para usar a IA RVTEC.';appAccess(false);return;}if(!rvtecAIEnabled){$('aiStatus').textContent='Ative a IA para enviar uma pergunta.';return;}if(!['admin','supervisor','electrician'].includes(userProfile.role)){ $('aiStatus').textContent='Seu perfil não tem acesso à IA RVTEC.';return;}const question=$('aiQuestion').value.trim();if(!question){$('aiStatus').textContent='Digite ou dite uma pergunta.';return;}$('aiSendButton').disabled=true;$('aiStatus').textContent='Consultando Gemini…';rvtecAppendMessage('Você',question);try{if(!window.rvtecGeminiReady)throw new Error('Módulo Gemini não foi carregado. Verifique a conexão.');await window.rvtecGeminiReady;const context={machines:db.machines,stops:db.stops.slice(0,30),orders:db.orders.slice(0,30),diagnostics:db.diagnostics.slice(0,30),technicalMemory:(db.technicalMemory||[]).slice(0,40),preventives:db.preventives.slice(0,30)};const answer=String(await window.rvtecGeminiGenerate(question,context,userProfile.role));if(!answer.trim())throw new Error('O Gemini não retornou resposta.');rvtecAppendMessage('IA RVTEC',answer);rvtecSpeak(answer);$('aiQuestion').value='';$('aiStatus').textContent='Resposta recebida pelo Gemini.';}catch(e){$('aiStatus').textContent='Erro ao consultar IA: '+(e?.message||String(e));}finally{$('aiSendButton').disabled=false;}}
 
 let rvtecSelectedPhoto=false, rvtecLastPartResult='';
 function rvtecMenuToggle(force){const nav=$('nav'),shade=$('navShade');nav.classList.remove('open');if(shade)shade.classList.remove('show');document.body.classList.remove('rvtec-menu-open');}
@@ -933,7 +933,7 @@ function rvtecCreateOrderFromStop(stopId){
  const existing=db.orders.find(o=>String(o.stopId)===String(stop.id));
  if(existing){alert('Esta parada já está vinculada à OS #'+String(existing.id).slice(-5)+'.');return;}
  const created=new Date().toISOString(),shift=stop.shift||rvtecShiftAt(created);
- const o={id:Date.now(),stopId:stop.id,machine:stop.machine,priority:'Alta',requester:stop.owner||'',area:'Elétrica',desc:'Atendimento da parada: '+stop.cause,status:'Aberta',created,shift,escalationMinutes:15,acknowledgedAt:null,assignee:null,startedAt:null,finished:null,diagnosis:'',parts:'',workDone:'',history:[]};
+ const o={id:Date.now(),stopId:stop.id,machine:stop.machine,priority:'Alta',requester:stop.owner||'',area:'Não definida',desc:'Atendimento da parada: '+stop.cause,status:'Aberta',created,shift,escalationMinutes:15,acknowledgedAt:null,assignee:null,startedAt:null,finished:null,diagnosis:'',parts:'',workDone:'',history:[]};
  rvtecOrderLog(o,'OS criada a partir da parada',`Parada #${String(stop.id).slice(-5)}; ocorrência vinculada para evitar duplicidade.`);
  db.orders.unshift(o);stop.orderId=o.id;save();tab('ordens');
 }
