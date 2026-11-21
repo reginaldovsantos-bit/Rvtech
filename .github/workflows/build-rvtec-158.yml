@@ -1,0 +1,58 @@
+name: Build RVTEC 1.5.8 APK (Firebase AI Logic)
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'RVTEC_1.5.8.html'
+      - 'RVTEC_1.4.7_FONTE_CORRIGIDA.zip'
+      - '.github/workflows/build-rvtec-158.yml'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Preparar projeto Android 1.4.7 base + HTML 1.5.8
+        run: |
+          set -euo pipefail
+          unzip -o RVTEC_1.4.7_FONTE_CORRIGIDA.zip -d buildsrc
+          test -f buildsrc/RVTEC_Android/app/src/main/java/com/rvtec/manutencao/MainActivity.java
+          test -f buildsrc/RVTEC_Android/app/google-services.json
+          test -f RVTEC_1.5.8.html
+          cp RVTEC_1.5.8.html buildsrc/RVTEC_Android/app/src/main/assets/index.html
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("buildsrc/RVTEC_Android/app/build.gradle")
+          lines = p.read_text().splitlines()
+          for i, line in enumerate(lines):
+              if line.strip().startswith("versionCode"):
+                  lines[i] = "        versionCode 158"
+              elif line.strip().startswith("versionName"):
+                  lines[i] = "        versionName '1.5.8'"
+          p.write_text("\n".join(lines) + "\n")
+          PY
+          grep -n "versionCode\|versionName" buildsrc/RVTEC_Android/app/build.gradle
+      - name: Compilar APK
+        working-directory: buildsrc/RVTEC_Android
+        run: gradle assembleDebug --stacktrace
+      - name: Validar APK
+        run: |
+          test -s buildsrc/RVTEC_Android/app/build/outputs/apk/debug/app-debug.apk
+          ls -lh buildsrc/RVTEC_Android/app/build/outputs/apk/debug/app-debug.apk
+      - name: Publicar APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: RVTEC-1.5.8-APK-Firebase
+          path: buildsrc/RVTEC_Android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30
