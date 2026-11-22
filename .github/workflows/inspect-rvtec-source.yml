@@ -1,0 +1,24 @@
+name: Inspect RVTEC source for 1.6.3 changes
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'inspect-rvtec-source.txt'
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract and inspect source
+        run: |
+          unzip -q RVTEC_1.6.2_ALERTA_OS_FONTE.zip
+          echo '--- FILE TREE ---'
+          find RVTEC_Android -maxdepth 5 -type f | sort | head -250
+          echo '--- SOURCE FILES WITH OS / STOP / TECHNICIAN TERMS ---'
+          grep -RIlE 'Máquinas Paradas|Ordem de Serviço|Concluir OS|Apontamento|Atender|Peças utilizadas' RVTEC_Android --exclude-dir=.gradle --exclude='*.png' --exclude='*.jpg' | head -100
+          echo '--- GRADLE CONFIG ---'
+          sed -n '1,180p' RVTEC_Android/app/build.gradle
+          echo '--- HTML / JS / XML SIZE ---'
+          find RVTEC_Android -type f \( -name '*.html' -o -name '*.js' -o -name '*.xml' \) -printf '%p %s bytes\\n' | sort | head -200
