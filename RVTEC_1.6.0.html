@@ -547,6 +547,13 @@ async function pushCloud(){
 }
 async function syncCloud(){
  if(!cloudUser||!userProfile)return;
+ // Produção não pode ler o documento legado completo: ele contém OS, estoque,
+ // diagnósticos, equipe e configurações. O operador usa somente sua coleção de solicitações.
+ if(userProfile.role==='production'){
+  setCloudStatus('Nuvem: acesso restrito • solicitações do operador');
+  await rvtecLoadRequests();
+  return true;
+ }
  setCloudStatus('Nuvem: sincronizando...');
  try{
   const snap=await rvtecStore.collection('rvtec_data').doc('main').get();
