@@ -1360,4 +1360,192 @@ rvtecRenderOrders=function(){
 };
 </script>
 
+
+<style id="rvtec-stock-os-integrity-v160">
+.rvtec-movement{font-size:12px;color:var(--muted);margin-top:5px}
+.rvtec-stock-actions button{white-space:nowrap}
+.rvtec-stock-deleted{opacity:.65}
+.rvtec-stock-ledger{margin-top:8px;padding:8px;border-top:1px solid var(--line);font-size:12px}
+.rvtec-stock-ledger button{margin-left:6px}
+</style>
+<script id="rvtec-stock-os-integrity-v160-js">
+/* RVTEC 1.6.0 — integridade de estoque e OS. Mantém o histórico legado. */
+db.stockMovements=db.stockMovements||[];
+let rvtecStockBusyOrders=window.rvtecStockBusyOrders||new Set();
+window.rvtecStockBusyOrders=rvtecStockBusyOrders;
+
+function rvtecStockMove(type,part,qty,extra={}){
+  const movement={id:'mov-'+Date.now()+'-'+Math.random().toString(36).slice(2,8),type,stockId:part.id,partName:part.name||'Peça',code:part.code||'',qty:Number(qty),balance:Number(part.qty||0),at:new Date().toISOString(),by:cloudUser?.email||userProfile?.name||'Usuário',...extra};
+  db.stockMovements=db.stockMovements||[];
+  db.stockMovements.unshift(movement);
+  return movement;
+}
+function rvtecStockActive(p){return p.active!==false;}
+function rvtecStockFormatQty(n){return Number(n).toLocaleString('pt-BR',{maximumFractionDigits:3});}
+function rvtecStockValidateQty(value,allowZero=true){
+  const n=Number(value);
+  return Number.isFinite(n)&&n>=(allowZero?0:Number.EPSILON)&&Number(n.toFixed(3))===n?n:null;
+}
+function rvtecStockRebuildParts(o){
+  const notes=String(o.partsNotes??o.parts??'').split('\n').filter(line=>!(o.stockUsage||[]).some(u=>line.trim()===rvtecStockUsageLabel(u)));
+  const usage=(o.stockUsage||[]).filter(u=>!u.reversedAt).map(rvtecStockUsageLabel);
+  o.parts=[...notes.filter(Boolean),...usage].join('\n');
+}
+function rvtecStockUsageLabel(u){return `${rvtecStockFormatQty(u.qty)} × ${u.name}${u.code?' ('+u.code+')':''}`;}
+
+window.renderStock=function(){
+ const el=$('stockList');if(!el)return;
+ const list=(db.stock||[]).filter(rvtecStockActive);
+ el.innerHTML=list.length?list.map(p=>`
+  <div class="stockRow">
+   <div style="flex:1;min-width:0"><strong>${esc(p.name)}</strong>
+    <div class="muted">${esc(p.code||'Sem código')} • ${esc(p.location||'Sem localização')}</div>
+    <div class="rvtec-movement">Movimentações: ${(db.stockMovements||[]).filter(m=>String(m.stockId)===String(p.id)).length}</div>
+   </div>
+   <div style="text-align:right"><strong>${rvtecStockFormatQty(p.qty||0)}</strong>
+    <div class="rvtec-stock-actions">
+     <button class="secondary" type="button" onclick="rvtecEditStock(${Number(p.id)})">Editar</button>
+     <button class="danger" type="button" onclick="rvtecDeleteStock(${Number(p.id)})">Excluir</button>
+    </div>
+   </div>
+  </div>`).join(''):'Nenhuma peça ativa cadastrada.';
+};
+
+window.rvtecAddStock=function(){
+ if(!canEditData())return alert('Seu perfil não tem permissão para alterar o estoque.');
+ const name=$('stockName').value.trim(),qty=rvtecStockValidateQty($('stockQty').value||0);
+ if(!name)return alert('Informe o nome da peça.');
+ if(qty===null)return alert('Quantidade inválida. Use até 3 casas decimais.');
+ const p={id:Date.now(),name,code:$('stockCode').value.trim(),qty,location:$('stockLocation').value.trim(),source:'manual',active:true,createdAt:new Date().toISOString()};
+ db.stock.unshift(p);rvtecStockMove('ENTRADA_INICIAL',p,qty,{reason:'Cadastro inicial'});
+ $('stockName').value='';$('stockCode').value='';$('stockQty').value='1';$('stockLocation').value='';
+ save();renderStock();
+};
+window.rvtecSaveIdentifiedPart=function(){
+ if(!canEditData())return alert('Seu perfil não tem permissão para alterar o estoque.');
+ const name=$('partStockName').value.trim(),qty=rvtecStockValidateQty($('partStockQty').value||0);
+ if(!name)return alert('Informe o nome confirmado da peça.');
+ if(qty===null)return alert('Quantidade inválida. Use até 3 casas decimais.');
+ const p={id:Date.now(),name,code:$('partStockCode').value.trim(),qty,location:$('partStockLocation').value.trim(),source:'foto',analysis:rvtecLastPartResult,active:true,createdAt:new Date().toISOString()};
+ db.stock.unshift(p);rvtecStockMove('ENTRADA_INICIAL',p,qty,{reason:'Cadastro por identificação de foto'});
+ save();renderStock();alert('Peça cadastrada. Entrada registrada no histórico.');
+};
+window.rvtecEditStock=function(id){
+ if(!canEditData())return alert('Seu perfil não tem permissão para alterar o estoque.');
+ const p=db.stock.find(x=>String(x.id)===String(id));if(!p||!rvtecStockActive(p))return;
+ const name=prompt('Nome da peça:',p.name||'');if(name===null)return;if(!name.trim())return alert('Informe o nome da peça.');
+ const code=prompt('Código / modelo:',p.code||'');if(code===null)return;
+ const qtyText=prompt('Saldo físico contado:',String(Number(p.qty||0)));if(qtyText===null)return;
+ const qty=rvtecStockValidateQty(qtyText);if(qty===null)return alert('Quantidade inválida. Use até 3 casas decimais.');
+ const location=prompt('Localização:',p.location||'');if(location===null)return;
+ const before=Number(p.qty||0),delta=Number((qty-before).toFixed(3));
+ p.name=name.trim();p.code=code.trim();p.location=location.trim();p.qty=qty;p.updatedAt=new Date().toISOString();
+ if(delta!==0)rvtecStockMove('AJUSTE',p,Math.abs(delta),{delta,previousBalance:before,reason:'Ajuste por contagem física'});
+ save();renderStock();
+};
+window.rvtecDeleteStock=function(id){
+ if(!canEditData())return alert('Seu perfil não tem permissão para alterar o estoque.');
+ const p=db.stock.find(x=>String(x.id)===String(id));if(!p||!rvtecStockActive(p))return;
+ if(Number(p.qty||0)!==0)return alert('Para excluir, primeiro faça o ajuste do saldo para zero com justificativa.');
+ const reason=prompt('Motivo da inativação desta peça:');if(reason===null)return;if(!reason.trim())return alert('Informe o motivo.');
+ if(!confirm(`Inativar "${p.name}"? O registro e o histórico serão preservados.`))return;
+ p.active=false;p.deletedAt=new Date().toISOString();p.deletedBy=cloudUser?.email||userProfile?.name||'Usuário';p.deleteReason=reason.trim();
+ rvtecStockMove('INATIVACAO',p,0,{reason:reason.trim()});
+ save();renderStock();
+};
+
+window.rvtecConsumeStockForOrder=function(orderId){
+ if(!canEditData())return alert('Seu perfil não tem permissão para baixar peças.');
+ const key=String(orderId);if(rvtecStockBusyOrders.has(key))return alert('Aguarde a movimentação em andamento.');
+ const order=db.orders.find(x=>String(x.id)===key);
+ if(!order||order.status==='Concluída')return alert('A ordem não está aberta para movimentação.');
+ const select=$('rvtecStockSelect_'+orderId),qtyInput=$('rvtecStockQty_'+orderId);
+ const part=db.stock.find(x=>String(x.id)===String(select?.value)&&rvtecStockActive(x));
+ const qty=rvtecStockValidateQty(qtyInput?.value||0,false);
+ if(!part)return alert('Selecione uma peça ativa do estoque.');
+ if(qty===null)return alert('Informe uma quantidade maior que zero, com até 3 casas decimais.');
+ if(Number(part.qty||0)<qty)return alert(`Estoque insuficiente. Disponível: ${rvtecStockFormatQty(part.qty||0)}.`);
+ if(!confirm(`Baixar ${rvtecStockFormatQty(qty)} unidade(s) de "${part.name}" para a OS #${String(order.id).slice(-5)}?`))return;
+ rvtecStockBusyOrders.add(key);
+ try{
+  const before=Number(part.qty||0);part.qty=Number((before-qty).toFixed(3));part.updatedAt=new Date().toISOString();
+  order.stockUsage=order.stockUsage||[];
+  const usage={id:'use-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),stockId:part.id,name:part.name,code:part.code||'',qty,at:new Date().toISOString(),by:cloudUser?.email||userProfile?.name||'Técnico'};
+  order.stockUsage.push(usage);
+  rvtecStockMove('SAIDA_OS',part,qty,{orderId:order.id,usageId:usage.id,previousBalance:before,reason:'Consumo vinculado à ordem de serviço'});
+  rvtecStockRebuildParts(order);rvtecOrderLog(order,'Baixa de estoque',rvtecStockUsageLabel(usage));
+  save();renderStock();rvtecRenderOrders();
+ }catch(e){alert('Não foi possível concluir a baixa: '+(e.message||e));}
+ finally{rvtecStockBusyOrders.delete(key);}
+};
+
+window.rvtecReverseStockUsage=function(orderId,usageId){
+ if(!canEditData())return alert('Seu perfil não tem permissão para estornar peças.');
+ const o=db.orders.find(x=>String(x.id)===String(orderId));if(!o)return;
+ const u=(o.stockUsage||[]).find(x=>String(x.id)===String(usageId));
+ if(!u||u.reversedAt)return alert('Esta baixa já foi estornada ou não foi encontrada.');
+ const p=db.stock.find(x=>String(x.id)===String(u.stockId));
+ if(!p)return alert('Peça não encontrada no cadastro. O estorno não foi realizado.');
+ const reason=prompt('Justificativa obrigatória para o estorno:');if(reason===null)return;if(!reason.trim())return alert('Informe a justificativa.');
+ if(!confirm(`Estornar ${rvtecStockFormatQty(u.qty)} de "${u.name}" da OS #${String(o.id).slice(-5)}?`))return;
+ const before=Number(p.qty||0);p.qty=Number((before+Number(u.qty)).toFixed(3));p.updatedAt=new Date().toISOString();
+ u.reversedAt=new Date().toISOString();u.reversedBy=cloudUser?.email||userProfile?.name||'Técnico';u.reverseReason=reason.trim();
+ rvtecStockMove('ESTORNO_OS',p,u.qty-before,{orderId:o.id,usageId:u.id,previousBalance:before,reason:reason.trim()});
+ rvtecStockRebuildParts(o);rvtecOrderLog(o,'Estorno de baixa de estoque',`${rvtecStockUsageLabel(u)} • ${reason.trim()}`);
+ save();renderStock();rvtecRenderOrders();
+};
+
+const rvtecRenderOrdersIntegrityBase=window.rvtecRenderOrders;
+window.rvtecRenderOrders=function(){
+ rvtecRenderOrdersIntegrityBase();
+ const el=$('orderList');if(!el)return;
+ db.orders.forEach(o=>{
+  const card=[...el.querySelectorAll('.item')].find(c=>c.textContent.includes('OS #'+String(o.id).slice(-5)));
+  const detail=card?.querySelector('.rvtec-os-detail');if(!detail)return;
+  const usageBox=detail.querySelector('.rvtec-stock-used');if(usageBox){
+   usageBox.innerHTML=(o.stockUsage||[]).map(u=>{
+    const line=document.createElement('div');line.className='rvtec-stock-ledger';
+    const title=document.createElement('span');title.textContent=rvtecStockUsageLabel(u)+' • '+new Date(u.at).toLocaleString('pt-BR')+(u.reversedAt?' • ESTORNADA':'');
+    line.appendChild(title);
+    if(!u.reversedAt&&o.status!=='Concluída'){
+     const btn=document.createElement('button');btn.type='button';btn.className='secondary';btn.textContent='Estornar';btn.onclick=()=>rvtecReverseStockUsage(o.id,u.id);line.appendChild(btn);
+    }
+    if(u.reversedAt){const note=document.createElement('div');note.textContent='Estorno: '+(u.reverseReason||'Sem justificativa')+' • '+new Date(u.reversedAt).toLocaleString('pt-BR');line.appendChild(note);}
+    usageBox.appendChild(line);return line;
+   });
+   if(!(o.stockUsage||[]).length)usageBox.textContent='Nenhuma peça baixada nesta OS.';
+  }
+  const sel=$('rvtecStockSelect_'+o.id);if(sel){
+   const current=sel.value;sel.innerHTML='<option value="">Selecionar peça</option>'+(db.stock||[]).filter(rvtecStockActive).map(p=>`<option value="${p.id}">${esc(p.name)} — disponível: ${rvtecStockFormatQty(p.qty||0)}</option>`).join('');
+   if((db.stock||[]).some(p=>String(p.id)===String(current)&&rvtecStockActive(p)))sel.value=current;
+  }
+ });
+};
+
+window.rvtecSaveOrderDetails=function(id){
+ if(!canEditData())return alert('Seu perfil não tem permissão para editar a ordem.');
+ const o=db.orders.find(x=>String(x.id)===String(id));if(!o)return;
+ const diagnosis=$('rvdiag'+id)?.value||'',parts=$('rvparts'+id)?.value||'',work=$('rvwork'+id)?.value||'';
+ o.diagnosis=diagnosis.trim();o.partsNotes=parts.trim();o.workDone=work.trim();
+ rvtecStockRebuildParts(o);rvtecOrderLog(o,'Atualização técnica','Diagnóstico, peças e serviço atualizados');save();
+};
+window.rvtecFinishOrder=function(id){
+ if(!canEditData())return alert('Seu perfil não tem permissão para concluir a ordem.');
+ const o=db.orders.find(x=>String(x.id)===String(id));if(!o)return;
+ const diagnosis=$('rvdiag'+id)?.value?.trim()||o.diagnosis||'';
+ const work=$('rvwork'+id)?.value?.trim()||o.workDone||'';
+ if(!diagnosis)return alert('Antes de concluir, registre o diagnóstico da falha.');
+ if(!work)return alert('Antes de concluir, descreva o serviço executado.');
+ if(!confirm('Confirmar encerramento da OS e retorno da máquina à operação?'))return;
+ o.diagnosis=diagnosis;o.workDone=work;
+ if($('rvparts'+id))o.partsNotes=$('rvparts'+id).value.trim();
+ rvtecStockRebuildParts(o);
+ o.status='Concluída';o.finished=new Date().toISOString();o.returnedAt=o.finished;
+ const linkedStop=db.stops.find(s=>String(s.id)===String(o.stopId));
+ if(linkedStop&&!linkedStop.end){linkedStop.end=o.finished;linkedStop.status='Finalizada';linkedStop.solution=linkedStop.solution||o.workDone||o.diagnosis;}
+ rvtecOrderLog(o,'OS encerrada / máquina liberada',`Tempo total: ${duration({start:o.created,end:o.finished})}${linkedStop?' • parada vinculada finalizada':''}`);
+ save();rvtecRenderOrders();
+};
+</script>
+
 </body></html>
