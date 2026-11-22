@@ -41,7 +41,7 @@ import re
 for old,new in repls:
     old="\n".join(line.lstrip() for line in old.splitlines())
     new="\n".join(line.lstrip() for line in new.splitlines())
-    pattern=re.compile(r"\\n[ \\t]*".join(re.escape(line) for line in old.splitlines()))
+    pattern=re.compile(r"\n[ \t]*".join(re.escape(line) for line in old.splitlines()))
     count=len(pattern.findall(s))
     if count != 1:
         raise SystemExit(f"Patch abortado: trecho esperado apareceu {count} vezes: {old[:100]!r}")
