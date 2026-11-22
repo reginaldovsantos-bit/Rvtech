@@ -1,3 +1,4 @@
+# RVTEC 1.5.9 Android test build
 name: Build RVTEC 1.5.9 APK
 on:
   workflow_dispatch:
