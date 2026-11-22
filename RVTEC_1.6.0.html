@@ -603,6 +603,9 @@ async function createRvtecUser(){
  }
 }
 rvtecAuth.onAuthStateChanged(async user=>{
+ const previousUid=cloudUser?.uid||null;
+ const nextUid=user?.uid||null;
+ if(previousUid!==nextUid){cloudKnownRevision=null;cloudConflictBlocked=false;cloudPushQueued=false;}
  cloudUser=user;userProfile=null;cloudReady=false;
  if(!user){
   appAccess(false);setCloudStatus('Nuvem: faça login');
