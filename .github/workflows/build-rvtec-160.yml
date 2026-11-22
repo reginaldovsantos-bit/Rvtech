@@ -6,6 +6,7 @@ on:
     paths:
       - 'RVTEC_1.6.0.html'
       - 'RVTEC_1.4.7_FONTE_CORRIGIDA.zip'
+      - 'scripts/patch_android_160.py'
       - '.github/workflows/build-rvtec-160.yml'
 jobs:
   build:
