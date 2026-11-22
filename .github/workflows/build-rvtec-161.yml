@@ -1,0 +1,62 @@
+name: Build RVTEC 1.6.1 APK
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'RVTEC-1.6.1-FONTE-CORRIGIDA.zip'
+      - '.github/workflows/build-rvtec-161.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Compile RVTEC 1.6.1
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle 8.9
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Extract RVTEC 1.6.1 source
+        shell: bash
+        run: |
+          set -euxo pipefail
+          test -s RVTEC-1.6.1-FONTE-CORRIGIDA.zip
+          unzip -q RVTEC-1.6.1-FONTE-CORRIGIDA.zip -d buildsrc
+          test -s buildsrc/RVTEC_Android/app/build.gradle
+          test -s buildsrc/RVTEC_Android/app/google-services.json
+
+      - name: Compile debug APK
+        working-directory: buildsrc/RVTEC_Android
+        run: gradle assembleDebug --stacktrace
+
+      - name: Validate APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK=buildsrc/RVTEC_Android/app/build/outputs/apk/debug/app-debug.apk
+          test -s "$APK"
+          unzip -t "$APK"
+          sha256sum "$APK"
+          ls -lh "$APK"
+
+      - name: Publish test APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: RVTEC-1.6.1-APK-TESTE
+          path: buildsrc/RVTEC_Android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30
