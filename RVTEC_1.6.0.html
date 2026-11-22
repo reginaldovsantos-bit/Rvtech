@@ -447,6 +447,7 @@ const rvtecStore=firebase.firestore();
 const ADMIN_EMAIL='reginaldovsantos@gmail.com';
 let cloudUser=null, userProfile=null, cloudBusy=false, cloudReady=false, cloudPushQueued=false;
 let cloudConflictBlocked=false;
+let cloudKnownRevision=null;
 const roleNames={admin:'Administrador',supervisor:'Supervisor',electrician:'Eletricista',production:'Produção'};
 function setCloudStatus(msg){const el=document.getElementById('cloudStatus');if(el)el.textContent=msg;}
 function showLoginMessage(msg){const el=document.getElementById('loginMessage');if(el)el.textContent=msg;}
@@ -494,12 +495,35 @@ async function pushCloud(){
   while(cloudPushQueued&&cloudUser&&canEditData()){
    cloudPushQueued=false;
    const uid=cloudUser.uid, payload=JSON.parse(JSON.stringify(db));
-   await rvtecStore.collection('rvtec_data').doc('main').set({dados:payload,updatedAt:firebase.firestore.FieldValue.serverTimestamp(),updatedBy:uid},{merge:true});
+   const ref=rvtecStore.collection('rvtec_data').doc('main');
+   const committedRevision=await rvtecStore.runTransaction(async tx=>{
+    const snap=await tx.get(ref);
+    const currentRevision=snap.exists?Number(snap.data().revision||0):0;
+    if(cloudKnownRevision===null){
+     if(snap.exists&&snap.data().dados)throw new Error('RVTEC_SYNC_REQUIRED');
+    }else if(currentRevision!==cloudKnownRevision){
+     throw new Error('RVTEC_SYNC_CONFLICT');
+    }
+    const nextRevision=currentRevision+1;
+    tx.set(ref,{dados:payload,revision:nextRevision,updatedAt:firebase.firestore.FieldValue.serverTimestamp(),updatedBy:uid},{merge:true});
+    return nextRevision;
+   });
    if(!cloudUser||cloudUser.uid!==uid)break;
+   cloudKnownRevision=committedRevision;
    if(JSON.stringify(payload)!==JSON.stringify(db))cloudPushQueued=true;
-   setCloudStatus('Nuvem: sincronizado • '+new Date().toLocaleTimeString('pt-BR'));
+   setCloudStatus('Nuvem: sincronizado • revisão '+committedRevision+' • '+new Date().toLocaleTimeString('pt-BR'));
   }
- }catch(e){cloudPushQueued=true;setCloudStatus('Erro ao salvar na nuvem: '+firebaseError(e));console.error(e);}
+ }catch(e){
+  cloudPushQueued=false;
+  if(String(e?.message||'').includes('RVTEC_SYNC_')){
+   cloudConflictBlocked=true;
+   localStorage.setItem(KEY+'_backup_conflito_local',JSON.stringify(db));
+   setCloudStatus('Conflito de sincronização: dados locais preservados. Faça uma sincronização antes de gravar.');
+   alert('A nuvem foi alterada em outro aparelho. Seus dados locais foram preservados. Sincronize e confira o conflito antes de continuar.');
+  }else{
+   cloudPushQueued=true;setCloudStatus('Erro ao salvar na nuvem: '+firebaseError(e));console.error(e);
+  }
+ }
  finally{cloudBusy=false;}
 }
 async function syncCloud(){
@@ -515,6 +539,7 @@ async function syncCloud(){
  try{
   const snap=await rvtecStore.collection('rvtec_data').doc('main').get();
   if(snap.exists&&snap.data().dados){
+   cloudKnownRevision=Number(snap.data().revision||0);
    const remote=snap.data().dados;
    const localSnapshot=JSON.stringify(db);
    const remoteSnapshot=JSON.stringify(remote);
