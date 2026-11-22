@@ -1510,6 +1510,7 @@ window.rvtecConsumeStockForOrder=function(orderId){
 window.rvtecReverseStockUsage=function(orderId,usageId){
  if(!canEditData())return alert('Seu perfil não tem permissão para estornar peças.');
  const o=db.orders.find(x=>String(x.id)===String(orderId));if(!o)return;
+ if(o.status==='Concluída')return alert('Não é possível estornar peças de uma OS já concluída.');
  const u=(o.stockUsage||[]).find(x=>String(x.id)===String(usageId));
  if(!u||u.reversedAt)return alert('Esta baixa já foi estornada ou não foi encontrada.');
  const p=db.stock.find(x=>String(x.id)===String(u.stockId));
@@ -1554,6 +1555,7 @@ window.rvtecRenderOrders=function(){
 window.rvtecSaveOrderDetails=function(id){
  if(!canEditData())return alert('Seu perfil não tem permissão para editar a ordem.');
  const o=db.orders.find(x=>String(x.id)===String(id));if(!o)return;
+ if(o.status==='Concluída')return alert('Esta ordem já foi concluída e não pode mais ser alterada.');
  const diagnosis=$('rvdiag'+id)?.value||'',parts=$('rvparts'+id)?.value||'',work=$('rvwork'+id)?.value||'';
  o.diagnosis=diagnosis.trim();o.partsNotes=parts.trim();o.workDone=work.trim();
  rvtecStockRebuildParts(o);rvtecOrderLog(o,'Atualização técnica','Diagnóstico, peças e serviço atualizados');save();
