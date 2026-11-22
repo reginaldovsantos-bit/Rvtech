@@ -3,7 +3,7 @@ on:
   push:
     branches: [ main ]
     paths:
-      - 'inspect-rvtec-source.txt'
+      - '.github/workflows/inspect-rvtec-source.yml'
 permissions:
   contents: read
 jobs:
