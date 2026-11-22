@@ -1,4 +1,4 @@
-name: Inspect RVTEC OS source details
+name: Inspect RVTEC technician view
 on:
   push:
     branches: [ main ]
@@ -11,11 +11,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Extract and print OS functions
-        run: |
+      - run: |
           unzip -q RVTEC_1.6.2_ALERTA_OS_FONTE.zip
           F=RVTEC_Android/app/src/main/assets/index.html
-          for R in '980,1065' '1110,1170' '620,670' '800,845'; do
-            echo "--- LINES $R ---"
-            sed -n "${R}p" "$F"
-          done
+          echo '--- STOP LIST RENDER / FUNCTIONS ---'
+          grep -inE 'function renderStops|function renderOrders|function render\(|function applyPermissions|function canEditData|rvtecFinishOrder|rvtecSaveOrderDetails' "$F"
+          echo '--- HTML ORDER PANEL ---'
+          sed -n '290,325p' "$F"
+          echo '--- STOP AND ORDER RENDER ---'
+          sed -n '800,845p' "$F"
+          sed -n '1220,1260p' "$F"
+          echo '--- ORDER DETAILS SAVE / FINISH ---'
+          sed -n '1030,1060p' "$F"
