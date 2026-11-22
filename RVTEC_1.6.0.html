@@ -214,7 +214,6 @@ nav button.rvtec-machine-stopped{animation:rvtecStopBlink .9s infinite;border:2p
 <div id="cloudBar" style="background:#eaf4fb;border-bottom:1px solid #d5e5f1;padding:8px 15px;display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px">
  <span id="cloudStatus">Nuvem: aguardando login</span>
  <span id="accountInfo"></span><button class="secondary" id="logoutButton" onclick="rvtecLogout()" style="display:none;padding:6px 10px">Sair</button>
- <span><button class="secondary" style="padding:6px 9px;font-size:11px" onclick="syncCloud()">Sincronizar agora</button></span>
 </div>
 
 
@@ -395,6 +394,7 @@ nav button.rvtec-machine-stopped{animation:rvtecStopBlink .9s infinite;border:2p
 <div><label for="settingsSchedule">Horário / escala de trabalho</label><input id="settingsSchedule" maxlength="100" placeholder="Ex.: 5x2 • 14:30 às 22:30"></div>
 <div><label for="settingsShift">Turno padrão</label><select id="settingsShift"><option value="">Não definido</option><option value="1º turno">1º turno • 06:30–14:30</option><option value="2º turno">2º turno • 14:30–22:30</option><option value="3º turno">3º turno • 22:30–06:30</option><option value="ADM">Administrativo</option><option value="Personalizado">Personalizado</option></select></div>
 </div></div>
+<div class="panel" id="settingsSyncPanel"><h3>Sincronização e nuvem</h3><p class="muted">Atualize os dados entre este aparelho e a nuvem. Em caso de divergência, confira os backups antes de escolher qual versão carregar.</p><div class="actions"><button class="primary" type="button" onclick="syncCloud()">Sincronizar agora</button></div></div>
 <div class="panel"><h3>Aparência</h3><div class="settings-grid"><div><label for="settingsTheme">Tema</label><select id="settingsTheme"><option value="light">Claro</option><option value="dark">Escuro</option></select></div><div><label for="settingsAccent">Cor principal</label><input id="settingsAccent" type="color" value="#1877b9" style="height:46px;padding:5px"></div><div><label for="settingsChartStyle">Estilo dos gráficos</label><select id="settingsChartStyle"><option value="bar">Barras</option><option value="line">Linhas</option></select></div><div><label for="settingsChartType">Gráfico inicial</label><select id="settingsChartType"><option value="machineStops">Paradas por máquina</option><option value="causes">Falhas por causa</option><option value="downtime">Horas paradas por máquina</option><option value="recurrences">Falhas reincidentes</option><option value="mtbf">MTBF por máquina</option><option value="mttr">MTTR por máquina</option></select></div></div></div>
 <div class="panel"><h3>Menu e telas</h3><p class="muted">Desmarque uma tela para ocultá-la do menu. Isso não apaga registros, históricos nem dados na nuvem. Você pode reativá-la a qualquer momento.</p><div id="settingsScreens"></div></div>
 <div class="panel"><h3>Ícones dos módulos</h3><p class="muted">Escolha o ícone que aparece ao lado de cada módulo nas abas superiores.</p><div id="settingsIcons"></div></div>
