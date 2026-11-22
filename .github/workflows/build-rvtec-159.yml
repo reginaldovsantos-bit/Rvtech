@@ -51,8 +51,8 @@ jobs:
           p = Path("buildsrc/RVTEC_Android/app/build.gradle")
           s = p.read_text()
           import re
-          s, n1 = re.subn(r'(?m)^\s*versionCode\s+\d+', '        versionCode 159', s, count=1)
-          s, n2 = re.subn(r"(?m)^\s*versionName\s+(['\"])[^'\"]+\1", "        versionName '1.5.9'", s, count=1)
+          s, n1 = re.subn(r'(?m)^\\s*versionCode\\s+\\d+', '        versionCode 159', s, count=1)
+          s, n2 = re.subn(r"(?m)^\\s*versionName\\s+(['\\"])[^'\\"]+\\1", "        versionName '1.5.9'", s, count=1)
           if n1 != 1 or n2 != 1:
               raise SystemExit("Não foi possível definir versionCode 159 e versionName 1.5.9.")
           p.write_text(s)
