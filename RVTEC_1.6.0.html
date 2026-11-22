@@ -1503,7 +1503,8 @@ window.rvtecRenderOrders=function(){
   const card=[...el.querySelectorAll('.item')].find(c=>c.textContent.includes('OS #'+String(o.id).slice(-5)));
   const detail=card?.querySelector('.rvtec-os-detail');if(!detail)return;
   const usageBox=detail.querySelector('.rvtec-stock-used');if(usageBox){
-   usageBox.innerHTML=(o.stockUsage||[]).map(u=>{
+   usageBox.replaceChildren();
+   (o.stockUsage||[]).forEach(u=>{
     const line=document.createElement('div');line.className='rvtec-stock-ledger';
     const title=document.createElement('span');title.textContent=rvtecStockUsageLabel(u)+' • '+new Date(u.at).toLocaleString('pt-BR')+(u.reversedAt?' • ESTORNADA':'');
     line.appendChild(title);
@@ -1511,7 +1512,7 @@ window.rvtecRenderOrders=function(){
      const btn=document.createElement('button');btn.type='button';btn.className='secondary';btn.textContent='Estornar';btn.onclick=()=>rvtecReverseStockUsage(o.id,u.id);line.appendChild(btn);
     }
     if(u.reversedAt){const note=document.createElement('div');note.textContent='Estorno: '+(u.reverseReason||'Sem justificativa')+' • '+new Date(u.reversedAt).toLocaleString('pt-BR');line.appendChild(note);}
-    usageBox.appendChild(line);return line;
+    usageBox.appendChild(line);
    });
    if(!(o.stockUsage||[]).length)usageBox.textContent='Nenhuma peça baixada nesta OS.';
   }
