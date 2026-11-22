@@ -1703,11 +1703,12 @@ window.shareSelectedReportWhatsApp=function(){
  if(selected.includes('stock'))extra.push('*ESTOQUE*',...(db.stock||[]).map(x=>'• '+x.name+' — saldo '+(x.qty||0)+' — '+(x.active===false?'Inativa':'Ativa')));
  if(selected.includes('stockMovements'))extra.push('*MOVIMENTAÇÕES DE ESTOQUE*',...(db.stockMovements||[]).slice(0,40).map(x=>'• '+x.partName+' — '+x.type+' — '+x.qty+' — '+(x.reason||'')));
  if(selected.includes('memory'))extra.push('*MEMÓRIA TÉCNICA*',...(db.technicalMemory||[]).slice(0,30).map(x=>'• '+mname(x.machine)+' — '+x.cause+' — '+x.solution));
- if(extra.length){
-  const old=window.open;let url='https://wa.me/?text='+encodeURIComponent('*RVTEC — RELATÓRIO COMPLEMENTAR*\n'+new Date().toLocaleString('pt-BR')+'\n\n'+extra.join('\n'));
-  window.open(url,'_blank');return;
- }
- rvtecShareReportBase();
+ const nativeOpen=window.open;
+ window.open=function(url,target){
+  try{if(extra.length&&String(url).includes('wa.me/?text=')){const base=decodeURIComponent(String(url).split('wa.me/?text=')[1]||'');url='https://wa.me/?text='+encodeURIComponent(base+'\\n\\n'+extra.join('\\n'));}}catch(e){}
+  window.open=nativeOpen;return nativeOpen.call(window,url,target);
+ };
+ try{rvtecShareReportBase();}finally{window.open=nativeOpen;}
 };
 </script>
 </body></html>
