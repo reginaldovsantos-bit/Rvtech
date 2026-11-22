@@ -11,25 +11,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Extract and inspect relevant source
+      - name: Extract and print OS functions
         run: |
           unzip -q RVTEC_1.6.2_ALERTA_OS_FONTE.zip
           F=RVTEC_Android/app/src/main/assets/index.html
-          echo '--- MATCHING LINE NUMBERS ---'
-          grep -inE 'Máquinas Paradas|Ordem de Serviço|Concluir OS|Apontamento|Atender|Peças utilizadas|tempoParada|horaInicio|inicioAtendimento|mttr|disponibilidade' "$F" | head -160
-          echo '--- SCRIPT / FUNCTION DECLARATIONS ---'
-          grep -inE 'function .*OS|function .*Parada|function .*Atend|function .*Ordem|const .*OS|let .*OS' "$F" | head -120
-          echo '--- HTML OS LABELS CONTEXT ---'
-          python3 - <<'PY'
-          from pathlib import Path
-          s=Path("RVTEC_Android/app/src/main/assets/index.html").read_text()
-          terms=["Máquinas Paradas","Ordem de Serviço","Concluir OS","Peças utilizadas","Atender"]
-          for term in terms:
-              p=0; count=0
-              while True:
-                  i=s.find(term,p)
-                  if i<0 or count>=4: break
-                  print("\\n###",term,"at",i,"###")
-                  print(s[max(0,i-700):i+1300])
-                  p=i+len(term); count+=1
-          PY
+          for R in '980,1065' '1110,1170' '620,670' '800,845'; do
+            echo "--- LINES $R ---"
+            sed -n "${R}p" "$F"
+          done
