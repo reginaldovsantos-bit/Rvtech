@@ -118,7 +118,7 @@ body[data-theme="dark"] nav button{background:#263744!important;color:#d8e3ec!im
 
 </head>
 <body>
-<div id="loginGate" style="position:fixed;inset:0;z-index:1000;background:#f2f5f8;display:flex;align-items:center;justify-content:center;padding:20px">
+<div id="loginGate" style="display:none;position:fixed;inset:0;z-index:1000;background:#f2f5f8;align-items:center;justify-content:center;padding:20px">
  <div class="panel" style="width:min(100%,420px);padding:24px">
   <div style="font-weight:800;color:#1877b9;letter-spacing:2px">RVTEC</div><h2 style="margin:8px 0">Acesso ao sistema</h2>
   <p class="muted">Entre com seu e-mail e senha cadastrados.</p>
@@ -493,7 +493,16 @@ async function createRvtecUser(){
   msg.textContent=firebaseError(e)+(createdUser&&!profileWritten?' A conta recém-criada foi removida; se a exclusão falhar, confira Usuários no Firebase Authentication.':'');
  }
 }
+const RVTEC_LOCAL_TEST_MODE=true;
 rvtecAuth.onAuthStateChanged(async user=>{
+ if(RVTEC_LOCAL_TEST_MODE){
+  cloudUser=null;userProfile={name:'Teste local',email:'',role:'admin',active:true};cloudReady=false;
+  KEY=LEGACY_KEY+'_test';
+  try{db={...EMPTY_DB,...JSON.parse(localStorage.getItem(KEY)||'{}')};}catch(e){db={...EMPTY_DB};}
+  appAccess(true);setCloudStatus('Modo de teste local • sem Firebase');
+  const account=$('accountInfo');if(account)account.textContent='Teste local';
+  applyPermissions();applyRvtecSettings();render();if(typeof renderStock==='function')renderStock();return;
+ }
  cloudUser=user;userProfile=null;cloudReady=false;
  if(!user){
   appAccess(false);setCloudStatus('Nuvem: faça login');
