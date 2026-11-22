@@ -1,4 +1,11 @@
 name: Build RVTEC 1.5.9 APK (Firebase fixes)
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rvtec-159-apk
+  cancel-in-progress: false
 on:
   workflow_dispatch:
   push:
