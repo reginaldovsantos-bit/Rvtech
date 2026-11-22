@@ -2,6 +2,13 @@ from pathlib import Path
 p=Path("RVTEC_Android/app/src/main/assets/index.html")
 s=p.read_text(encoding="utf-8")
 repls = [
+(""" .rvtec-os-detail{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}""",
+""" .rvtec-os-detail{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+ .rvtec-os-toggle{border:0!important;background:transparent!important;color:var(--muted)!important;font-size:22px!important;line-height:1;padding:10px 13px!important;min-width:44px;min-height:44px;border-radius:50%;cursor:pointer;touch-action:manipulation}
+ .rvtec-os-toggle:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+ .rvtec-os-collapsed .rvtec-os-detail{display:none}
+ .rvtec-os-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+ .rvtec-os-parts summary{cursor:pointer;color:var(--muted);padding:7px 0;min-height:24px}"""),
 (""" .rvtec-os-detail{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
  .rvtec-os-detail input,.rvtec-os-detail textarea{width:100%;box-sizing:border-box}
  @media(max-width:600px){.rvtec-os-detail{grid-template-columns:1fr}}""",
