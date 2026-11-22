@@ -360,7 +360,6 @@ nav button.rvtec-machine-stopped{animation:rvtecStopBlink .9s infinite;border:2p
 <footer>Manutenção Industrial 1.0 • RVTEC</footer>
 
 <script src="https://www.gstatic.com/firebasejs/12.1.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/12.1.0/firebase-app-check-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.1.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore-compat.js"></script>
 
@@ -377,7 +376,7 @@ function rvtecLoadUserData(uid,role){
  else{
   const legacy=localStorage.getItem(LEGACY_KEY);
   if(role==='admin'&&legacy){
-   try{db={...EMPTY_DB,...JSON.parse(legacy)};localStorage.setItem(KEY,JSON.stringify(db));localStorage.setItem(KEY+'_migrated','1');localStorage.removeItem(LEGACY_KEY);}
+   try{db={...EMPTY_DB,...JSON.parse(legacy)};localStorage.setItem(KEY,JSON.stringify(db));localStorage.setItem(KEY+'_migrated','1');}
    catch(e){db={...EMPTY_DB};}
   }else db={...EMPTY_DB};
  }
@@ -388,22 +387,6 @@ db.diagnostics=db.diagnostics||[]; db.technicalMemory=db.technicalMemory||[]; db
 // Firebase Authentication + Firestore (RVTEC)
 const firebaseConfig={apiKey:'AIzaSyCNqRK8qcEP1dA4T0dFoFzbE2Lotfpq1K0',authDomain:'rvtech-cfd2e.firebaseapp.com',projectId:'rvtech-cfd2e',storageBucket:'rvtech-cfd2e.firebasestorage.app',messagingSenderId:'171095099635',appId:'1:171095099635:web:58017bc059de606f7ecf86',measurementId:'G-5KR4W30QZM'};
 firebase.initializeApp(firebaseConfig);
-// Reutiliza o token App Check emitido pelo SDK Android nativo (Play Integrity/debug).
-const rvtecAppCheckPending={};
-window.rvtecAppCheckNativeResult=function(id,token,expireTimeMillis,error){
- const pending=rvtecAppCheckPending[id];if(!pending)return;delete rvtecAppCheckPending[id];
- if(error)pending.reject(new Error(error));else pending.resolve({token,expireTimeMillis});
-};
-const rvtecNativeAppCheckProvider={
- getToken:()=>new Promise((resolve,reject)=>{
-  if(!window.RVTECNative||typeof window.RVTECNative.getAppCheckToken!=='function'){reject(new Error('Ponte nativa do App Check não encontrada.'));return;}
-  const id='appcheck-'+Date.now()+'-'+Math.random().toString(36).slice(2);
-  rvtecAppCheckPending[id]={resolve,reject};
-  try{window.RVTECNative.getAppCheckToken(id);}catch(e){delete rvtecAppCheckPending[id];reject(e);return;}
-  setTimeout(()=>{if(rvtecAppCheckPending[id]){delete rvtecAppCheckPending[id];reject(new Error('Tempo esgotado ao obter token App Check nativo.'));}},20000);
- })
-};
-firebase.appCheck().activate(rvtecNativeAppCheckProvider,true);
 const rvtecAuth=firebase.auth();
 const rvtecStore=firebase.firestore();
 const ADMIN_EMAIL='reginaldovsantos@gmail.com';
@@ -473,8 +456,7 @@ async function syncCloud(){
    await pushCloud();
   }
   setCloudStatus('Nuvem: conectado • '+(canEditData()?'sincronização ativa':'consulta somente'));
-  return true;
- }catch(e){setCloudStatus('Falha na nuvem: '+firebaseError(e));console.error(e);return false;}
+ }catch(e){setCloudStatus('Falha na nuvem: '+firebaseError(e));console.error(e);}
 }
 window.addEventListener('online',()=>{if(cloudPushQueued)pushCloud();});
 async function runFirebaseDiagnostic(){
@@ -485,8 +467,7 @@ async function runFirebaseDiagnostic(){
   if(!navigator.onLine)throw new Error('O aparelho está sem conexão com a internet.');
   if(!rvtecAuth.currentUser)throw new Error('Sessão Firebase não autenticada.');
   await rvtecStore.collection('rvtec_users').doc(rvtecAuth.currentUser.uid).get();
-  const synced=await syncCloud();
-  if(!synced)throw new Error('O Firestore recusou ou não concluiu a sincronização. Confira App Check, regras e conexão.');
+  await syncCloud();
   if(status)status.textContent='Conexão verificada';
   if(detail)detail.textContent='Autenticação ativa, leitura do perfil no Firestore concluída e sincronização solicitada. Consulte o status da nuvem acima.';
  }catch(e){if(status)status.textContent='Falha no diagnóstico';if(detail)detail.textContent=firebaseError(e);console.error(e);}
@@ -561,7 +542,6 @@ function saveRvtecSettings(){
 }
 function resetRvtecSettings(){if(!confirm('Restaurar as configurações visuais e do menu? Os dados de manutenção não serão apagados.'))return;db.settings={...RVTEC_DEFAULT_SETTINGS};saveRvtecSettings();}
 function rvtecBack(){let previous='inicio';while(rvtecTabHistory.length){const candidate=rvtecTabHistory.pop();if(candidate==='configuracoes'||rvtecSettings().menuVisibility[candidate]!==false){previous=candidate;break;}}if(rvtecCurrentTab!=='inicio'){tab(previous,false);return true;}if($('nav')?.classList.contains('open')){rvtecMenuToggle(false);return true;}return false;}
-window.rvtecBackFromAndroid=function(){return rvtecBack();};
 function tab(id,addHistory=true){if(!cloudUser||!userProfile){appAccess(false);showLoginMessage('Faça login para acessar o RVTEC.');return;}if(id==='iaRvtec'&&(!cloudReady||!userProfile||!['admin','supervisor','electrician'].includes(userProfile.role))){showLoginMessage('A IA RVTEC está disponível para administrador, supervisor e eletricista.');return;}if(!document.getElementById(id)||!document.getElementById(id).classList.contains('tab'))return;if(id!=='configuracoes'&&rvtecSettings().menuVisibility[id]===false){alert('Esta tela está oculta. Reative-a em Configurações > Menu e telas.');return;}if(addHistory&&rvtecCurrentTab!==id)rvtecTabHistory.push(rvtecCurrentTab);rvtecCurrentTab=id;document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('hidden',x.id!==id));document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active',x.dataset.tab===id));applyRvtecSettings();rvtecMenuToggle(false);render();if(id==='estoque')renderStock();if(id==='configuracoes')renderSettings();if(id==='graficos')renderCharts();}
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>tab(b.dataset.tab));
 function machineOptions(id){let opts=db.machines.map(m=>`<option value="${m.id}">${esc(m.name)}</option>`).join('');$(id).innerHTML=opts||'<option value="">Cadastre uma máquina primeiro</option>'}
