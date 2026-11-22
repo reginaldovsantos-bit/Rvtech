@@ -1,0 +1,45 @@
+name: Build RVTEC 1.6.2 APK
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/build-rvtec-162.yml'
+      - 'RVTEC_1.6.2_ALERTA_OS_FONTE.zip'
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract RVTEC 1.6.2 source
+        run: |
+          unzip -q RVTEC_1.6.2_ALERTA_OS_FONTE.zip
+          test -f RVTEC_Android/app/build.gradle
+          sed -i "s/versionCode 161/versionCode 162/" RVTEC_Android/app/build.gradle
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Build test APK
+        working-directory: RVTEC_Android
+        run: gradle assembleDebug --stacktrace
+      - name: Validate APK
+        working-directory: RVTEC_Android
+        run: |
+          APK=app/build/outputs/apk/debug/app-debug.apk
+          test -s "$APK"
+          unzip -t "$APK"
+          sha256sum "$APK"
+          ls -lh "$APK"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: RVTEC-1.6.2-APK-TESTE
+          path: RVTEC_Android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30
