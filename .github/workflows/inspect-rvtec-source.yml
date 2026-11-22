@@ -1,4 +1,4 @@
-name: Inspect RVTEC source for 1.6.3 changes
+name: Inspect RVTEC OS source details
 on:
   push:
     branches: [ main ]
@@ -11,14 +11,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Extract and inspect source
+      - name: Extract and inspect relevant source
         run: |
           unzip -q RVTEC_1.6.2_ALERTA_OS_FONTE.zip
-          echo '--- FILE TREE ---'
-          find RVTEC_Android -maxdepth 5 -type f | sort | head -250
-          echo '--- SOURCE FILES WITH OS / STOP / TECHNICIAN TERMS ---'
-          grep -RIlE 'Máquinas Paradas|Ordem de Serviço|Concluir OS|Apontamento|Atender|Peças utilizadas' RVTEC_Android --exclude-dir=.gradle --exclude='*.png' --exclude='*.jpg' | head -100
-          echo '--- GRADLE CONFIG ---'
-          sed -n '1,180p' RVTEC_Android/app/build.gradle
-          echo '--- HTML / JS / XML SIZE ---'
-          find RVTEC_Android -type f \( -name '*.html' -o -name '*.js' -o -name '*.xml' \) -printf '%p %s bytes\\n' | sort | head -200
+          F=RVTEC_Android/app/src/main/assets/index.html
+          echo '--- MATCHING LINE NUMBERS ---'
+          grep -inE 'Máquinas Paradas|Ordem de Serviço|Concluir OS|Apontamento|Atender|Peças utilizadas|tempoParada|horaInicio|inicioAtendimento|mttr|disponibilidade' "$F" | head -160
+          echo '--- SCRIPT / FUNCTION DECLARATIONS ---'
+          grep -inE 'function .*OS|function .*Parada|function .*Atend|function .*Ordem|const .*OS|let .*OS' "$F" | head -120
+          echo '--- HTML OS LABELS CONTEXT ---'
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path("RVTEC_Android/app/src/main/assets/index.html").read_text()
+          terms=["Máquinas Paradas","Ordem de Serviço","Concluir OS","Peças utilizadas","Atender"]
+          for term in terms:
+              p=0; count=0
+              while True:
+                  i=s.find(term,p)
+                  if i<0 or count>=4: break
+                  print("\\n###",term,"at",i,"###")
+                  print(s[max(0,i-700):i+1300])
+                  p=i+len(term); count+=1
+          PY
