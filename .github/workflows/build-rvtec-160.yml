@@ -63,12 +63,13 @@ jobs:
                   pos = match.end()
                   s = s[:pos] + "\n" + match.group(1) + "    " + suffix + s[pos:]
               else:
-                  match = re.search(r'(?m)^(\s*)dependencies\s*\{', s)
+                  match = re.search(r'(?m)^(\s*)android\s*\{', s)
                   if not match:
-                      raise SystemExit("Não encontrei bloco debug nem dependencies no build.gradle.")
-                  indent = match.group(1)
-                  block = indent + "buildTypes {\n" + indent + "    debug {\n" + indent + "        " + suffix + "\n" + indent + "    }\n" + indent + "}\n"
-                  s = s[:match.start()] + block + s[match.start():]
+                      raise SystemExit("Não encontrei o bloco android no build.gradle.")
+                  indent = match.group(1) + "    "
+                  pos = match.end()
+                  block = "\n" + indent + "buildTypes {\n" + indent + "    debug {\n" + indent + "        " + suffix + "\n" + indent + "    }\n" + indent + "}\n"
+                  s = s[:pos] + block + s[pos:]
           p.write_text(s)
           if suffix not in p.read_text():
               raise SystemExit("Não foi possível aplicar o identificador separado.")
