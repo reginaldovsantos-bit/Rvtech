@@ -93,3 +93,5 @@ jobs:
           path: buildsrc/RVTEC_Android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 30
+
+# Reexecuta a compilacao da RVTEC 1.6.0 apos corrigir o patch Gradle.
