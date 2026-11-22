@@ -337,12 +337,15 @@ nav button.rvtec-machine-stopped{animation:rvtecStopBlink .9s infinite;border:2p
 <label><input type="checkbox" class="report-choice" value="orders"> Ordens de serviço</label>
 <label><input type="checkbox" class="report-choice" value="preventives"> Manutenções preventivas</label>
 <label><input type="checkbox" class="report-choice" value="diagnostics"> Diagnósticos técnicos</label>
+<label><input type="checkbox" class="report-choice" value="memory"> Memória técnica</label>
+<label><input type="checkbox" class="report-choice" value="stock"> Estoque atual</label>
+<label><input type="checkbox" class="report-choice" value="stockMovements"> Movimentações de estoque</label>
 <label><input type="checkbox" class="report-choice" value="indicators" checked> Indicadores gerais (MTBF, MTTR, disponibilidade e confiabilidade)</label>
 </div>
 <div class="actions"><button class="whatsapp" type="button" onclick="shareSelectedReportWhatsApp()">WhatsApp — enviar selecionados</button></div>
 </div>
 <div class="panel"><h3>Indicadores por máquina</h3><p class="muted">Cálculo dos últimos 30 dias, usando as horas programadas por dia cadastradas em cada máquina.</p><div id="reliabilitySummary" class="muted">Sem dados suficientes.</div></div>
-<div class="panel"><h3>Resumo das paradas</h3><div id="stopSummary" class="muted">Sem dados.</div><div class="actions"><button class="secondary" onclick="exportCSV()">Exportar paradas (CSV)</button><button class="secondary" onclick="window.print()">Imprimir relatório</button></div></div>
+<div class="panel"><h3>Resumo das paradas</h3><div id="stopSummary" class="muted">Sem dados.</div><div class="actions"><button class="secondary" onclick="exportCSV()">Exportar relatório completo (CSV)</button><button class="secondary" onclick="window.print()">Imprimir relatório</button></div></div>
 </section>
 <section id="configuracoes" class="tab hidden">
 <h2>Configurações do RVTEC</h2>
@@ -1579,4 +1582,132 @@ window.rvtecFinishOrder=function(id){
 };
 </script>
 
+
+<style id="rvtec-preventive-report-v161">
+.rvtec-prev-meta{font-size:12px;color:var(--muted);margin-top:5px;line-height:1.6}
+.rvtec-prev-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+.rvtec-prev-status{display:inline-block;border-radius:7px;padding:5px 8px;font-size:10px;font-weight:800;text-transform:uppercase}
+.rvtec-prev-status.overdue{background:#ffe3e3;color:#b42323}
+.rvtec-prev-status.today{background:#fff3df;color:#a96b08}
+.rvtec-prev-status.ok{background:#e5f5ed;color:#16845b}
+.rvtec-prev-status.paused{background:#edf3f8;color:#526477}
+.rvtec-report-extra{margin-top:12px}
+.rvtec-report-extra .stat{min-height:84px}
+</style>
+<script id="rvtec-preventive-report-v161">
+/* RVTEC 1.6.1 — ciclos preventivos, histórico e relatórios ampliados. */
+function rvtecDateKey(d){const x=new Date(d);return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');}
+function rvtecAddPeriod(date,period){
+ const d=new Date(String(date||rvtecDateKey(new Date()))+'T12:00:00');
+ const p=String(period||'Mensal').toLowerCase();
+ if(p==='semanal')d.setDate(d.getDate()+7);
+ else if(p==='quinzenal')d.setDate(d.getDate()+15);
+ else if(p==='bimestral')d.setMonth(d.getMonth()+2);
+ else if(p==='trimestral')d.setMonth(d.getMonth()+3);
+ else if(p==='semestral')d.setMonth(d.getMonth()+6);
+ else if(p==='anual')d.setFullYear(d.getFullYear()+1);
+ else d.setMonth(d.getMonth()+1);
+ return rvtecDateKey(d);
+}
+function rvtecPrevState(p){
+ if(p.paused)return {label:'Pausada',css:'paused'};
+ if(!p.date)return {label:'Sem data',css:'paused'};
+ const today=rvtecDateKey(new Date());
+ if(p.date<today)return {label:'Atrasada',css:'overdue'};
+ if(p.date===today)return {label:'Vence hoje',css:'today'};
+ return {label:'Programada',css:'ok'};
+}
+function rvtecRenderPreventives(){
+ const el=$('prevList');if(!el)return;
+ const list=[...(db.preventives||[])].sort((a,b)=>String(a.date||'9999').localeCompare(String(b.date||'9999')));
+ if(!list.length){el.innerHTML='<div class="empty">Nenhuma preventiva cadastrada.</div>';return;}
+ el.innerHTML=list.map(p=>{
+  const st=rvtecPrevState(p),hist=p.history||[];
+  return '<div class="item"><div style="flex:1;min-width:0"><h3>'+esc(mname(p.machine))+'</h3><div>'+esc(p.task||'Atividade não informada')+'</div><div class="rvtec-prev-meta">Periodicidade: <b>'+esc(p.period||'Mensal')+'</b> • Próxima execução: <b>'+(p.date?new Date(p.date+'T12:00:00').toLocaleDateString('pt-BR'):'Não definida')+'</b><br>Responsável: '+esc(p.owner||'Não definido')+' • Ciclos concluídos: '+hist.length+'</div><div style="margin-top:8px"><span class="rvtec-prev-status '+st.css+'">'+st.label+'</span></div>'+
+  (hist.length?'<details style="margin-top:9px"><summary>Histórico ('+hist.length+')</summary>'+hist.slice().reverse().map(h=>'<div class="rvtec-prev-meta">• '+(h.completedAt?new Date(h.completedAt).toLocaleString('pt-BR'):'Data não informada')+' — previsto: '+(h.dueDate?new Date(h.dueDate+'T12:00:00').toLocaleDateString('pt-BR'):'—')+' • '+esc(h.by||'Responsável não informado')+(h.note?' • '+esc(h.note):'')+'</div>').join('')+'</details>':'')+
+  '<div class="rvtec-prev-actions">'+(!p.paused?'<button class="primary" type="button" onclick="rvtecCompletePreventive('+Number(p.id)+')">Concluir ciclo</button>':'')+'<button class="secondary" type="button" onclick="rvtecEditPreventive('+Number(p.id)+')">Editar</button><button class="secondary" type="button" onclick="rvtecTogglePreventive('+Number(p.id)+')">'+(p.paused?'Reativar':'Pausar')+'</button><button class="danger" type="button" onclick="rvtecDeletePreventive('+Number(p.id)+')">Excluir</button></div></div></div>';
+ }).join('');
+}
+const rvtecRenderBaseV161=render;
+render=function(){rvtecRenderBaseV161();rvtecRenderPreventives();rvtecRenderReportExtras();};
+window.addPrev=function(){
+ if(!canEditData())return alert('Seu perfil não tem permissão para cadastrar preventivas.');
+ const machine=Number($('prevMachine').value),task=$('prevTask').value.trim(),date=$('prevDate').value;
+ if(!machine||!task||!date)return alert('Preencha máquina, atividade e próxima data.');
+ const record={id:Date.now(),machine,date,period:$('prevPeriod').value||'Mensal',owner:$('prevOwner').value||'',task,paused:false,history:[],createdAt:new Date().toISOString(),createdBy:cloudUser?.email||userProfile?.name||'Técnico'};
+ db.preventives.unshift(record);$('prevTask').value='';$('prevOwner').value='';$('prevDate').value='';save();
+};
+window.rvtecCompletePreventive=function(id){
+ if(!canEditData())return alert('Seu perfil não tem permissão para concluir preventivas.');
+ const p=db.preventives.find(x=>String(x.id)===String(id));if(!p||p.paused)return;
+ const note=prompt('Observação da execução (opcional):');if(note===null)return;
+ const completedAt=new Date().toISOString(),dueDate=p.date||rvtecDateKey(new Date());
+ p.history=p.history||[];p.history.push({id:'prev-'+Date.now(),dueDate,completedAt,by:cloudUser?.email||userProfile?.name||p.owner||'Técnico',note:note.trim()});
+ let next=rvtecAddPeriod(dueDate,p.period),today=rvtecDateKey(new Date()),guard=0;
+ while(next<=today&&guard++<240)next=rvtecAddPeriod(next,p.period);
+ p.date=next;p.lastCompletedAt=completedAt;p.lastCompletedBy=cloudUser?.email||userProfile?.name||p.owner||'Técnico';p.updatedAt=completedAt;
+ save();
+};
+window.rvtecEditPreventive=function(id){
+ if(!canEditData())return alert('Seu perfil não tem permissão para editar preventivas.');
+ const p=db.preventives.find(x=>String(x.id)===String(id));if(!p)return;
+ const machineText=prompt('ID da máquina (consulte a lista de máquinas):',String(p.machine));if(machineText===null)return;
+ const machine=Number(machineText);if(!db.machines.some(m=>String(m.id)===String(machine)))return alert('ID de máquina inválido.');
+ const task=prompt('Atividade preventiva:',p.task||'');if(task===null)return;if(!task.trim())return alert('Informe a atividade.');
+ const date=prompt('Próxima data (AAAA-MM-DD):',p.date||'');if(date===null)return;if(date&&!/^\d{4}-\d{2}-\d{2}$/.test(date))return alert('Data inválida. Use AAAA-MM-DD.');
+ const periods=['Semanal','Quinzenal','Mensal','Bimestral','Trimestral','Semestral','Anual'];
+ const periodText=prompt('Periodicidade: '+periods.join(', '),p.period||'Mensal');if(periodText===null)return;
+ const period=periods.find(x=>x.toLowerCase()===periodText.trim().toLowerCase());if(!period)return alert('Periodicidade inválida.');
+ const owner=prompt('Responsável:',p.owner||'');if(owner===null)return;
+ p.machine=machine;p.task=task.trim();p.date=date;p.period=period;p.owner=owner.trim();p.updatedAt=new Date().toISOString();save();
+};
+window.rvtecTogglePreventive=function(id){if(!canEditData())return alert('Sem permissão.');const p=db.preventives.find(x=>String(x.id)===String(id));if(!p)return;p.paused=!p.paused;p.updatedAt=new Date().toISOString();save();};
+window.rvtecDeletePreventive=function(id){if(!canEditData())return alert('Sem permissão.');const p=db.preventives.find(x=>String(x.id)===String(id));if(!p)return;if(!confirm('Excluir esta preventiva e seu histórico de ciclos?'))return;db.preventives=db.preventives.filter(x=>String(x.id)!==String(id));save();};
+function rvtecRenderReportExtras(){
+ const section=$('relatorios');if(!section)return;
+ let panel=$('rvtecReportExtraPanel');
+ if(!panel){panel=document.createElement('div');panel.id='rvtecReportExtraPanel';panel.className='panel rvtec-report-extra';panel.innerHTML='<h3>Resumo complementar</h3><div class="grid"><div class="stat"><span>Preventivas atrasadas</span><strong id="rvtecRPrevLate">0</strong></div><div class="stat"><span>Preventivas para hoje</span><strong id="rvtecRPrevToday">0</strong></div><div class="stat"><span>Preventivas programadas</span><strong id="rvtecRPrevOpen">0</strong></div><div class="stat"><span>Peças ativas no estoque</span><strong id="rvtecRStockItems">0</strong></div><div class="stat"><span>Movimentações de estoque</span><strong id="rvtecRStockMoves">0</strong></div><div class="stat"><span>Diagnósticos técnicos</span><strong id="rvtecRDiagnostics">0</strong></div></div><p class="muted">Os totais consideram os registros disponíveis neste aparelho/conta.</p></div>';const anchor=$('reliabilitySummary')?.parentElement;if(anchor)anchor.after(panel);else section.appendChild(panel);}
+ const states=(db.preventives||[]).map(rvtecPrevState);
+ const set=(id,value)=>{const el=$(id);if(el)el.textContent=value;};
+ set('rvtecRPrevLate',states.filter(x=>x.css==='overdue').length);
+ set('rvtecRPrevToday',states.filter(x=>x.css==='today').length);
+ set('rvtecRPrevOpen',states.filter(x=>x.css==='ok').length);
+ set('rvtecRStockItems',(db.stock||[]).filter(x=>x.active!==false).length);
+ set('rvtecRStockMoves',(db.stockMovements||[]).length);
+ set('rvtecRDiagnostics',(db.diagnostics||[]).length);
+}
+function rvtecReportRows(){
+ const selected=[...document.querySelectorAll('.report-choice:checked')].map(x=>x.value),rows=[['Tipo','Registro','Máquina/Item','Descrição','Responsável','Data início/prevista','Data fim/conclusão','Status','Detalhes']];
+ const add=(...r)=>rows.push(r.map(v=>String(v??'')));
+ if(selected.includes('machines'))(db.machines||[]).forEach(m=>add('Máquina',m.id,m.name,m.sector,m.owner,'','','Ativa','Código: '+(m.code||'')+'; horas/dia: '+(m.hoursDay||24)));
+ if(selected.includes('stops'))(db.stops||[]).forEach(x=>add('Parada',x.id,mname(x.machine),x.cause,x.owner,x.start,x.end,x.end?'Finalizada':'Aberta','Turno: '+(x.shift||'')+'; duração: '+duration(x)+'; solução: '+(x.solution||'')));
+ if(selected.includes('orders'))(db.orders||[]).forEach(x=>add('OS',x.id,mname(x.machine),x.desc,x.owner,x.created,x.finished,x.status,'Prioridade: '+(x.priority||'')+'; diagnóstico: '+(x.diagnosis||'')+'; serviço: '+(x.workDone||'')+'; peças: '+(x.parts||'')));
+ if(selected.includes('preventives'))(db.preventives||[]).forEach(x=>{add('Preventiva',x.id,mname(x.machine),x.task,x.owner,x.date,'',x.paused?'Pausada':rvtecPrevState(x).label,'Periodicidade: '+(x.period||'')+'; ciclos concluídos: '+((x.history||[]).length));(x.history||[]).forEach(h=>add('Execução preventiva',h.id,mname(x.machine),x.task,h.by,h.dueDate,h.completedAt,'Concluída',h.note||''));});
+ if(selected.includes('diagnostics'))(db.diagnostics||[]).forEach(x=>add('Diagnóstico',x.id,mname(x.machine),x.symptom,x.owner,x.date,'',x.validation||'Em análise','Componente: '+(x.part||'')+'; falha: '+(x.code||'')+'; causa: '+(x.cause||'')+'; solução: '+(x.solution||'')));
+ if(selected.includes('memory'))(db.technicalMemory||[]).forEach(x=>add('Memória técnica',x.id,mname(x.machine),x.symptom,x.owner,x.validatedAt,'',x.outcome||'', 'Causa: '+(x.cause||'')+'; solução: '+(x.solution||'')+'; reincidência: '+(x.recurrence||'')));
+ if(selected.includes('stock'))(db.stock||[]).forEach(x=>add('Estoque',x.id,x.name,x.code,x.location,'','',x.active===false?'Inativa':'Ativa','Saldo: '+(x.qty||0)));
+ if(selected.includes('stockMovements'))(db.stockMovements||[]).forEach(x=>add('Movimentação estoque',x.id,x.partName,x.type,x.by,x.at,'',x.reason||'', 'Quantidade: '+(x.qty||0)+'; saldo: '+(x.balance??'')+'; OS: '+(x.orderId||'')));
+ return rows;
+}
+window.exportCSV=function(){
+ const rows=rvtecReportRows();
+ if(rows.length===1)return alert('Marque ao menos uma categoria para exportar.');
+ const csv='\ufeff'+rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\n');
+ const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+ const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='RVTEC_relatorio_completo_'+rvtecDateKey(new Date())+'.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+};
+const rvtecShareReportBase=shareSelectedReportWhatsApp;
+window.shareSelectedReportWhatsApp=function(){
+ const selected=[...document.querySelectorAll('.report-choice:checked')].map(x=>x.value);
+ const extra=[];
+ if(selected.includes('stock'))extra.push('*ESTOQUE*',...(db.stock||[]).map(x=>'• '+x.name+' — saldo '+(x.qty||0)+' — '+(x.active===false?'Inativa':'Ativa')));
+ if(selected.includes('stockMovements'))extra.push('*MOVIMENTAÇÕES DE ESTOQUE*',...(db.stockMovements||[]).slice(0,40).map(x=>'• '+x.partName+' — '+x.type+' — '+x.qty+' — '+(x.reason||'')));
+ if(selected.includes('memory'))extra.push('*MEMÓRIA TÉCNICA*',...(db.technicalMemory||[]).slice(0,30).map(x=>'• '+mname(x.machine)+' — '+x.cause+' — '+x.solution));
+ if(extra.length){
+  const old=window.open;let url='https://wa.me/?text='+encodeURIComponent('*RVTEC — RELATÓRIO COMPLEMENTAR*\n'+new Date().toLocaleString('pt-BR')+'\n\n'+extra.join('\n'));
+  window.open(url,'_blank');return;
+ }
+ rvtecShareReportBase();
+};
+</script>
 </body></html>
