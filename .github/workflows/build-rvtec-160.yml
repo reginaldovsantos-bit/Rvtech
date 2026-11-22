@@ -60,6 +60,20 @@ jobs:
           PY
           python3 - <<'PY'
           from pathlib import Path
+          html = Path("RVTEC_1.6.0.html").read_text()
+          sync = html[html.index("async function syncCloud(){"):]
+          guard = sync.find("if(userProfile.role==='production')")
+          legacy_read = sync.find("collection('rvtec_data').doc('main').get()")
+          if guard < 0 or legacy_read < 0 or guard > legacy_read:
+              raise SystemExit("ERRO: perfil Produção pode alcançar a leitura do documento legado.")
+          if '<input id="requestMachine" type="text"' not in html:
+              raise SystemExit("ERRO: campo de máquina do operador não está disponível sem catálogo legado.")
+          if html.count("async function rvtecLoadRequests(){") != 1:
+              raise SystemExit("ERRO: declaração duplicada/ausente de rvtecLoadRequests.")
+          print("Segurança de leitura do operador e formulário de solicitação validados.")
+          PY
+          python3 - <<'PY'
+          from pathlib import Path
           gradle = Path("buildsrc/RVTEC_Android/app/build.gradle")
           lines = gradle.read_text().splitlines()
           for i, line in enumerate(lines):
