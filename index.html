@@ -40,7 +40,8 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 
 textarea{min-height:82px;resize:vertical}
 button{cursor:pointer;transition:transform .12s,filter .12s}button:active{transform:scale(.98)}
 button.primary,.primary{background:var(--blue);color:#fff;border:0;border-radius:10px;padding:12px 16px;font-weight:750;box-shadow:0 4px 10px #1877b925}
-button.secondary{background:#f1f5f8;color:var(--navy);border:1px solid var(--line);border-radius:10px;padding:11px 14px;font-weight:700}\nbutton.whatsapp{background:#16845b;color:#fff;border:0;border-radius:10px;padding:11px 14px;font-weight:800}
+button.secondary{background:#f1f5f8;color:var(--navy);border:1px solid var(--line);border-radius:10px;padding:11px 14px;font-weight:700}
+button.whatsapp{background:#16845b;color:#fff;border:0;border-radius:10px;padding:11px 14px;font-weight:800}
 button.danger{background:#fff1f1;color:var(--red);border:1px solid #f1caca;border-radius:10px;padding:9px 12px;font-weight:700}
 .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
 .time-edit{width:100%;margin-top:12px;padding:13px;background:#f5f9fc;border:1px solid #d8e5ef;border-radius:12px}.time-edit-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.time-edit label{margin:5px 0}.time-edit input{padding:11px;background:#fff}.time-edit strong{display:block;margin-bottom:7px;color:var(--navy)}
@@ -493,7 +494,7 @@ async function createRvtecUser(){
   msg.textContent=firebaseError(e)+(createdUser&&!profileWritten?' A conta recém-criada foi removida; se a exclusão falhar, confira Usuários no Firebase Authentication.':'');
  }
 }
-const RVTEC_LOCAL_TEST_MODE=true;
+const RVTEC_LOCAL_TEST_MODE=false;
 rvtecAuth.onAuthStateChanged(async user=>{
  if(RVTEC_LOCAL_TEST_MODE){
   cloudUser=null;userProfile={name:'Teste local',email:'',role:'admin',active:true};cloudReady=false;
@@ -899,10 +900,17 @@ function rvtecSaveOrderDetails(id){
  rvtecOrderLog(o,'Atualização técnica','Diagnóstico, peças e serviço atualizados');save();
 }
 function rvtecFinishOrder(id){
- const o=db.orders.find(x=>x.id===id);if(!o)return;
+ const o=db.orders.find(x=>String(x.id)===String(id));if(!o)return;
+ if(o.status==='Concluída')return alert('Esta OS já está concluída.');
+ const diagnosis=$('rvdiag'+id)?.value??o.diagnosis??'';
+ const parts=$('rvparts'+id)?.value??o.parts??'';
+ const work=$('rvwork'+id)?.value??o.workDone??'';
+ if(!String(diagnosis).trim())return alert('Informe o diagnóstico antes de concluir a OS.');
+ if(!String(work).trim())return alert('Descreva o serviço executado antes de concluir a OS.');
  if(!confirm('Confirmar encerramento da OS e retorno da máquina à operação?'))return;
+ o.diagnosis=String(diagnosis).trim();o.parts=String(parts).trim();o.workDone=String(work).trim();
  o.status='Concluída';o.finished=new Date().toISOString();o.returnedAt=o.finished;
- rvtecOrderLog(o,'OS encerrada / máquina liberada',`Tempo total: ${duration({start:o.created,end:o.finished})}`);
+ rvtecOrderLog(o,'OS encerrada / máquina liberada',`Diagnóstico e serviço registrados. Tempo total: ${duration({start:o.created,end:o.finished})}`);
  save();
 }
 function rvtecCheckEscalations(){
