@@ -38,6 +38,8 @@ function rvtecRenderOrders(){
 """ if(linkedStop&&!linkedStop.end){linkedStop.end=o.finished;linkedStop.status='Finalizada';linkedStop.solution=linkedStop.solution||o.solution||o.workDone||o.diagnosis;linkedStop.cause=linkedStop.cause||o.diagnosis;}""")
 ]
 for old,new in repls:
+    old="\n".join(line.lstrip() for line in old.splitlines())
+    new="\n".join(line.lstrip() for line in new.splitlines())
     count=s.count(old)
     if count != 1:
         raise SystemExit(f"Patch abortado: trecho esperado apareceu {count} vezes: {old[:100]!r}")
