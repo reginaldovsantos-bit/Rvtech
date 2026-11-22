@@ -6,7 +6,7 @@ s = p.read_text(encoding="utf-8")
 
 def replace_once(pattern, replacement, label, flags=re.S):
     global s
-    s2, n = re.subn(pattern, replacement, s, count=1, flags=flags)
+    s2, n = re.subn(pattern, lambda match: replacement, s, count=1, flags=flags)
     if n != 1:
         raise SystemExit(f"Patch 1.6.4 abortado: {label}; ocorrências={n}")
     s = s2
