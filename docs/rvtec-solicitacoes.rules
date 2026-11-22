@@ -32,7 +32,10 @@ service cloud.firestore {
         ])
         && request.resource.data.createdBy == request.auth.uid
         && request.resource.data.status == 'Pendente'
-        && request.resource.data.machine is number
+        && (request.resource.data.machine is number || request.resource.data.machine is string)
+        && request.resource.data.machineName is string
+        && request.resource.data.machineName.size() > 0
+        && request.resource.data.machineName.size() <= 100
         && request.resource.data.description is string
         && request.resource.data.description.size() > 0
         && request.resource.data.description.size() <= 1200
