@@ -49,13 +49,20 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           p = Path("buildsrc/RVTEC_Android/app/build.gradle")
-          s = p.read_text()
-          import re
-          s, n1 = re.subn(r'(?m)^\\s*versionCode\\s+\\d+', '        versionCode 159', s, count=1)
-          s, n2 = re.subn(r"(?m)^\\s*versionName\\s+(['\\"])[^'\\"]+\\1", "        versionName '1.5.9'", s, count=1)
-          if n1 != 1 or n2 != 1:
-              raise SystemExit("Não foi possível definir versionCode 159 e versionName 1.5.9.")
-          p.write_text(s)
+          lines = p.read_text().splitlines()
+          code_found = False
+          name_found = False
+          for i, line in enumerate(lines):
+              stripped = line.strip()
+              if stripped.startswith("versionCode "):
+                  lines[i] = "        versionCode 159"
+                  code_found = True
+              elif stripped.startswith("versionName "):
+                  lines[i] = "        versionName '1.5.9'"
+                  name_found = True
+          if not code_found or not name_found:
+              raise SystemExit("Não foi possível localizar versionCode/versionName no build.gradle.")
+          p.write_text("\n".join(lines) + "\n")
           PY
 
       - name: Compile debug APK
