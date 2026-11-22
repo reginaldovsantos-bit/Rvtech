@@ -984,8 +984,13 @@ function rvtecRenderOrders(){
   const history=(o.history||[]).slice(0,8).map(x=>`${new Date(x.at).toLocaleString('pt-BR')} — ${esc(x.event)}${x.detail?' — '+esc(x.detail):''}`).join('<br>');
   const elapsed=open?duration({start:o.created}):duration({start:o.created,end:o.finished});
   return `<div class="item ${cls}"><div style="flex:1"><h3>${open?'<span class="rvtec-alert-dot"></span>':''}OS #${String(o.id).slice(-5)} — ${esc(mname(o.machine))}</h3><div class="muted">${esc(o.desc)}<br>Prioridade: ${esc(o.priority)} • Área: ${esc(o.area||'Não definida')} • ${esc(o.shift||rvtecShiftAt(o.created||new Date().toISOString()))}<br>Aberta: ${new Date(o.created).toLocaleString('pt-BR')} • ${open?'Parada/aberta há: '+elapsed:'Duração: '+elapsed}<br>Responsável: ${esc(o.assignee||'Aguardando aceite')}</div>
-  <div class="rvtec-os-detail"><div><label>Diagnóstico</label><textarea id="rvdiag${o.id}" rows="2">${esc(o.diagnosis||'')}</textarea></div><div><label>Peças utilizadas</label><textarea id="rvparts${o.id}" rows="2">${esc(o.parts||'')}</textarea></div><div style="grid-column:1/-1"><label>Serviço executado</label><textarea id="rvwork${o.id}" rows="2">${esc(o.workDone||'')}</textarea></div></div>
-  <div class="rvtec-os-actions">${open&&!ack?`<button class="primary" onclick="rvtecAcknowledgeOrder(${o.id})">Confirmar recebimento / assumir</button>`:''}${open&&ack&&!o.startedAt?`<button class="secondary" onclick="rvtecStartOrder(${o.id})">Iniciar atendimento</button>`:''}<button class="secondary" onclick="rvtecSaveOrderDetails(${o.id})">Salvar histórico técnico</button>${open?`<button class="primary" onclick="rvtecFinishOrder(${o.id})">Concluir e liberar máquina</button>`:''}</div>
+  <div class="rvtec-os-detail rvtec-os-form">
+   <div class="rvtec-os-field rvtec-os-required"><label for="rvdiag${o.id}">1. Diagnóstico da falha <span>OBRIGATÓRIO</span></label><textarea id="rvdiag${o.id}" rows="3" placeholder="Descreva o defeito encontrado, alarme e causa identificada...">${esc(o.diagnosis||'')}</textarea></div>
+   <div class="rvtec-os-field"><label for="rvparts${o.id}">Peças utilizadas</label><textarea id="rvparts${o.id}" rows="3" placeholder="Informe peças e quantidades ou deixe em branco se não utilizou...">${esc(o.parts||'')}</textarea></div>
+   <div class="rvtec-os-field rvtec-os-required" style="grid-column:1/-1"><label for="rvwork${o.id}">2. Serviço executado <span>OBRIGATÓRIO</span></label><textarea id="rvwork${o.id}" rows="3" placeholder="Descreva o reparo realizado e os testes feitos antes de liberar a máquina...">${esc(o.workDone||'')}</textarea></div>
+   <div class="rvtec-os-hint">Preencha os dois campos obrigatórios e toque em Salvar apontamento. Depois, conclua a OS para registrar a liberação da máquina.</div>
+  </div>
+  <div class="rvtec-os-actions">${open&&!ack?`<button class="primary" onclick="rvtecAcknowledgeOrder(${o.id})">Confirmar recebimento / assumir</button>`:''}${open&&ack&&!o.startedAt?`<button class="secondary" onclick="rvtecStartOrder(${o.id})">Iniciar atendimento</button>`:''}<button class="secondary" onclick="rvtecSaveOrderDetails(${o.id})">Salvar apontamento técnico</button>${open?`<button class="primary" onclick="rvtecFinishOrder(${o.id})">Concluir e liberar máquina</button>`:''}</div>
   <div class="rvtec-os-history"><strong>Histórico da OS</strong><br>${history||'Abertura registrada.'}${o.escalatedAt?'<br><strong>Escalonada:</strong> '+new Date(o.escalatedAt).toLocaleString('pt-BR'):''}</div>
   </div><div style="text-align:right"><span class="tag ${o.status==='Concluída'?'done':'open'}">${esc(o.status)}</span></div></div>`;
  }).join(''):'<div class="empty">Nenhuma ordem cadastrada.</div>';
@@ -1206,4 +1211,17 @@ rvtecRenderOrders=function(){
 };
 </script>
 
+
+<style id="rvtec-os-form-improvements">
+.rvtec-os-form{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--card,#fff)}
+.rvtec-os-field{min-width:0}
+.rvtec-os-field label{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-weight:800;margin:0 0 7px}
+.rvtec-os-field label span{font-size:10px;letter-spacing:.04em;color:#b42318;background:#fee4e2;padding:3px 7px;border-radius:20px}
+.rvtec-os-field textarea{min-height:82px;font-size:14px}
+.rvtec-os-required textarea{border-left:4px solid #d97706}
+.rvtec-os-hint{grid-column:1/-1;padding:10px 12px;border-radius:8px;background:#fff7e6;color:#754c00;font-size:12px;line-height:1.45}
+.rvtec-os-actions{gap:9px}
+.rvtec-os-actions button{min-height:44px}
+@media(max-width:600px){.rvtec-os-form{grid-template-columns:1fr;padding:11px}.rvtec-os-form .rvtec-os-field[style*="grid-column"]{grid-column:auto!important}.rvtec-os-hint{grid-column:auto}}
+</style>
 </body></html>
