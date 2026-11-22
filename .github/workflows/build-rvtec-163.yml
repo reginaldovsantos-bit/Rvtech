@@ -1,4 +1,4 @@
-name: Build RVTEC 1.6.3 APK
+name: Build RVTEC 1.6.4 APK
 on:
   workflow_dispatch:
   push:
@@ -18,7 +18,8 @@ jobs:
         run: |
           unzip -q RVTEC_1.6.2_ALERTA_OS_FONTE.zip
           python3 scripts/patch-rvtec-163.py
-          test "$(grep -o "versionName '1.6.3'" RVTEC_Android/app/build.gradle | wc -l)" -eq 1
+          python3 scripts/patch-rvtec-164.py
+          test "$(grep -o "versionName '1.6.4'" RVTEC_Android/app/build.gradle | wc -l)" -eq 1
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -39,7 +40,7 @@ jobs:
           ls -lh "$APK"
       - uses: actions/upload-artifact@v4
         with:
-          name: RVTEC-1.6.3-APK-TESTE
+          name: RVTEC-1.6.4-APK-TESTE
           path: RVTEC_Android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 30
