@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/build-rvtec-162.yml'
       - 'RVTEC_1.6.2_ALERTA_OS_FONTE.zip'
+      - 'trigger-rvtec-162.txt'
 permissions:
   contents: read
 jobs:
