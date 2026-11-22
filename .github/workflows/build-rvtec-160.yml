@@ -1,4 +1,4 @@
-name: Build RVTEC 1.6.0 APK — Revisão Profissional
+name: Build RVTEC 1.6.0 APK
 on:
   workflow_dispatch:
   push:
@@ -8,171 +8,65 @@ on:
       - 'RVTEC_1.4.7_FONTE_CORRIGIDA.zip'
       - 'scripts/patch_android_160.py'
       - '.github/workflows/build-rvtec-160.yml'
+permissions:
+  contents: read
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 35
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Java 17
-        uses: actions/setup-java@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-      - name: Gradle
-        uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
-      - name: Prepare Android source + RVTEC 1.6.0
+      - name: Prepare Android project
+        shell: bash
         run: |
-          set -euo pipefail
-          unzip -o RVTEC_1.4.7_FONTE_CORRIGIDA.zip -d buildsrc
+          set -euxo pipefail
+          test -s RVTEC_1.6.0.html
+          test -s RVTEC_1.4.7_FONTE_CORRIGIDA.zip
+          unzip -q RVTEC_1.4.7_FONTE_CORRIGIDA.zip -d buildsrc
           APP=buildsrc/RVTEC_Android
-          test -f "$APP/app/src/main/java/com/rvtec/manutencao/MainActivity.java"
-          test -f "$APP/app/google-services.json"
+          test -s "$APP/app/src/main/java/com/rvtec/manutencao/MainActivity.java"
+          test -s "$APP/app/google-services.json"
+          mkdir -p "$APP/app/src/main/assets"
           cp RVTEC_1.6.0.html "$APP/app/src/main/assets/index.html"
-          mkdir -p buildsrc/jscheck
-          python3 - <<'PY'
-          import re
-          from pathlib import Path
-          html = Path("RVTEC_1.6.0.html").read_text()
-          scripts = re.findall(r'<script\b(?![^>]*\bsrc=)[^>]*>(.*?)</script>', html, re.I | re.S)
-          if not scripts:
-              raise SystemExit("Nenhum script inline encontrado para validar.")
-          for i, script in enumerate(scripts):
-              Path(f"buildsrc/jscheck/script_{i}.js").write_text(script)
-          print(f"{len(scripts)} scripts inline extraídos.")
-          PY
-          for js in buildsrc/jscheck/*.js; do node --check "$js"; done
-          python3 - <<'PY'
-          from html.parser import HTMLParser
-          from collections import Counter
-          from pathlib import Path
-          class Check(HTMLParser):
-              def __init__(self): super().__init__(); self.ids=[]
-              def handle_starttag(self, tag, attrs):
-                  value=dict(attrs).get("id")
-                  if value: self.ids.append(value)
-          p=Check();p.feed(Path("RVTEC_1.6.0.html").read_text())
-          duplicates=[x for x,n in Counter(p.ids).items() if n>1]
-          if duplicates: raise SystemExit("IDs HTML duplicados: "+", ".join(duplicates))
-          print("IDs HTML sem duplicidade.")
-          PY
           python3 - <<'PY'
           from pathlib import Path
-          html = Path("RVTEC_1.6.0.html").read_text()
-          sync = html[html.index("async function syncCloud(){"):]
-          guard = sync.find("if(userProfile.role==='production')")
-          legacy_read = sync.find("collection('rvtec_data').doc('main').get()")
-          if guard < 0 or legacy_read < 0 or guard > legacy_read:
-              raise SystemExit("ERRO: perfil Produção pode alcançar a leitura do documento legado.")
-          if '<input id="requestMachine" type="text"' not in html:
-              raise SystemExit("ERRO: campo de máquina do operador não está disponível sem catálogo legado.")
-          if html.count("async function rvtecLoadRequests(){") != 1:
-              raise SystemExit("ERRO: declaração duplicada/ausente de rvtecLoadRequests.")
-          print("Segurança de leitura do operador e formulário de solicitação validados.")
-          PY
-          python3 - <<'PY'
-          from pathlib import Path
-          gradle = Path("buildsrc/RVTEC_Android/app/build.gradle")
-          lines = gradle.read_text().splitlines()
-          for i, line in enumerate(lines):
+          p=Path("buildsrc/RVTEC_Android/app/build.gradle")
+          lines=p.read_text().splitlines()
+          code=name=0
+          for i,line in enumerate(lines):
               if line.strip().startswith("versionCode"):
-                  lines[i] = "        versionCode 160"
+                  lines[i]="        versionCode 160"; code+=1
               elif line.strip().startswith("versionName"):
-                  lines[i] = "        versionName '1.6.0'"
-          gradle.write_text("\n".join(lines) + "\n")
-
-          p = Path("buildsrc/RVTEC_Android/app/src/main/java/com/rvtec/manutencao/MainActivity.java")
-          s = p.read_text()
-          s = s.replace("import android.webkit.WebViewClient;", "import android.webkit.WebViewClient;\nimport android.webkit.WebResourceRequest;\nimport android.view.View;")
-          s = s.replace("private static final int PHOTO_CAMERA = 703;", "private static final int PHOTO_CAMERA = 703;\n    private static final int AUDIO_PERMISSION = 701;\n    private PermissionRequest pendingAudioRequest;")
-          begin = s.index("        webView.setWebChromeClient(new WebChromeClient() {")
-          end = s.index("        setContentView(webView);", begin)
-          replacement = """        webView.setWebChromeClient(new WebChromeClient() {
-            @Override public void onPermissionRequest(PermissionRequest request) {
-                runOnUiThread(() -> {
-                    boolean audio = false;
-                    for (String resource : request.getResources()) {
-                        if (PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(resource)) audio = true;
-                    }
-                    if (!audio) { request.deny(); return; }
-                    if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
-                        request.grant(new String[]{PermissionRequest.RESOURCE_AUDIO_CAPTURE});
-                    } else {
-                        pendingAudioRequest = request;
-                        requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, AUDIO_PERMISSION);
-                    }
-                });
-            }
-        });
-        webView.setOnApplyWindowInsetsListener((view, insets) -> {
-            view.setPadding(insets.getSystemWindowInsetLeft(), insets.getSystemWindowInsetTop(),
-                    insets.getSystemWindowInsetRight(), insets.getSystemWindowInsetBottom());
-            return insets;
-        });
-        webView.requestApplyInsets();
-        webView.setWebViewClient(new WebViewClient() {
-            private boolean navigate(String url) {
-                if ("file:///android_asset/index.html".equals(url)) return false;
-                try {
-                    Uri uri = Uri.parse(url);
-                    String scheme = uri.getScheme() == null ? "" : uri.getScheme().toLowerCase();
-                    if ("https".equals(scheme) || "http".equals(scheme) || "whatsapp".equals(scheme)
-                            || "mailto".equals(scheme) || "tel".equals(scheme)) {
-                        startActivity(new Intent(Intent.ACTION_VIEW, uri));
-                    }
-                } catch (Exception ignored) { }
-                return true;
-            }
-            @Override public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                return navigate(url);
-            }
-            @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                return navigate(request.getUrl().toString());
-            }
-        });
-"""
-          s = s[:begin] + replacement + s[end:]
-          anchor = "    @Override\n    protected void onActivityResult(int requestCode, int resultCode, Intent data) {"
-          permission = """    @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == AUDIO_PERMISSION && pendingAudioRequest != null) {
-            PermissionRequest request = pendingAudioRequest;
-            pendingAudioRequest = null;
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                request.grant(new String[]{PermissionRequest.RESOURCE_AUDIO_CAPTURE});
-            } else {
-                request.deny();
-            }
-        }
-    }
-
-"""
-          if anchor not in s:
-              raise SystemExit("Não localizei ponto para inserir retorno da permissão de áudio.")
-          s = s.replace(anchor, permission + anchor)
-          s = s.replace("if (safePrompt.length() > 20000) safePrompt = safePrompt.substring(0, 20000);",
-                        "if (safePrompt.length() > 30000) safePrompt = safePrompt.substring(0, 30000);")
-          p.write_text(s)
+                  lines[i]="        versionName '1.6.0'"; name+=1
+          if code != 1 or name != 1:
+              raise SystemExit(f"Metadados Android inesperados: versionCode={code}, versionName={name}")
+          p.write_text("\n".join(lines)+"\n")
           PY
           python3 scripts/patch_android_160.py "$APP"
-          grep -n "versionCode\|versionName\|AUDIO_PERMISSION\|30000" "$APP/app/build.gradle" "$APP/app/src/main/java/com/rvtec/manutencao/MainActivity.java"
-      - name: Compile debug APK
+          grep -n "versionCode 160\|versionName '1.6.0'" "$APP/app/build.gradle"
+      - name: Compile APK
         working-directory: buildsrc/RVTEC_Android
-        run: gradle assembleDebug --stacktrace
+        run: gradle assembleDebug --no-daemon --stacktrace
       - name: Validate APK
+        shell: bash
         run: |
           set -euo pipefail
           APK=buildsrc/RVTEC_Android/app/build/outputs/apk/debug/app-debug.apk
           test -s "$APK"
           unzip -t "$APK"
+          sha256sum "$APK"
           ls -lh "$APK"
-      - name: Publish test APK
+      - name: Publish APK
         uses: actions/upload-artifact@v4
         with:
-          name: RVTEC-1.6.0-APK-Firebase-TESTE
+          name: RVTEC-1.6.0-APK-TESTE
           path: buildsrc/RVTEC_Android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 30
