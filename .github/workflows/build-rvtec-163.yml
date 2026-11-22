@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/build-rvtec-163.yml'
       - 'scripts/patch-rvtec-163.py'
+      - 'scripts/patch-rvtec-164.py'
 permissions:
   contents: read
 jobs:
