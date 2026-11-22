@@ -37,13 +37,15 @@ function rvtecRenderOrders(){
 (""" if(linkedStop&&!linkedStop.end){linkedStop.end=o.finished;linkedStop.status='Finalizada';linkedStop.solution=linkedStop.solution||o.workDone||o.diagnosis;}""",
 """ if(linkedStop&&!linkedStop.end){linkedStop.end=o.finished;linkedStop.status='Finalizada';linkedStop.solution=linkedStop.solution||o.solution||o.workDone||o.diagnosis;linkedStop.cause=linkedStop.cause||o.diagnosis;}""")
 ]
+import re
 for old,new in repls:
     old="\n".join(line.lstrip() for line in old.splitlines())
     new="\n".join(line.lstrip() for line in new.splitlines())
-    count=s.count(old)
+    pattern=re.compile(re.escape(old).replace(r"\\n", r"\\n[ \\t]*"))
+    count=len(pattern.findall(s))
     if count != 1:
         raise SystemExit(f"Patch abortado: trecho esperado apareceu {count} vezes: {old[:100]!r}")
-    s=s.replace(old,new,1)
+    s=pattern.sub(lambda _: new, s, count=1)
 p.write_text(s,encoding="utf-8")
 g=Path("RVTEC_Android/app/build.gradle")
 t=g.read_text(encoding="utf-8")
