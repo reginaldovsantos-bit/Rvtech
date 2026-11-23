@@ -1,0 +1,55 @@
+name: Build RVTEC 1.6.5 com Biometria
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/build-rvtec-165-biometria.yml'
+      - 'scripts/patch-rvtec-165-biometria.py'
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Baixar fonte RVTEC
+        uses: actions/checkout@v4
+      - name: Preparar fonte 1.6.4
+        run: |
+          unzip -q RVTEC_1.6.2_ALERTA_OS_FONTE.zip
+          python3 scripts/patch-rvtec-163.py
+          python3 scripts/patch-rvtec-164.py
+      - name: Integrar login biométrico Android
+        run: |
+          python3 scripts/patch-rvtec-165-biometria.py
+          grep -q "versionName '1.6.5'" RVTEC_Android/app/build.gradle
+          grep -q "rvtecBiometricLogin" RVTEC_Android/app/src/main/assets/index.html
+          grep -q "authenticateBiometric" RVTEC_Android/app/src/main/java/com/rvtec/manutencao/MainActivity.java
+      - name: Configurar Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Configurar Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Compilar APK
+        working-directory: RVTEC_Android
+        run: gradle --no-daemon clean assembleDebug --stacktrace
+      - name: Validar APK
+        working-directory: RVTEC_Android
+        run: |
+          APK=app/build/outputs/apk/debug/app-debug.apk
+          test -s "$APK"
+          unzip -t "$APK"
+          sha256sum "$APK"
+          ls -lh "$APK"
+      - name: Publicar APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: RVTEC-1.6.5-APK-BIOMETRIA
+          path: RVTEC_Android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30
