@@ -1,0 +1,52 @@
+name: RVTEC 1.6.4 - teste de recuperação da IA
+
+on:
+  push:
+    branches: [ fix/rvtec-ai-regression-test ]
+    paths:
+      - '.github/workflows/rvtec-ai-recovery-test.yml'
+      - 'scripts/repair_rvtec_ai_164.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extrair e aplicar correções operacionais 1.6.3/1.6.4
+        run: |
+          set -euo pipefail
+          unzip -q RVTEC_1.6.2_ALERTA_OS_FONTE.zip
+          python3 scripts/patch-rvtec-163.py
+          python3 scripts/patch-rvtec-164.py
+      - name: Auditar e corrigir modelo Gemini da ponte nativa
+        run: python3 scripts/repair_rvtec_ai_164.py
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Compilar APK de teste
+        working-directory: RVTEC_Android
+        run: gradle assembleDebug --stacktrace
+      - name: Validar APK
+        working-directory: RVTEC_Android
+        run: |
+          set -euo pipefail
+          APK=app/build/outputs/apk/debug/app-debug.apk
+          test -s "$APK"
+          unzip -t "$APK"
+          sha256sum "$APK"
+          ls -lh "$APK"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: RVTEC-1.6.4-IA-RECUPERACAO-TESTE
+          path: RVTEC_Android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30
