@@ -67,3 +67,5 @@ jobs:
           retention-days: 30
 
 # Re-run after correcting Java bridge source insertion.
+
+# Rebuild after FragmentActivity compatibility correction.
