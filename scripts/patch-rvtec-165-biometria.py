@@ -11,7 +11,7 @@ def once(text, pattern, replacement, label, flags=0):
         repl = replacement
     else:
         def repl(match):
-            return re.sub(r"\\\\([1-9])", lambda backref: match.group(int(backref.group(1))), replacement)
+            return re.sub(r"\\([1-9])", lambda backref: match.group(int(backref.group(1))), replacement)
     out, n = re.subn(pattern, repl, text, count=1, flags=flags)
     if n != 1:
         raise SystemExit(f"Patch biometria abortado: {label}; ocorrências={n}")
