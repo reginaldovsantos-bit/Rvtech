@@ -29,3 +29,5 @@ jobs:
           path: diagnostico/firebase-appcheck.txt
           if-no-files-found: error
           retention-days: 7
+
+# Capture exact Firebase AI and App Check source sections.
