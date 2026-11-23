@@ -65,10 +65,10 @@ jobs:
           p = Path('app/build.gradle')
           s = p.read_text()
           if 'buildFeatures' not in s:
-              marker = "android {\\n"
+              marker = "android {" + chr(10)
               if marker not in s:
                   raise SystemExit('Bloco android não encontrado; nenhuma alteração aplicada')
-              s = s.replace(marker, marker + "    buildFeatures { buildConfig true }\\n", 1)
+              s = s.replace(marker, marker + "    buildFeatures { buildConfig true }" + chr(10), 1)
           elif 'buildConfig true' not in s:
               raise SystemExit('buildFeatures já existe, mas buildConfig não está habilitado; revisão manual necessária')
           p.write_text(s)
