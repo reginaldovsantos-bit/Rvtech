@@ -1,5 +1,6 @@
 name: RVTEC 1.6.4 - teste de recuperação da IA
 
+# Reexecução de validação do APK de teste.
 on:
   push:
     branches: [ fix/rvtec-ai-regression-test ]
