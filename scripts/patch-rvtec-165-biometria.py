@@ -21,6 +21,11 @@ j = JAVA.read_text(encoding="utf-8")
 h = HTML.read_text(encoding="utf-8")
 g = GRADLE.read_text(encoding="utf-8")
 
+# BiometricPrompt requires FragmentActivity, not android.app.Activity.
+if "import androidx.fragment.app.FragmentActivity;" not in j:
+    j = j.replace("package com.rvtec.manutencao;\\n", "package com.rvtec.manutencao;\\n\\nimport androidx.fragment.app.FragmentActivity;\\n", 1)
+j = j.replace("public class MainActivity extends Activity {", "public class MainActivity extends FragmentActivity {", 1)
+
 # Confirma que a fonte-base é a aplicação Android nativa com WebView e bridge Gemini.
 for token in ["class MainActivity", "class GeminiBridge", 'addJavascriptInterface(new GeminiBridge(), "RVTECNative")']:
     if token not in j:
