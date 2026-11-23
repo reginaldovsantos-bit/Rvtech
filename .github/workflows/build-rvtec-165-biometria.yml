@@ -37,7 +37,11 @@ jobs:
           gradle-version: '8.9'
       - name: Compilar APK
         working-directory: RVTEC_Android
-        run: gradle --no-daemon clean assembleDebug --stacktrace
+        run: |
+          set +e
+          gradle --no-daemon clean assembleDebug --stacktrace 2>&1 | tee ../gradle-build.log
+          result=${PIPESTATUS[0]}
+          exit "$result"
       - name: Validar APK
         working-directory: RVTEC_Android
         run: |
@@ -46,6 +50,14 @@ jobs:
           unzip -t "$APK"
           sha256sum "$APK"
           ls -lh "$APK"
+      - name: Publicar log da compilação
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: RVTEC-1.6.5-LOG-COMPILACAO
+          path: gradle-build.log
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Publicar APK
         uses: actions/upload-artifact@v4
         with:
