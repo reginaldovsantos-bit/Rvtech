@@ -5,6 +5,7 @@ on:
     branches: [ main ]
     paths:
       - '.github/workflows/diagnostico-firebase-appcheck.yml'
+      - 'scripts/diagnose_firebase_appcheck.py'
 permissions:
   contents: read
 jobs:
@@ -18,31 +19,10 @@ jobs:
           unzip -q 'RVTEC_1.6.2_ALERTA_OS_FONTE.zip'
           python3 scripts/patch-rvtec-163.py
           python3 scripts/patch-rvtec-164.py
-      - name: Registrar configuração Firebase e App Check
+      - name: Inspecionar integração Firebase
         run: |
           mkdir -p diagnostico
-          {
-            echo '=== GRADLE FIREBASE / APP CHECK ==='
-            grep -RniE 'firebase-bom|firebase-appcheck|firebase-ai|firebase-vertex|playintegrity|debugprovider' RVTEC_Android --include='*.gradle' --include='*.gradle.kts' || true
-            echo '=== MAIN ACTIVITY FIREBASE / APP CHECK ==='
-            grep -nE 'FirebaseApp|FirebaseAppCheck|AppCheck|PlayIntegrity|DebugAppCheck|onCreate|initializeApp|GeminiBridge' RVTEC_Android/app/src/main/java/com/rvtec/manutencao/MainActivity.java || true
-            echo '=== MANIFEST PACKAGE ==='
-            grep -nE 'applicationId|namespace|versionCode|versionName' RVTEC_Android/app/build.gradle
-            echo '=== GOOGLE SERVICES PROJECT ==='
-            python3 - <<'PY'
-            import json
-            p='RVTEC_Android/app/google-services.json'
-            try:
-                d=json.load(open(p))
-                print('project_id=',d.get('project_info',{}).get('project_id'))
-                for c in d.get('client',[]):
-                    print('package=',c.get('client_info',{}).get('android_client_info',{}).get('package_name'))
-                    print('oauth_clients=',len(c.get('oauth_client',[])))
-            except Exception as e: print('google-services.json:',repr(e))
-            PY
-            echo '=== AI REQUEST IMPLEMENTATION ==='
-            grep -nE 'FirebaseAI|FirebaseVertexAI|GenerativeModel|generateContent|Gemini|generateContent|appCheck|APP_CHECK' RVTEC_Android/app/src/main/java/com/rvtec/manutencao/MainActivity.java RVTEC_Android/app/src/main/assets/index.html | head -160 || true
-          } | tee diagnostico/firebase-appcheck.txt
+          python3 scripts/diagnose_firebase_appcheck.py | tee diagnostico/firebase-appcheck.txt
       - uses: actions/upload-artifact@v4
         with:
           name: RVTEC-DIAGNOSTICO-FIREBASE-APPCHECK
