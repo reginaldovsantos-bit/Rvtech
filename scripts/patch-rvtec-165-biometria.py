@@ -19,9 +19,9 @@ h = HTML.read_text(encoding="utf-8")
 g = GRADLE.read_text(encoding="utf-8")
 
 # Confirma que a fonte-base é a aplicação Android nativa com WebView e bridge Gemini.
-for token in ["class MainActivity extends FragmentActivity", "class GeminiBridge", 'addJavascriptInterface(new GeminiBridge(), "RVTECNative")']:
+for token in ["class MainActivity", "class GeminiBridge", 'addJavascriptInterface(new GeminiBridge(), "RVTECNative")']:
     if token not in j:
-        raise SystemExit(f"Fonte Android incompatível: {token}")
+        raise SystemExit(f"Fonte Android incompatível: {token}. Início da fonte:\\n" + "\\n".join(j.splitlines()[:80]))
 for token in ['id="loginButton"', "async function rvtecLogin", "rvtecAuth.signInWithEmailAndPassword"]:
     if token not in h:
         raise SystemExit(f"Tela de login incompatível: {token}")
