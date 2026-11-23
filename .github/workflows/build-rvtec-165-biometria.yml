@@ -69,3 +69,5 @@ jobs:
 # Re-run after correcting Java bridge source insertion.
 
 # Rebuild after FragmentActivity compatibility correction.
+
+# Rebuild with the FragmentActivity import insertion fix.
