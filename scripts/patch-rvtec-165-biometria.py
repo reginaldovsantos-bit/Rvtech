@@ -161,7 +161,7 @@ if "public void saveBiometricCredentials(String email, String password)" not in 
     j = once(j, r"(private class GeminiBridge\s*\{)", r"\1\n" + bridge, "ponte JavaScript/Android")
 
 if "androidx.biometric:biometric" not in g:
-    g = once(g, r"(dependencies\s*\{)", r"\1\n    implementation 'androidx.biometric:biometric:1.1.0'\n    implementation 'androidx.fragment:fragment:1.8.5'", "dependências AndroidX")
+    g = once(g, r"(dependencies\s*\{)", lambda m: m.group(1) + "\n    implementation 'androidx.biometric:biometric:1.1.0'\n    implementation 'androidx.fragment:fragment:1.8.5'", "dependências AndroidX")
 # Versão de entrega nova, sem sobrescrever os artefatos anteriores.
 if "versionName '1.6.4'" in g:
     g = g.replace("versionCode 164", "versionCode 165", 1).replace("versionName '1.6.4'", "versionName '1.6.5'", 1)
