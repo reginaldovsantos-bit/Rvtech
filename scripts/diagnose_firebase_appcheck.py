@@ -22,3 +22,16 @@ try:
   print("package =",c.get("client_info",{}).get("android_client_info",{}).get("package_name"))
   print("oauth_clients =",len(c.get("oauth_client",[])))
 except Exception as e: print("ERROR",repr(e))
+
+print("\\n=== RELEVANT SOURCE BLOCKS ===")
+def block(path,start,end):
+ try: lines=path.read_text(encoding="utf-8").splitlines()
+ except Exception as e: print("READ ERROR",e); return
+ print(f"--- {path}:{start}-{end} ---")
+ for n in range(start,min(end,len(lines))+1):
+  print(f"{n}: {lines[n-1]}")
+block(root/"app/src/main/java/com/rvtec/manutencao/MainActivity.java",1,85)
+block(root/"app/src/main/java/com/rvtec/manutencao/MainActivity.java",150,255)
+block(root/"app/src/main/assets/index.html",430,465)
+block(root/"app/src/main/assets/index.html",930,980)
+block(root/"app/src/main/assets/index.html",1275,1335)
