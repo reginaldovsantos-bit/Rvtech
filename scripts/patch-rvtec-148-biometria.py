@@ -57,7 +57,7 @@ methods = r'''
     private void biometricEnrollmentResult(String msg){if(webView!=null)runOnUiThread(()->webView.evaluateJavascript("window.rvtecBiometricEnrollmentResult("+JSONObject.quote(msg)+");",null));}
     private void biometricLoginResult(String email,String pass,String msg){if(webView==null)return;String js="window.rvtecBiometricResult("+JSONObject.quote(email==null?"":email)+","+JSONObject.quote(pass==null?"":pass)+","+JSONObject.quote(msg==null?"":msg)+");";runOnUiThread(()->{if(webView!=null)webView.evaluateJavascript(js,null);});}
     private BiometricPrompt makePrompt(BiometricPrompt.AuthenticationCallback cb){return new BiometricPrompt(this,biometricExecutor,cb);}
-    private BiometricPrompt.PromptInfo promptInfo(String subtitle){return new BiometricPrompt.PromptInfo.Builder().setTitle("RVTEC").setSubtitle(subtitle).setNegativeButtonText("Cancelar").build();}
+    private BiometricPrompt.PromptInfo promptInfo(String subtitle){return new BiometricPrompt.PromptInfo.Builder().setTitle("RVTEC").setSubtitle(subtitle).setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG).setNegativeButtonText("Cancelar").build();}
     private void enrollBiometricCredentials(String email,String password){
         if(!biometricHardwareReady()){biometricEnrollmentResult("Biometria forte não configurada. Continue com e-mail e senha.");return;}
         try{Cipher c=Cipher.getInstance("AES/GCM/NoPadding");c.init(Cipher.ENCRYPT_MODE,biometricKey());
