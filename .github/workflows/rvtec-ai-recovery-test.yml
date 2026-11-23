@@ -36,13 +36,22 @@ jobs:
       - name: Compilar APK de teste
         working-directory: RVTEC_Android
         run: gradle assembleDebug --stacktrace
-      - name: Validar APK
+      - name: Validar APK e modelo embarcado
         working-directory: RVTEC_Android
         run: |
           set -euo pipefail
           APK=app/build/outputs/apk/debug/app-debug.apk
           test -s "$APK"
           unzip -t "$APK"
+          : > /tmp/rvtec-dex-strings.txt
+          while IFS= read -r dex; do
+            unzip -p "$APK" "$dex" | strings >> /tmp/rvtec-dex-strings.txt
+          done < <(unzip -Z1 "$APK" | grep -E '^classes[0-9]*\.dex$')
+          grep -q 'gemini-2.5-flash' /tmp/rvtec-dex-strings.txt
+          if grep -q 'gemini-4-hydrogen' /tmp/rvtec-dex-strings.txt; then
+            echo 'ERRO: modelo Gemini legado permaneceu no APK.'
+            exit 1
+          fi
           sha256sum "$APK"
           ls -lh "$APK"
       - uses: actions/upload-artifact@v4
