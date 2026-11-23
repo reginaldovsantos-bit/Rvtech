@@ -71,3 +71,5 @@ jobs:
 # Rebuild after FragmentActivity compatibility correction.
 
 # Rebuild with the FragmentActivity import insertion fix.
+
+# Retry after correcting newline insertion in FragmentActivity import.
