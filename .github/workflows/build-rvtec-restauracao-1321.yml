@@ -55,6 +55,27 @@ jobs:
           grep -R -n "RVTECNative" app/src/main
           grep -R -n -E "FirebaseAI|Firebase AI|AppCheck|PlayIntegrity" app/src/main || true
 
+      - name: Corrigir geração do BuildConfig no projeto extraído
+        working-directory: buildsrc/RVTEC_Android
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('app/build.gradle')
+          s = p.read_text()
+          if 'buildFeatures' not in s:
+              marker = "android {\\n"
+              if marker not in s:
+                  raise SystemExit('Bloco android não encontrado; nenhuma alteração aplicada')
+              s = s.replace(marker, marker + "    buildFeatures { buildConfig true }\\n", 1)
+          elif 'buildConfig true' not in s:
+              raise SystemExit('buildFeatures já existe, mas buildConfig não está habilitado; revisão manual necessária')
+          p.write_text(s)
+          assert 'buildConfig true' in p.read_text()
+          print('BuildConfig habilitado explicitamente para AGP 8+')
+          PY
+
       - name: Compilar APK de referência
         working-directory: buildsrc/RVTEC_Android
         run: gradle assembleDebug
