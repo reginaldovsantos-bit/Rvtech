@@ -5,7 +5,6 @@ on:
 
 permissions:
   contents: read
-  actions: write
 
 jobs:
   restore-reference:
@@ -39,9 +38,9 @@ jobs:
           set -euo pipefail
           test -f app/build.gradle
           test -f app/src/main/AndroidManifest.xml
-          test -f app/src/main/java
+          test -d app/src/main/java
           grep -R -n "RVTECNative" app/src/main
-          grep -R -n "FirebaseAI\|Firebase AI\|AppCheck\|PlayIntegrity" app/src/main || true
+          grep -R -n -E "FirebaseAI|Firebase AI|AppCheck|PlayIntegrity" app/src/main || true
 
       - name: Compilar APK de referência
         working-directory: buildsrc/RVTEC_Android
