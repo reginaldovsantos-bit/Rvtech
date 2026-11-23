@@ -18,7 +18,6 @@ jobs:
           unzip -q 'RVTEC_1.6.2_ALERTA_OS_FONTE.zip'
           python3 scripts/patch-rvtec-163.py
           python3 scripts/patch-rvtec-164.py
-          python3 scripts/patch-rvtec-165-biometria.py
       - name: Registrar configuração Firebase e App Check
         run: |
           mkdir -p diagnostico
