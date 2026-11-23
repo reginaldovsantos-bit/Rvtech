@@ -1,0 +1,100 @@
+name: Audit and build RVTEC 1.1 isolated
+
+on:
+  push:
+    branches:
+      - audit/rvtec-1.1-base
+    paths:
+      - '.github/workflows/audit-rvtec-11.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout isolated audit branch
+        uses: actions/checkout@v4
+
+      - name: Inventory source archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f 'RVTEC_Android_v1.1_LOGIN_IA.zip'
+          unzip -l 'RVTEC_Android_v1.1_LOGIN_IA.zip' > archive-inventory.txt
+          mkdir -p rvtec11-source
+          unzip -q 'RVTEC_Android_v1.1_LOGIN_IA.zip' -d rvtec11-source
+          echo '--- ARCHIVE INVENTORY ---'
+          cat archive-inventory.txt
+          echo '--- PROJECT FILES ---'
+          find rvtec11-source -maxdepth 7 -type f | sort | head -300
+
+      - name: Static source audit
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          root=Path("rvtec11-source")
+          out=[]
+          for p in root.rglob("*"):
+              if not p.is_file() or p.suffix.lower() not in {".html",".js",".java",".kt",".gradle",".kts",".xml",".json"}:
+                  continue
+              try: s=p.read_text(encoding="utf-8")
+              except Exception: continue
+              if p.name.lower() in {"index.html","main.html"} or p.suffix.lower() in {".java",".kt"}:
+                  out.append(f"FILE {p} bytes={len(s.encode())}")
+                  if p.suffix.lower()==".html":
+                      tabs=re.findall(r'<button[^>]*(?:data-tab|onclick)[^>]*>(.*?)</button>',s,re.I|re.S)
+                      out.append("TABS: "+" | ".join(re.sub(r'<[^>]+>',' ',x).strip() for x in tabs))
+                      ids=re.findall(r'<(?:section|div)[^>]+id=["\']([^"\']+)["\']',s,re.I)
+                      out.append("IDS: "+", ".join(ids[:100]))
+                      funcs=sorted(set(re.findall(r'function\s+([\w$]+)\s*\(',s)))
+                      out.append("FUNCTIONS: "+", ".join(funcs))
+                  out.append("MARKERS: "+", ".join(f"{k}={len(re.findall(k,s,re.I))}" for k in ["firebase","getGenerativeModel","FirebaseAI","Gemini","localStorage","indexedDB","MTBF","MTTR","estoque","preventiva","paradas","ordens","memoriaTecnica","configuracoes","QRCode"]))
+          Path("rvtec11-static-audit.txt").write_text("\n".join(out),encoding="utf-8")
+          print("\n".join(out))
+          PY
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Locate Android project and compile
+        shell: bash
+        run: |
+          set +e
+          SETTINGS=$(find rvtec11-source -type f \( -name settings.gradle -o -name settings.gradle.kts \) -print -quit)
+          if [ -z "$SETTINGS" ]; then
+            echo "Não foi encontrado settings.gradle/settings.gradle.kts" | tee rvtec11-build.log
+            echo "BUILD_EXIT_CODE=2" | tee -a rvtec11-build.log
+            exit 0
+          fi
+          PROJECT_DIR=$(dirname "$SETTINGS")
+          echo "PROJECT_DIR=$PROJECT_DIR" | tee rvtec11-build.log
+          gradle -p "$PROJECT_DIR" assembleDebug --no-daemon --stacktrace 2>&1 | tee -a rvtec11-build.log
+          CODE=${PIPESTATUS[0]}
+          echo "BUILD_EXIT_CODE=$CODE" | tee -a rvtec11-build.log
+          exit 0
+
+      - name: Publish 1.1 audit and build results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: RVTEC-1.1-AUDIT-AND-BUILD
+          path: |
+            archive-inventory.txt
+            rvtec11-static-audit.txt
+            rvtec11-build.log
+            rvtec11-source/**/build/outputs/apk/debug/*.apk
+          if-no-files-found: warn
+          retention-days: 14
