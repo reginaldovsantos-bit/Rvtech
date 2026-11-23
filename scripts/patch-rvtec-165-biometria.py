@@ -7,7 +7,9 @@ HTML = ROOT / "app/src/main/assets/index.html"
 GRADLE = ROOT / "app/build.gradle"
 
 def once(text, pattern, replacement, label, flags=0):
-    out, n = re.subn(pattern, lambda m: replacement, text, count=1, flags=flags)
+    def expand(match):
+        return re.sub(r"\\\\([1-9])", lambda backref: match.group(int(backref.group(1))), replacement)
+    out, n = re.subn(pattern, expand, text, count=1, flags=flags)
     if n != 1:
         raise SystemExit(f"Patch biometria abortado: {label}; ocorrências={n}")
     return out
