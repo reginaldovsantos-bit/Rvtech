@@ -54,8 +54,27 @@ jobs:
                       funcs=sorted(set(re.findall(r'function\s+([\w$]+)\s*\(',s)))
                       out.append("FUNCTIONS: "+", ".join(funcs))
                   out.append("MARKERS: "+", ".join(f"{k}={len(re.findall(k,s,re.I))}" for k in ["firebase","getGenerativeModel","FirebaseAI","Gemini","localStorage","indexedDB","MTBF","MTTR","estoque","preventiva","paradas","ordens","memoriaTecnica","configuracoes","QRCode"]))
-          Path("rvtec11-static-audit.txt").write_text("\n".join(out),encoding="utf-8")
-          print("\n".join(out))
+          html=root/"RVTEC_Android/app/src/main/assets/index.html"
+          if html.exists():
+              source=html.read_text(encoding="utf-8")
+              for name in ["rvtecAskAI","rvtecToggleAI","syncCloud","pushCloud","rvtecLogin","applyPermissions","render"]:
+                  m=re.search(r"function\\s+"+re.escape(name)+r"\\s*\\([^)]*\\)\\s*\\{",source)
+                  if m:
+                      depth=0
+                      finish=None
+                      for i in range(m.end()-1,len(source)):
+                          if source[i]=="{": depth+=1
+                          elif source[i]=="}":
+                              depth-=1
+                              if depth==0:
+                                  finish=i+1
+                                  break
+                      out.append("\\n--- FUNCTION "+name+" ---\\n"+source[m.start():finish][:9000])
+          for p in [root/"RVTEC_Android/app/build.gradle",root/"RVTEC_Android/app/src/main/java/com/rvtec/manutencao/MainActivity.java",root/"RVTEC_Android/app/src/main/AndroidManifest.xml",root/"RVTEC_Android/LEIA-ME.txt",root/"RVTEC_Android/RVTEC_FIRESTORE_RULES.txt"]:
+              if p.exists():
+                  out.append("\\n--- FILE "+str(p)+" ---\\n"+p.read_text(encoding="utf-8",errors="replace")[:10000])
+          Path("rvtec11-static-audit.txt").write_text("\\n".join(out),encoding="utf-8")
+          print("\\n".join(out))
           PY
 
       - name: Set up Java 17
@@ -96,5 +115,11 @@ jobs:
             rvtec11-static-audit.txt
             rvtec11-build.log
             rvtec11-source/**/build/outputs/apk/debug/*.apk
+            rvtec11-source/RVTEC_Android/app/src/main/assets/index.html
+            rvtec11-source/RVTEC_Android/app/src/main/java/com/rvtec/manutencao/MainActivity.java
+            rvtec11-source/RVTEC_Android/app/build.gradle
+            rvtec11-source/RVTEC_Android/app/src/main/AndroidManifest.xml
+            rvtec11-source/RVTEC_Android/LEIA-ME.txt
+            rvtec11-source/RVTEC_Android/RVTEC_FIRESTORE_RULES.txt
           if-no-files-found: warn
           retention-days: 14
