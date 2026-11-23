@@ -161,7 +161,7 @@ if "public void saveBiometricCredentials(String email, String password)" not in 
             });
         }
 '''
-    j = once(j, r"(private class GeminiBridge\s*\{)", r"\1\n" + bridge, "ponte JavaScript/Android")
+    j = once(j, r"(private class GeminiBridge\s*\{)", "\\1\n" + bridge, "ponte JavaScript/Android")
 
 if "androidx.biometric:biometric" not in g:
     g = once(g, r"(dependencies\s*\{)", lambda m: m.group(1) + "\n    implementation 'androidx.biometric:biometric:1.1.0'\n    implementation 'androidx.fragment:fragment:1.8.5'", "dependências AndroidX")
