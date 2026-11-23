@@ -35,3 +35,10 @@ block(root/"app/src/main/java/com/rvtec/manutencao/MainActivity.java",150,255)
 block(root/"app/src/main/assets/index.html",430,465)
 block(root/"app/src/main/assets/index.html",930,980)
 block(root/"app/src/main/assets/index.html",1275,1335)
+
+print("\\n=== FIREBASE SCRIPT TAGS ===")
+try:
+ for i,line in enumerate((root/"app/src/main/assets/index.html").read_text(encoding="utf-8").splitlines(),1):
+  if "<script" in line.lower() and ("firebase" in line.lower() or "gstatic" in line.lower()):
+   print(f"{i}: {line[:1000]}")
+except Exception as e: print("SCRIPT SCAN ERROR",repr(e))
