@@ -90,18 +90,16 @@ jobs:
           )
           final_html=final_html.replace('Aguardando configuração segura do serviço de IA.','IA RVTEC pronta para receber sua pergunta.')
           html_path.write_text(final_html,encoding='utf-8')
-          # Em Debug, solicitar o token e registrá-lo no Logcat para cadastro seguro na allowlist do App Check.
-          j=java.read_text()
-          if 'import android.util.Log;' not in j:
-              j=j.replace('import android.os.Bundle;','import android.os.Bundle;\nimport android.util.Log;')
-          marker='''            GenerativeModel model = FirebaseAI.getInstance(app, GenerativeBackend.googleAI())'''
+          # O SDK DebugAppCheckProvider registra o DEBUG SECRET no Logcat (tag DebugAppCheckProvider).
+          # Não registrar JWT App Check: ele não é o segredo que deve ser cadastrado na allowlist.
+          if 'import android.util.Log;' in j:
+              j=j.replace('import android.util.Log;\\n','')
           debug_block='''            if (BuildConfig.DEBUG) {
-                appCheck.getAppCheckToken(false)
-                        .addOnSuccessListener(token -> Log.i("RVTEC_APP_CHECK", "DEBUG_TOKEN=" + token.getToken()))
-                        .addOnFailureListener(error -> Log.e("RVTEC_APP_CHECK", "Falha ao obter token Debug do App Check", error));
+                Log.i("RVTEC_APP_CHECK", "Debug provider ativo; consulte DebugAppCheckProvider no Logcat para obter o debug secret.");
             }
             GenerativeModel model = FirebaseAI.getInstance(app, GenerativeBackend.googleAI())'''
-          if 'DEBUG_TOKEN=' not in j:
+          marker='''            GenerativeModel model = FirebaseAI.getInstance(app, GenerativeBackend.googleAI())'''
+          if 'Debug provider ativo' not in j:
               if marker not in j: raise SystemExit('Ponto de inicialização Firebase AI Logic não encontrado')
               j=j.replace(marker,debug_block,1)
           java.write_text(j)
