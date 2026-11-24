@@ -5,6 +5,7 @@ plugins {
     id 'com.google.gms.google-services'
 }
 android {
+    buildFeatures { buildConfig true }
     namespace 'com.rvtec.v2'
     compileSdk 35
     compileOptions {
