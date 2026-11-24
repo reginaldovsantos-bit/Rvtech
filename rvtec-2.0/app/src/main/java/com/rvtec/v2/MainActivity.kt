@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.rvtec.v2.data.MaintenanceRepository
+import com.rvtec.v2.data.FirebaseServices
 import com.rvtec.v2.domain.*
 
 private val pages = listOf("Início", "Máquinas", "Paradas", "Ordens de serviço", "Apontamentos", "Memória Técnica IA")
@@ -19,6 +20,8 @@ private val pages = listOf("Início", "Máquinas", "Paradas", "Ordens de serviç
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val firebaseServices = FirebaseServices(applicationContext)
+        firebaseServices.installAppCheck()
         val repository = MaintenanceRepository(applicationContext)
         setContent {
             MaterialTheme {
