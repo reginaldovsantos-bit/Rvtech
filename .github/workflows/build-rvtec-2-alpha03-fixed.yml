@@ -1,0 +1,43 @@
+name: Build RVTEC 2.0 Alpha 03 - package fix
+
+on:
+  push:
+    branches:
+      - rebuild/rvtec-2.0-foundation
+    paths:
+      - 'rvtec-2.0/**'
+      - '.github/workflows/build-rvtec-2-alpha03-fixed.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Run unit tests and build debug APK
+        working-directory: rvtec-2.0
+        run: gradle testDebugUnitTest assembleDebug --stacktrace
+
+      - name: Upload corrected APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: rvtec-2-alpha03-fixed
+          path: rvtec-2.0/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 90
