@@ -43,12 +43,12 @@ fun TechnicalAiScreen() {
                     try {
                         answer = service.diagnose(question.trim())
                     } catch (e: Exception) {
-                        error = when {
-                            e.message.orEmpty().contains("Firebase", ignoreCase = true) ||
-                                e.message.orEmpty().contains("CONFIGURATION_NOT_FOUND", ignoreCase = true) ->
-                                "Firebase ainda não está configurado para esta versão do RVTEC. É necessário registrar o pacote instalado no Firebase, adicionar o google-services.json correto e habilitar Firebase AI Logic."
-                            else -> e.message ?: "Falha ao consultar a IA. Verifique a conexão e tente novamente."
-                        }
+                        // Preserve the original failure: Firebase/network/App Check/model errors
+                        // must not all be mislabeled as a missing google-services.json.
+                        val detail = e.localizedMessage
+                            ?.takeIf { it.isNotBlank() }
+                            ?: e.javaClass.simpleName
+                        error = "Não foi possível consultar o Gemini. Detalhe técnico: $detail"
                     } finally {
                         loading = false
                     }
