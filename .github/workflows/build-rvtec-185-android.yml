@@ -1,7 +1,7 @@
 name: Build RVTEC Android 1.8.5 integrado
 on:
   push:
-    branches: [ main, audit/rvtec-appcheck-root-cause ]
+    branches: [ main, audit/rvtec-appcheck-root-cause, fix/rvtec-1.8.6-gemini-model ]
     paths:
       - '.github/workflows/build-rvtec-185-android.yml'
       - 'scripts/patch_appcheck_runtime_diagnostic.py'
@@ -62,8 +62,8 @@ jobs:
           # Atualizar versão do APK sem alterar applicationId/assinatura/config Firebase.
           gradle=root/'app/build.gradle'
           g=gradle.read_text()
-          g=re.sub(r'versionCode\s+\d+', 'versionCode 7', g, count=1)
-          g=re.sub(r"versionName\s+['\"][^'\"]+['\"]", "versionName '1.8.5'", g, count=1)
+          g=re.sub(r'versionCode\s+\d+', 'versionCode 8', g, count=1)
+          g=re.sub(r"versionName\s+['\"][^'\"]+['\"]", "versionName '1.8.6'", g, count=1)
           # AGP 8 desativa BuildConfig por padrão; MainActivity usa BuildConfig.DEBUG.
           if 'buildFeatures' not in g:
               g=re.sub(r'android\s*\{', 'android {\n    buildFeatures { buildConfig true }', g, count=1)
@@ -72,7 +72,7 @@ jobs:
           # Usar o modelo estável solicitado na linha RVTEC: Gemini 2.5 Flash.
           java=root/'app/src/main/java/com/rvtec/manutencao/MainActivity.java'
           j=java.read_text()
-          j=j.replace('"gemini-4-hydrogen"','"gemini-2.5-flash"')
+          j=j.replace('"gemini-4-hydrogen"','"gemini-3.8-flash"')
           java.write_text(j)
           # Corrigir duplicidade real: o HTML 1.8.5 continha duas pontes Gemini globais.
           # Manter uma única implementação para evitar sobrescrita de estado/fila de requisições.
@@ -111,7 +111,7 @@ jobs:
           cd /tmp/android/RVTEC_Android
           echo '--- CHECK PREVIEW / GEMINI / FIREBASE ---'
           ! grep -q 'window.RVTEC_HTML_PREVIEW=true' app/src/main/assets/index.html
-          grep -nE 'firebaseConfig|rvtecGeminiGenerate|RVTECNative|rvtecPhotoSelected|gemini-2.5-flash' app/src/main/assets/index.html app/src/main/java/com/rvtec/manutencao/MainActivity.java app/build.gradle
+          grep -nE 'firebaseConfig|rvtecGeminiGenerate|RVTECNative|rvtecPhotoSelected|gemini-3.8-flash' app/src/main/assets/index.html app/src/main/java/com/rvtec/manutencao/MainActivity.java app/build.gradle
           echo '--- CHECK JAVASCRIPT SYNTAX ---'
           python3 - <<'PY'
           from html.parser import HTMLParser
@@ -136,15 +136,15 @@ jobs:
           gradle --version
           gradle --no-daemon clean assembleDebug
           mkdir -p "$GITHUB_WORKSPACE/output"
-          cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/output/RVTEC-1.8.5-debug.apk"
+          cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/output/RVTEC-1.8.6-debug.apk"
           cd "$GITHUB_WORKSPACE"
-          cp /tmp/android/RVTEC_Android/app/src/main/assets/index.html output/index-1.8.5-integrado.html
+          cp /tmp/android/RVTEC_Android/app/src/main/assets/index.html output/index-1.8.6-integrado.html
           # Pacote temporário de auditoria: permite inspecionar a fonte Android exata que gerou o APK.
           cd /tmp/android
           zip -qr "$GITHUB_WORKSPACE/output/RVTEC-Android-source-audit.zip" RVTEC_Android
           cd "$GITHUB_WORKSPACE"
           {
-            echo "RVTEC 1.8.5 - AUDITORIA APP CHECK / FIREBASE AI LOGIC"
+            echo "RVTEC 1.8.6 - AUDITORIA APP CHECK / FIREBASE AI LOGIC"
             echo "Commit: $GITHUB_SHA"
             echo "Data UTC: $(date -u +%FT%TZ)"
             echo
@@ -177,6 +177,6 @@ jobs:
       - name: Publicar APK e HTML integrado
         uses: actions/upload-artifact@v4
         with:
-          name: RVTEC-1.8.5-Android-Firebase-Gemini
+          name: RVTEC-1.8.6-Android-Firebase-Gemini
           path: output/*
           if-no-files-found: error
