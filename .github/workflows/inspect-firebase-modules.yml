@@ -1,0 +1,29 @@
+name: Inspecionar módulos reais Firebase e Gemini
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/inspect-firebase-modules.yml'
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extrair inicialização Firebase e IA das bases
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/a /tmp/b
+          unzip -q RVTEC_Android_v1.4.0_FOTO_IA_FONTE.zip -d /tmp/a
+          unzip -q RVTEC_1.8.5_SEM_BOTAO_MENU.zip -d /tmp/b
+          for f in /tmp/a/RVTEC_Android/app/src/main/assets/index.html /tmp/b/index.html; do
+            echo "===== $f ====="
+            grep -nE 'firebaseConfig|initializeApp|firebase-app|firebase-auth|firebase-firestore|firebase-ai|rvtecGeminiReady|rvtecGeminiGenerate|rvtecGeminiNativeResult|RVTECNative|RVTEC_HTML_PREVIEW|rvtecAskAI|rvtecAIEnabled' "$f" | tail -100 || true
+          done
+          echo '--- 1.4.0 AI HTML RANGE ---'
+          grep -n 'rvtecGeminiReady\|rvtecGeminiGenerate\|rvtecGeminiNativeResult' /tmp/a/RVTEC_Android/app/src/main/assets/index.html | head -30
+          echo '--- 1.8.5 AI TAIL ---'
+          sed -n '1320,1410p' /tmp/b/index.html
+          echo '--- ANDROID CONFIG ---'
+          cat /tmp/a/RVTEC_Android/app/google-services.json
