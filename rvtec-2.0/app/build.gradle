@@ -11,7 +11,8 @@ android {
         targetCompatibility JavaVersion.VERSION_17
     }
     defaultConfig {
-        applicationId 'com.rvtec.manutencao.v2'
+        // Unique application ID lets Alpha 03 install alongside older RVTEC builds.
+        applicationId 'com.rvtec.manutencao.v2.alpha03'
         minSdk 24
         targetSdk 35
         versionCode 1
