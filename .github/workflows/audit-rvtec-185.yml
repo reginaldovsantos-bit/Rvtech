@@ -1,0 +1,56 @@
+name: Auditoria técnica RVTEC 1.8.5
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/audit-rvtec-185.yml'
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Auditoria do pacote
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/rvtec185 && mkdir -p /tmp/rvtec185
+          unzip -q RVTEC_1.8.5_SEM_BOTAO_MENU.zip -d /tmp/rvtec185
+          echo '--- LEIA-ME ---'
+          cat /tmp/rvtec185/LEIA-ME.txt
+          echo '--- METADADOS HTML ---'
+          grep -nE '<title>|manifest|serviceWorker|firebase|Firebase|gemini|Gemini|generativelanguage|apiKey|appId|versionName|versionCode' /tmp/rvtec185/index.html | head -100 || true
+          echo '--- MANIFEST ---'
+          cat /tmp/rvtec185/manifest.webmanifest
+          echo '--- SERVICE WORKER ---'
+          cat /tmp/rvtec185/sw.js
+          echo '--- CONTAGEM DE SCRIPTS ---'
+          python3 - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+          class P(HTMLParser):
+              def __init__(self): super().__init__(); self.scripts=[]; self.cur=None
+              def handle_starttag(self,t,a):
+                  if t=='script': self.cur={'attrs':dict(a),'body':''}
+              def handle_data(self,d):
+                  if self.cur is not None: self.cur['body']+=d
+              def handle_endtag(self,t):
+                  if t=='script' and self.cur is not None: self.scripts.append(self.cur); self.cur=None
+          p=P(); p.feed(Path('/tmp/rvtec185/index.html').read_text())
+          print('total scripts:',len(p.scripts))
+          for i,s in enumerate(p.scripts):
+              if s['body'].strip():
+                  Path(f'/tmp/rvtec185/script-{i}.js').write_text(s['body'])
+                  print(i, 'inline bytes=',len(s['body']), 'type=',s['attrs'].get('type','classic'), 'src=',s['attrs'].get('src','inline'))
+          PY
+          echo '--- VALIDACAO SINTATICA JS INLINE ---'
+          for f in /tmp/rvtec185/script-*.js; do
+            [ -f "$f" ] || continue
+            node --check "$f" || exit 1
+          done
+          echo '--- ARQUIVOS ANDROID ---'
+          if find /tmp/rvtec185 -type f \( -name 'build.gradle' -o -name 'settings.gradle' -o -name 'gradlew' -o -name 'AndroidManifest.xml' \) | grep .; then
+            echo 'Android project files found'
+          else
+            echo 'NO_ANDROID_PROJECT_FILES'
+          fi
