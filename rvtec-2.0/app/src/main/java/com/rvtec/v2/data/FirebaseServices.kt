@@ -3,6 +3,7 @@ package com.rvtec.v2.data
 import android.content.Context
 import com.google.firebase.FirebaseApp
 import com.google.firebase.appcheck.FirebaseAppCheck
+import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory
 import com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderFactory
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -22,8 +23,12 @@ class FirebaseServices(context: Context) {
 
     fun installAppCheck(): Boolean {
         if (app == null) return false
-        FirebaseAppCheck.getInstance(app)
-            .installAppCheckProviderFactory(PlayIntegrityAppCheckProviderFactory.getInstance())
+        val providerFactory = if (com.rvtec.v2.BuildConfig.DEBUG) {
+            DebugAppCheckProviderFactory.getInstance()
+        } else {
+            PlayIntegrityAppCheckProviderFactory.getInstance()
+        }
+        FirebaseAppCheck.getInstance(app).installAppCheckProviderFactory(providerFactory)
         return true
     }
 
