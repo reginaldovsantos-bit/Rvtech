@@ -80,7 +80,7 @@ class MaintenanceRepository(context: Context? = null) {
     @Synchronized fun listMachines(): List<Machine> = machines.values.toList()
     @Synchronized fun listStops(): List<StopRecord> = stops.values.toList()
     @Synchronized fun listOrders(): List<WorkOrder> = orders.values.toList()
-    @Synchronized fun listEntries(): List<ExecutionEntry> = entries.values.toList()
+    @Synchronized fun listEntries(): List<ExecutionEntry> = entries.values.sortedBy { it.createdAt }
 
     @Synchronized fun registerStop(machineId: String, cause: String, now: Long = System.currentTimeMillis()): StopRecord {
         require(cause.isNotBlank()) { "Informe a causa da parada." }
@@ -96,13 +96,9 @@ class MaintenanceRepository(context: Context? = null) {
     @Synchronized fun openWorkOrder(machineId: String, title: String, description: String = "", stopId: String? = null, now: Long = System.currentTimeMillis()): WorkOrder {
         require(title.isNotBlank()) { "Informe o título da OS." }
         val machine = machines[machineId] ?: error("Máquina não encontrada.")
-        val activeOrder = orders.values.firstOrNull {
-            it.machineId == machineId &&
-                (it.status == WorkOrderStatus.OPEN || it.status == WorkOrderStatus.IN_PROGRESS)
-        }
-        check(activeOrder == null) {
-            "Já existe uma OS ativa para esta máquina: ${activeOrder?.title}. Reutilize a OS existente em vez de abrir outra."
-        }
+        // OS independentes podem coexistir na mesma máquina.
+        // A prevenção de duplicidade é feita pelo vínculo único da parada (stopId),
+        // validado abaixo; não pelo machineId isoladamente.
         val stop = stopId?.let { stops[it] ?: error("Parada não encontrada.") }
         if (stop != null) {
             require(stop.machineId == machineId) { "A parada pertence a outra máquina." }
