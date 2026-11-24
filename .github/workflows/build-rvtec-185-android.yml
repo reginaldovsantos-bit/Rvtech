@@ -16,6 +16,9 @@ jobs:
           distribution: temurin
           java-version: '17'
       - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
       - name: Montar interface 1.8.5 sobre base Android Firebase/Gemini
         run: |
           set -euo pipefail
@@ -64,6 +67,7 @@ jobs:
           java.write_text(j)
           print('HTML 1.8.5 integrado com Firebase compat + ponte Gemini nativa.')
           PY
+          cd /tmp/android/RVTEC_Android
           echo '--- CHECK PREVIEW / GEMINI / FIREBASE ---'
           ! grep -q 'window.RVTEC_HTML_PREVIEW=true' app/src/main/assets/index.html
           grep -nE 'firebaseConfig|rvtecGeminiGenerate|RVTECNative|rvtecPhotoSelected|gemini-2.5-flash' app/src/main/assets/index.html app/src/main/java/com/rvtec/manutencao/MainActivity.java app/build.gradle
@@ -87,7 +91,6 @@ jobs:
           PY
           for f in /tmp/rvtec-script-*.js; do node --check "$f"; done
           echo '--- BUILD DEBUG APK ---'
-          cd /tmp/android/RVTEC_Android
           chmod +x gradlew 2>/dev/null || true
           gradle --version
           gradle --no-daemon clean assembleDebug
