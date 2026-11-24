@@ -27,3 +27,9 @@ Fundação de interface criada. Ainda não é uma versão funcional de produçã
 ## Correção de integridade de OS
 
 Uma OS sem parada vinculada não pode marcar a máquina como liberada. A conclusão sem parada mantém o estado operacional existente; a liberação explícita permanece vinculada ao encerramento da parada. Testes unitários cobrem os dois caminhos.
+
+## Qualidade operacional — etapa seguinte
+- O registro de parada exige uma causa informada na interface; não é mais preenchido com uma descrição genérica.
+- O cálculo de indicadores recebe uma janela de observação explícita. Paradas abertas contam como indisponibilidade até o fim da janela; MTTR considera somente paradas encerradas no período; falhas são contadas pela data de início dentro da janela.
+- Os indicadores ainda não são exibidos no painel. Antes de publicar, será necessário definir calendário/horas programadas por máquina e validar os resultados com dados reais, evitando tratar 24 horas por dia como tempo produtivo.
+- Testes unitários cobrem disponibilidade, MTTR, MTBF, paradas em andamento e limites do período.
