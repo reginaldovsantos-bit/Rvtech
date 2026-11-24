@@ -85,4 +85,36 @@ class MaintenanceRepositoryTest {
         assertTrue(repo.listStops().isEmpty())
     }
 
+
+    @Test fun independentActiveOrdersCanCoexistOnSameMachine() {
+        val repo = MaintenanceRepository()
+        repo.addMachine(Machine("m1", "Extrusora 108"))
+        val first = repo.openWorkOrder("m1", "Falha no puxador")
+        val second = repo.openWorkOrder("m1", "Falha no bobinador")
+        assertNotEquals(first.id, second.id)
+        assertEquals(2, repo.listOrders().size)
+    }
+
+    @Test fun oneStopCannotBeLinkedToTwoOrders() {
+        val repo = MaintenanceRepository()
+        repo.addMachine(Machine("m1", "Extrusora 108"))
+        val stop = repo.registerStop("m1", "Falha no puxador")
+        repo.openWorkOrder("m1", "Reparo do puxador", stopId = stop.id)
+        try {
+            repo.openWorkOrder("m1", "Segunda OS para mesma parada", stopId = stop.id)
+            fail("Uma parada não pode ter duas OS")
+        } catch (_: IllegalArgumentException) { }
+        assertEquals(1, repo.listOrders().size)
+    }
+
+    @Test fun executionEntriesAreReturnedOldestFirst() {
+        val repo = MaintenanceRepository()
+        repo.addMachine(Machine("m1", "Extrusora 108"))
+        val order = repo.openWorkOrder("m1", "Inspeção")
+        repo.startWork(order.id)
+        repo.addExecution(order.id, "Técnico", "Etapa mais recente", now = 300)
+        repo.addExecution(order.id, "Técnico", "Etapa mais antiga", now = 100)
+        assertEquals(listOf("Etapa mais antiga", "Etapa mais recente"), repo.listEntries().map { it.description })
+    }
+
 }
