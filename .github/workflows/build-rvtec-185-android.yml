@@ -77,11 +77,12 @@ jobs:
           # Manter uma única implementação para evitar sobrescrita de estado/fila de requisições.
           html_path=root/'app/src/main/assets/index.html'
           final_html=html_path.read_text(encoding='utf-8')
-          bridge_pattern=r'<script>\\s*// Firebase AI Logic é chamado pelo SDK Android nativo.*?</script>'
+          bridge_pattern=r'<script>\s*// Firebase AI Logic é chamado pelo SDK Android nativo.*?</script>'
           bridges=re.findall(bridge_pattern,final_html,re.S)
           if len(bridges)<1: raise SystemExit('Ponte Gemini nativa não encontrada após integração')
           first_bridge=bridges[0]
-          final_html=re.sub(bridge_pattern,lambda m: first_bridge if m.group(0)==first_bridge else '',final_html,flags=re.S)
+          final_html=re.sub(bridge_pattern,'',final_html,flags=re.S)
+          final_html=final_html.replace('</body>',first_bridge+'\\n</body>')
           # Mensagem inicial antiga mencionava publicação de função/servidor, incompatível com Firebase AI Logic nativo.
           final_html=final_html.replace(
             'Olá! Sou a IA RVTEC. Posso ajudar com falhas, inversores, motores e manutenção. O servidor seguro está preparado e ficará disponível após a publicação da função pelo administrador.',
