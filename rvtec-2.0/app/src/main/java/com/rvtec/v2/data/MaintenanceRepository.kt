@@ -83,6 +83,7 @@ class MaintenanceRepository(context: Context? = null) {
     @Synchronized fun listEntries(): List<ExecutionEntry> = entries.values.toList()
 
     @Synchronized fun registerStop(machineId: String, cause: String, now: Long = System.currentTimeMillis()): StopRecord {
+        require(cause.isNotBlank()) { "Informe a causa da parada." }
         val machine = machines[machineId] ?: error("Máquina não encontrada.")
         check(machine.status == MachineStatus.RUNNING && machine.activeStopId == null) { "Máquina já está parada ou em manutenção." }
         val stop = StopRecord(UUID.randomUUID().toString(), machineId, now, cause = cause.trim())
