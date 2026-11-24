@@ -20,6 +20,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
+            @OptIn(ExperimentalMaterial3Api::class)
             MaterialTheme {
                 var selected by remember { mutableStateOf("Início") }
                 Scaffold(topBar = { TopAppBar(title = { Text("RVTEC 2.0") }) }) { padding ->
