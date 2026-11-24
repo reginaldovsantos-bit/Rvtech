@@ -95,7 +95,7 @@ jobs:
           if 'import android.util.Log;' in j:
               j=j.replace('import android.util.Log;\\n','')
           debug_block='''            if (BuildConfig.DEBUG) {
-                Log.i("RVTEC_APP_CHECK", "Debug provider ativo; consulte DebugAppCheckProvider no Logcat para obter o debug secret.");
+                android.util.Log.i("RVTEC_APP_CHECK", "Debug provider ativo; consulte DebugAppCheckProvider no Logcat para obter o debug secret.");
             }
             GenerativeModel model = FirebaseAI.getInstance(app, GenerativeBackend.googleAI())'''
           marker='''            GenerativeModel model = FirebaseAI.getInstance(app, GenerativeBackend.googleAI())'''
