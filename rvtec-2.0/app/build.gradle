@@ -15,7 +15,7 @@ android {
         minSdk 24
         targetSdk 35
         versionCode 1
-        versionName '2.0.0-alpha02'
+        versionName '2.0.0-alpha03'
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
     kotlinOptions { jvmTarget = '17' }
