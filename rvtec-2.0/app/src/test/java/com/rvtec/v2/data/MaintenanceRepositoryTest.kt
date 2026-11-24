@@ -41,6 +41,29 @@ class MaintenanceRepositoryTest {
         assertEquals(MachineStatus.RUNNING, repo.listMachines().single().status)
     }
 
+    @Test fun workOrderWithoutStopCannotReleaseMachine() {
+        val repo = MaintenanceRepository()
+        repo.addMachine(Machine("m1", "Extrusora 108"))
+        val order = repo.openWorkOrder("m1", "Inspeção preventiva")
+        repo.startWork(order.id)
+        try {
+            repo.completeWork(order.id, "Inspeção concluída", releaseMachine = true)
+            fail("Não deve liberar máquina sem parada vinculada")
+        } catch (_: IllegalArgumentException) { }
+        assertEquals(WorkOrderStatus.IN_PROGRESS, repo.listOrders().single().status)
+        assertEquals(MachineStatus.RUNNING, repo.listMachines().single().status)
+    }
+
+    @Test fun workOrderWithoutStopCanCompleteWithoutChangingMachineState() {
+        val repo = MaintenanceRepository()
+        repo.addMachine(Machine("m1", "Extrusora 108"))
+        val order = repo.openWorkOrder("m1", "Inspeção preventiva")
+        repo.startWork(order.id)
+        val completed = repo.completeWork(order.id, "Inspeção concluída", releaseMachine = false)
+        assertEquals(WorkOrderStatus.COMPLETED, completed.status)
+        assertEquals(MachineStatus.RUNNING, repo.listMachines().single().status)
+    }
+
     @Test fun stopCannotLinkToAnotherMachinesOrder() {
         val repo = MaintenanceRepository()
         repo.addMachine(Machine("m1", "Extrusora 108"))
