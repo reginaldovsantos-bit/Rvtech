@@ -1,0 +1,28 @@
+name: Inspecionar integração Android RVTEC
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/inspect-android-integration.yml'
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ler estrutura Android 1.4.0 e 1.3.3
+        run: |
+          set -euo pipefail
+          for z in RVTEC_Android_v1.4.0_FOTO_IA_FONTE.zip RVTEC_Android_v1.3.3_GEMINI_APPCHECK.zip; do
+            d="/tmp/$(basename "$z" .zip)"
+            mkdir -p "$d"; unzip -q "$z" -d "$d"
+            echo "===== $z FILES ====="
+            find "$d" -type f | sed "s#$d/##" | sort | head -100
+            echo "===== JAVA/KOTLIN/GRADLE ====="
+            find "$d" -type f \( -name '*.java' -o -name '*.kt' -o -name '*.gradle' -o -name 'gradle.properties' \) -print
+            while IFS= read -r f; do
+              echo "--- $f ---"
+              sed -n '1,240p' "$f"
+            done < <(find "$d" -type f \( -name '*.java' -o -name '*.kt' -o -name 'app/build.gradle' -o -name 'build.gradle' -o -name 'settings.gradle' \))
+          done
