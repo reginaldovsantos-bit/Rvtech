@@ -76,7 +76,7 @@ jobs:
               g=re.sub(r'android\s*\{', 'android {\n    buildFeatures { buildConfig true }', g, count=1)
           if 'buildConfig true' not in g: raise SystemExit('Não foi possível habilitar BuildConfig')
           gradle.write_text(g)
-          # Usar o modelo estável solicitado na linha RVTEC: Gemini 2.5 Flash.
+          # Padronizar o modelo Gemini na ponte nativa e na interface HTML: gemini-3.8-flash.
           java=root/'app/src/main/java/com/rvtec/manutencao/MainActivity.java'
           j=java.read_text()
           j=j.replace('"gemini-4-hydrogen"','"gemini-3.8-flash"')
@@ -119,6 +119,18 @@ jobs:
           echo '--- CHECK PREVIEW / GEMINI / FIREBASE ---'
           ! grep -q 'window.RVTEC_HTML_PREVIEW=true' app/src/main/assets/index.html
           grep -nE 'firebaseConfig|rvtecGeminiGenerate|RVTECNative|rvtecPhotoSelected|gemini-3.8-flash' app/src/main/assets/index.html app/src/main/java/com/rvtec/manutencao/MainActivity.java app/build.gradle
+          python3 - <<'PY'
+          from pathlib import Path
+          html=Path('app/src/main/assets/index.html').read_text(encoding='utf-8')
+          java=Path('app/src/main/java/com/rvtec/manutencao/MainActivity.java').read_text(encoding='utf-8')
+          expected='gemini-3.8-flash'
+          for name,source in [('HTML',html),('Android/Firebase AI Logic',java)]:
+              if expected not in source:
+                  raise SystemExit(f'{name}: modelo esperado {expected} não encontrado')
+              if 'gemini-2.5-flash' in source:
+                  raise SystemExit(f'{name}: referência antiga gemini-2.5-flash ainda presente')
+          print('OK: HTML e Android usam gemini-3.8-flash; modelo antigo ausente.')
+          PY
           echo '--- CHECK JAVASCRIPT SYNTAX ---'
           python3 - <<'PY'
           from html.parser import HTMLParser
