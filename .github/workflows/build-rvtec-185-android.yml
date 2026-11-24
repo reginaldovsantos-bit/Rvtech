@@ -82,7 +82,7 @@ jobs:
           if len(bridges)<1: raise SystemExit('Ponte Gemini nativa não encontrada após integração')
           first_bridge=bridges[0]
           final_html=re.sub(bridge_pattern,'',final_html,flags=re.S)
-          final_html=final_html.replace('</body>',first_bridge+'\\n</body>')
+          final_html=final_html.replace('</body>',first_bridge+'\n</body>')
           # Mensagem inicial antiga mencionava publicação de função/servidor, incompatível com Firebase AI Logic nativo.
           final_html=final_html.replace(
             'Olá! Sou a IA RVTEC. Posso ajudar com falhas, inversores, motores e manutenção. O servidor seguro está preparado e ficará disponível após a publicação da função pelo administrador.',
@@ -93,7 +93,7 @@ jobs:
           # Em Debug, solicitar o token e registrá-lo no Logcat para cadastro seguro na allowlist do App Check.
           j=java.read_text()
           if 'import android.util.Log;' not in j:
-              j=j.replace('import android.os.Bundle;','import android.os.Bundle;\\nimport android.util.Log;')
+              j=j.replace('import android.os.Bundle;','import android.os.Bundle;\nimport android.util.Log;')
           marker='''            GenerativeModel model = FirebaseAI.getInstance(app, GenerativeBackend.googleAI())'''
           debug_block='''            if (BuildConfig.DEBUG) {
                 appCheck.getAppCheckToken(false)
