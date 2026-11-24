@@ -15,7 +15,7 @@ android {
         minSdk 24
         targetSdk 35
         versionCode 1
-        versionName '2.0.0-alpha01'
+        versionName '2.0.0-alpha02'
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
     kotlinOptions { jvmTarget = '17' }
@@ -28,6 +28,11 @@ dependencies {
     implementation 'androidx.compose.material3:material3'
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.8.7'
     implementation 'org.json:json:20240303'
+    implementation platform('com.google.firebase:firebase-bom:35.2.0')
+    implementation 'com.google.firebase:firebase-auth'
+    implementation 'com.google.firebase:firebase-firestore'
+    implementation 'com.google.firebase:firebase-appcheck-playintegrity'
+    implementation 'com.google.firebase:firebase-ai'
     testImplementation 'junit:junit:4.13.2'
     debugImplementation 'androidx.compose.ui:ui-tooling'
 }
