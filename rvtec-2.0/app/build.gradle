@@ -6,6 +6,10 @@ plugins {
 android {
     namespace 'com.rvtec.v2'
     compileSdk 35
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
     defaultConfig {
         applicationId 'com.rvtec.manutencao.v2'
         minSdk 24
@@ -14,6 +18,7 @@ android {
         versionName '2.0.0-alpha01'
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
+    kotlinOptions { jvmTarget = '17' }
 }
 dependencies {
     implementation platform('androidx.compose:compose-bom:2024.12.01')
