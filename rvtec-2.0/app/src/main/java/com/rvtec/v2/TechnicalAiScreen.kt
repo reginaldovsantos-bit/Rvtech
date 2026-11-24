@@ -7,17 +7,26 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.google.firebase.FirebaseApp
 import com.rvtec.v2.data.TechnicalAiService
 import kotlinx.coroutines.launch
 
 @Composable
-fun TechnicalAiScreen() {
+fun TechnicalAiScreen(firebaseApp: FirebaseApp?) {
     var question by remember { mutableStateOf("") }
     var answer by remember { mutableStateOf("") }
     var error by remember { mutableStateOf("") }
     var loading by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
-    val service = remember { TechnicalAiService() }
+    val service = remember(firebaseApp) { firebaseApp?.let(::TechnicalAiService) }
+
+    LaunchedEffect(service) {
+        if (service == null) {
+            error = "Firebase não inicializou nesta instalação. Confira se o APK foi compilado com o google-services.json que contém o pacote com.rvtec.manutencao.v2."
+        } else {
+            error = ""
+        }
+    }
 
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(12.dp),
@@ -34,17 +43,15 @@ fun TechnicalAiScreen() {
             placeholder = { Text("Ex.: CFW700 apresenta F074 quando o puxador acelera...") }
         )
         Button(
-            enabled = question.isNotBlank() && !loading,
+            enabled = question.isNotBlank() && !loading && service != null,
             onClick = {
                 loading = true
                 error = ""
                 answer = ""
                 scope.launch {
                     try {
-                        answer = service.diagnose(question.trim())
+                        answer = requireNotNull(service).diagnose(question.trim())
                     } catch (e: Exception) {
-                        // Preserve the original failure: Firebase/network/App Check/model errors
-                        // must not all be mislabeled as a missing google-services.json.
                         val detail = e.localizedMessage
                             ?.takeIf { it.isNotBlank() }
                             ?: e.javaClass.simpleName
