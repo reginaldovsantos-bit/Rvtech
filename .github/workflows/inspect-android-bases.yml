@@ -1,0 +1,24 @@
+name: Comparar bases Android RVTEC
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/inspect-android-bases.yml'
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Comparar estruturas e integrações
+        run: |
+          set -euo pipefail
+          for z in RVTEC_Android_Projeto.zip RVTEC_Android_Projeto_ICONE_NOVO.zip RVTEC_Android_v1.1_LOGIN_IA.zip RVTEC_Android_v1.3.2_AppCheck_PREPARADO.zip RVTEC_Android_v1.3.3_GEMINI_APPCHECK.zip RVTEC_Android_v1.3_GEMINI_SEM_CLOUD\(1\).zip RVTEC_Android_v1.4.0_FOTO_IA_FONTE.zip; do
+            [ -f "$z" ] || continue
+            echo "===== $z ====="
+            unzip -t "$z" | tail -2
+            unzip -Z1 "$z" | grep -E '(^|/)(gradlew|settings.gradle|build.gradle|AndroidManifest.xml|google-services.json|.*\.kt|.*\.java|.*\.html)$' | head -60 || true
+            echo "-- firebase/gemini references --"
+            unzip -p "$z" 2>/dev/null | strings | grep -iE 'firebase-ai|firebaseai|gemini-2|generativelanguage|appcheck|firebaseappcheck' | head -25 || true
+          done
