@@ -1,7 +1,7 @@
 name: Build RVTEC Android 1.8.5 integrado
 on:
   push:
-    branches: [ main ]
+    branches: [ main, audit/rvtec-appcheck-root-cause ]
     paths:
       - '.github/workflows/build-rvtec-185-android.yml'
 permissions:
@@ -106,6 +106,41 @@ jobs:
           cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/output/RVTEC-1.8.5-debug.apk"
           cd "$GITHUB_WORKSPACE"
           cp /tmp/android/RVTEC_Android/app/src/main/assets/index.html output/index-1.8.5-integrado.html
+          # Pacote temporário de auditoria: permite inspecionar a fonte Android exata que gerou o APK.
+          cd /tmp/android
+          zip -qr "$GITHUB_WORKSPACE/output/RVTEC-Android-source-audit.zip" RVTEC_Android
+          cd "$GITHUB_WORKSPACE"
+          {
+            echo "RVTEC 1.8.5 - AUDITORIA APP CHECK / FIREBASE AI LOGIC"
+            echo "Commit: $GITHUB_SHA"
+            echo "Data UTC: $(date -u +%FT%TZ)"
+            echo
+            echo "=== Gradle ==="
+            grep -nE "com.android.application|com.google.gms.google-services|firebase|appcheck|firebaseai|versionCode|versionName" /tmp/android/RVTEC_Android/build.gradle /tmp/android/RVTEC_Android/app/build.gradle /tmp/android/RVTEC_Android/gradle/libs.versions.toml 2>/dev/null || true
+            echo
+            echo "=== App Check / AI Logic / Initialization ==="
+            grep -RniE "AppCheck|App Check|PlayIntegrity|DebugAppCheck|FirebaseAI|Firebase\.ai|generativeModel|initializeAppCheck|installations" /tmp/android/RVTEC_Android/app/src/main /tmp/android/RVTEC_Android/app/build.gradle 2>/dev/null || true
+            echo
+            echo "=== Manifest ==="
+            sed -n '1,240p' /tmp/android/RVTEC_Android/app/src/main/AndroidManifest.xml
+            echo
+            echo "=== MainActivity ==="
+            sed -n '1,300p' /tmp/android/RVTEC_Android/app/src/main/java/com/rvtec/manutencao/MainActivity.java
+            echo
+            echo "=== Google Services package mapping ==="
+            python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('/tmp/android/RVTEC_Android/app/google-services.json')
+          if p.exists():
+              d=json.loads(p.read_text())
+              print('project_id:',d.get('project_info',{}).get('project_id'))
+              for c in d.get('client',[]):
+                  print('package_name:',c.get('client_info',{}).get('android_client_info',{}).get('package_name'))
+          else:
+              print('google-services.json AUSENTE')
+          PY
+          } > "$GITHUB_WORKSPACE/output/APP-CHECK-AUDIT.txt"
       - name: Publicar APK e HTML integrado
         uses: actions/upload-artifact@v4
         with:
