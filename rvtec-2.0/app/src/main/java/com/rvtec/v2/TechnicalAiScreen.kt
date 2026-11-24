@@ -8,6 +8,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.google.firebase.FirebaseApp
+import com.google.firebase.ai.Firebase
+import com.google.firebase.ai.GenerativeBackend
+import com.google.firebase.appcheck.FirebaseAppCheck
 import com.rvtec.v2.data.TechnicalAiService
 import kotlinx.coroutines.launch
 
@@ -16,6 +19,8 @@ fun TechnicalAiScreen(firebaseApp: FirebaseApp?) {
     var question by remember { mutableStateOf("") }
     var answer by remember { mutableStateOf("") }
     var error by remember { mutableStateOf("") }
+    var appCheckStatus by remember { mutableStateOf("") }
+    var checkingAppCheck by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val service = remember(firebaseApp) { firebaseApp?.let(::TechnicalAiService) }
@@ -34,6 +39,41 @@ fun TechnicalAiScreen(firebaseApp: FirebaseApp?) {
     ) {
         Text("Memória Técnica IA", style = MaterialTheme.typography.headlineSmall)
         Text("Assistente de diagnóstico para extrusoras, puxadores, bobinadores, motores, inversores WEG, CLP, IHM, sensores e encoders.")
+
+        if (com.rvtec.v2.BuildConfig.DEBUG && firebaseApp != null) {
+            OutlinedButton(
+                enabled = !checkingAppCheck,
+                onClick = {
+                    checkingAppCheck = true
+                    appCheckStatus = "Verificando obtenção do token App Check..."
+                    scope.launch {
+                        try {
+                            val result = FirebaseAppCheck.getInstance(firebaseApp).getToken(false).await()
+                            appCheckStatus = if (result.token.isNotBlank()) {
+                                "App Check conseguiu obter um token. Isso confirma a comunicação com o serviço de App Check, mas não garante que o token esteja aceito pela API Gemini."
+                            } else {
+                                "O serviço App Check retornou um token vazio."
+                            }
+                        } catch (e: Exception) {
+                            val detail = e.localizedMessage?.takeIf { it.isNotBlank() } ?: e.javaClass.simpleName
+                            appCheckStatus = "Falha ao obter token App Check: $detail"
+                        } finally {
+                            checkingAppCheck = false
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                if (checkingAppCheck) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                else Text("Testar App Check")
+            }
+            if (appCheckStatus.isNotBlank()) {
+                Card(Modifier.fillMaxWidth()) {
+                    Text(appCheckStatus, Modifier.padding(12.dp), style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+        }
+
         OutlinedTextField(
             value = question,
             onValueChange = { question = it },
