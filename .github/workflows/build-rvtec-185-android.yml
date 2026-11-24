@@ -35,6 +35,13 @@ jobs:
           import re
           root=Path('/tmp/android/RVTEC_Android')
           html=Path('/tmp/html/index.html').read_text(encoding='utf-8')
+          # Corrigir também o modelo usado pela interface HTML (não apenas o SDK nativo).
+          html=html.replace("const RVTEC_AI_MODEL = 'gemini-2.5-flash';", "const RVTEC_AI_MODEL = 'gemini-3.8-flash';")
+          if "const RVTEC_AI_MODEL = 'gemini-3.8-flash';" not in html:
+              raise SystemExit('Modelo Gemini antigo/inesperado na interface; interrompendo build')
+          if "const RVTEC_AI_MODEL = 'gemini-2.5-flash';" in html:
+              raise SystemExit('Modelo antigo ainda presente na interface')
+
           base=Path('/tmp/android/RVTEC_Android/app/src/main/assets/index.html').read_text(encoding='utf-8')
           # Carregar os SDKs compatíveis de Auth/Firestore antes do JavaScript do app.
           tags='\n<script src="https://www.gstatic.com/firebasejs/12.1.0/firebase-app-compat.js"></script>\n<script src="https://www.gstatic.com/firebasejs/12.1.0/firebase-auth-compat.js"></script>\n<script src="https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore-compat.js"></script>\n'
