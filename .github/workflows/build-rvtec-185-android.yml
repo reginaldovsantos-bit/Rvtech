@@ -63,6 +63,10 @@ jobs:
           g=gradle.read_text()
           g=re.sub(r'versionCode\s+\d+', 'versionCode 7', g, count=1)
           g=re.sub(r"versionName\s+['\"][^'\"]+['\"]", "versionName '1.8.5'", g, count=1)
+          # AGP 8 desativa BuildConfig por padrão; MainActivity usa BuildConfig.DEBUG.
+          if 'buildFeatures' not in g:
+              g=re.sub(r'android\\s*\\{', 'android {\\n    buildFeatures { buildConfig true }', g, count=1)
+          if 'buildConfig true' not in g: raise SystemExit('Não foi possível habilitar BuildConfig')
           gradle.write_text(g)
           # Usar o modelo estável solicitado na linha RVTEC: Gemini 2.5 Flash.
           java=root/'app/src/main/java/com/rvtec/manutencao/MainActivity.java'
