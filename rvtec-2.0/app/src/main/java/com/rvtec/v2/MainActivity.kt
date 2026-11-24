@@ -13,6 +13,9 @@ import androidx.compose.ui.unit.dp
 import com.rvtec.v2.data.MaintenanceRepository
 import com.rvtec.v2.data.FirebaseServices
 import com.rvtec.v2.domain.*
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 private val pages = listOf("Início", "Máquinas", "Paradas", "Ordens de serviço", "Apontamentos", "Memória Técnica IA")
 
@@ -147,10 +150,10 @@ class MainActivity : ComponentActivity() {
                                 val entries = remember(revision) { repository.listEntries() }
                                 val orders = remember(revision) { repository.listOrders() }
                                 Text("Histórico de execução", style = MaterialTheme.typography.titleLarge)
-                                LazyColumn { items(entries.reversed()) { e ->
+                                LazyColumn { items(entries) { e ->
                                     val title = orders.firstOrNull { it.id == e.workOrderId }?.title ?: e.workOrderId
                                     ListItem(headlineContent = { Text(title) }, supportingContent = {
-                                        Text("${e.technician}: ${e.description} • ${e.durationMinutes} min")
+                                        Text("${SimpleDateFormat("dd/MM/yyyy HH:mm", Locale("pt", "BR")).format(Date(e.createdAt))} • ${e.technician}: ${e.description} • ${e.durationMinutes} min")
                                     })
                                 } }
                             }
