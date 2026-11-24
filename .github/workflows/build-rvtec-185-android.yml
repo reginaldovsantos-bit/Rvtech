@@ -1,0 +1,103 @@
+name: Build RVTEC Android 1.8.5 integrado
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/build-rvtec-185-android.yml'
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: Montar interface 1.8.5 sobre base Android Firebase/Gemini
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/android /tmp/html
+          unzip -q RVTEC_Android_v1.4.0_FOTO_IA_FONTE.zip -d /tmp/android
+          unzip -q RVTEC_1.8.5_SEM_BOTAO_MENU.zip -d /tmp/html
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          root=Path('/tmp/android/RVTEC_Android')
+          html=Path('/tmp/html/index.html').read_text(encoding='utf-8')
+          base=Path('/tmp/android/RVTEC_Android/app/src/main/assets/index.html').read_text(encoding='utf-8')
+          # Carregar os SDKs compatíveis de Auth/Firestore antes do JavaScript do app.
+          tags='\n<script src="https://www.gstatic.com/firebasejs/12.1.0/firebase-app-compat.js"></script>\n<script src="https://www.gstatic.com/firebasejs/12.1.0/firebase-auth-compat.js"></script>\n<script src="https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore-compat.js"></script>\n'
+          first=html.lower().find('<script')
+          if first<0: raise SystemExit('HTML sem tag script')
+          html=html[:first]+tags+html[first:]
+          # Remover stub de pré-visualização e inicializar o Firebase real do projeto.
+          pattern=r'// Pré-visualização HTML isolada: sem SDK Firebase, autenticação ou App Check\.\s*window\.RVTEC_HTML_PREVIEW=true;.*?const rvtecStore=firebase\.firestore\(\);'
+          replacement="""// Firebase Authentication + Firestore reais do projeto RVTEC.
+          const firebaseConfig={apiKey:'AIzaSyCNqRK8qcEP1dA4T0dFoFzbE2Lotfpq1K0',authDomain:'rvtech-cfd2e.firebaseapp.com',projectId:'rvtech-cfd2e',storageBucket:'rvtech-cfd2e.firebasestorage.app',messagingSenderId:'171095099635',appId:'1:171095099635:web:58017bc059de606f7ecf86',measurementId:'G-5KR4W30QZM'};
+          firebase.initializeApp(firebaseConfig);
+          const rvtecAuth=firebase.auth();
+          const rvtecStore=firebase.firestore();"""
+          html,n=re.subn(pattern,replacement,html,count=1,flags=re.S)
+          if n!=1: raise SystemExit(f'Bloco de prévia Firebase não localizado (matches={n})')
+          # Garantir que nenhum trecho reative o modo HTML isolado.
+          html=html.replace('window.RVTEC_HTML_PREVIEW=true;','window.RVTEC_HTML_PREVIEW=false;')
+          # Reutilizar a ponte nativa já testada para Gemini e fotos.
+          m=re.search(r'<script>\s*// Firebase AI Logic é chamado pelo SDK Android nativo.*?</script>',base,re.S)
+          if not m: raise SystemExit('Ponte Gemini nativa não encontrada na base Android 1.4.0')
+          bridge=m.group(0)
+          if 'window.rvtecGeminiGenerate' in html: raise SystemExit('HTML já possui implementação Gemini; abortando para evitar duplicação')
+          html=html.replace('</body>',bridge+'\n</body>')
+          Path(root/'app/src/main/assets/index.html').write_text(html,encoding='utf-8')
+          # Atualizar versão do APK sem alterar applicationId/assinatura/config Firebase.
+          gradle=root/'app/build.gradle'
+          g=gradle.read_text()
+          g=re.sub(r'versionCode\s+\d+', 'versionCode 7', g, count=1)
+          g=re.sub(r"versionName\s+['\"][^'\"]+['\"]", "versionName '1.8.5'", g, count=1)
+          gradle.write_text(g)
+          # Usar o modelo estável solicitado na linha RVTEC: Gemini 2.5 Flash.
+          java=root/'app/src/main/java/com/rvtec/manutencao/MainActivity.java'
+          j=java.read_text()
+          j=j.replace('"gemini-4-hydrogen"','"gemini-2.5-flash"')
+          java.write_text(j)
+          print('HTML 1.8.5 integrado com Firebase compat + ponte Gemini nativa.')
+          PY
+          echo '--- CHECK PREVIEW / GEMINI / FIREBASE ---'
+          ! grep -q 'window.RVTEC_HTML_PREVIEW=true' app/src/main/assets/index.html
+          grep -nE 'firebaseConfig|rvtecGeminiGenerate|RVTECNative|rvtecPhotoSelected|gemini-2.5-flash' app/src/main/assets/index.html app/src/main/java/com/rvtec/manutencao/MainActivity.java app/build.gradle
+          echo '--- CHECK JAVASCRIPT SYNTAX ---'
+          python3 - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+          class P(HTMLParser):
+              def __init__(self): super().__init__(); self.items=[]; self.cur=None
+              def handle_starttag(self,t,a):
+                  if t=='script': self.cur={'attrs':dict(a),'body':''}
+              def handle_data(self,d):
+                  if self.cur is not None:self.cur['body']+=d
+              def handle_endtag(self,t):
+                  if t=='script' and self.cur is not None:self.items.append(self.cur);self.cur=None
+          p=P();p.feed(Path('app/src/main/assets/index.html').read_text())
+          for i,x in enumerate(p.items):
+              if x['body'].strip() and not x['attrs'].get('src'):
+                  Path(f'/tmp/rvtec-script-{i}.js').write_text(x['body'])
+          print('inline scripts extracted:',sum(1 for x in p.items if x['body'].strip()))
+          PY
+          for f in /tmp/rvtec-script-*.js; do node --check "$f"; done
+          echo '--- BUILD DEBUG APK ---'
+          cd /tmp/android/RVTEC_Android
+          chmod +x gradlew 2>/dev/null || true
+          gradle --version
+          gradle --no-daemon clean assembleDebug
+          mkdir -p "$GITHUB_WORKSPACE/output"
+          cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/output/RVTEC-1.8.5-debug.apk"
+          cd "$GITHUB_WORKSPACE"
+          cp /tmp/android/RVTEC_Android/app/src/main/assets/index.html output/index-1.8.5-integrado.html
+      - name: Publicar APK e HTML integrado
+        uses: actions/upload-artifact@v4
+        with:
+          name: RVTEC-1.8.5-Android-Firebase-Gemini
+          path: output/*
+          if-no-files-found: error
