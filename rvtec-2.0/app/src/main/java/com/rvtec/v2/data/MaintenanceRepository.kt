@@ -135,6 +135,9 @@ class MaintenanceRepository(context: Context? = null) {
         val order = orders[orderId] ?: error("OS não encontrada.")
         check(order.status == WorkOrderStatus.IN_PROGRESS) { "Somente OS em execução pode ser concluída." }
         val stop = order.stopId?.let { stops[it] }
+        require(!releaseMachine || stop != null) {
+            "A máquina só pode ser liberada ao concluir uma OS vinculada a uma parada."
+        }
         if (stop != null) {
             require(solution.isNotBlank()) { "Informe a solução para encerrar a parada." }
             val machine = machines[order.machineId] ?: error("Máquina não encontrada.")
