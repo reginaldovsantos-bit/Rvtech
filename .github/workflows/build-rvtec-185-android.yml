@@ -55,7 +55,7 @@ jobs:
           m=re.search(r'<script>\s*// Firebase AI Logic é chamado pelo SDK Android nativo.*?</script>',base,re.S)
           if not m: raise SystemExit('Ponte Gemini nativa não encontrada na base Android 1.4.0')
           bridge=m.group(0)
-          if 'window.rvtecGeminiGenerate' in html: raise SystemExit('HTML já possui implementação Gemini; abortando para evitar duplicação')
+          if re.search(r'window\\.rvtecGeminiGenerate\\s*=',html): raise SystemExit('HTML já possui implementação Gemini; abortando para evitar duplicação')
           html=html.replace('</body>',bridge+'\n</body>')
           Path(root/'app/src/main/assets/index.html').write_text(html,encoding='utf-8')
           # Atualizar versão do APK sem alterar applicationId/assinatura/config Firebase.
