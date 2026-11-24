@@ -35,7 +35,7 @@ object MaintenanceIndicatorsCalculator {
         val observationHours = observationMs / 3_600_000.0
         val downtimeHours = downtimeMs / 3_600_000.0
         val operatingHours = operatingMs / 3_600_000.0
-        val failureCount = relevant.size
+        val failureCount = relevant.count { (stop, _) -> stop.startedAt >= windowStart && stop.startedAt < windowEnd }
         return MaintenanceIndicators(
             observationHours = observationHours,
             downtimeHours = downtimeHours,
