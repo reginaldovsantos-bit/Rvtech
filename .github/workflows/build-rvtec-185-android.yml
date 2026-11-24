@@ -4,6 +4,7 @@ on:
     branches: [ main, audit/rvtec-appcheck-root-cause ]
     paths:
       - '.github/workflows/build-rvtec-185-android.yml'
+      - 'scripts/patch_appcheck_runtime_diagnostic.py'
 permissions:
   contents: read
 jobs:
@@ -106,6 +107,7 @@ jobs:
           print(f'Ponte Gemini única; bridges originais={len(bridges)}; token Debug rastreável no Logcat; mensagem inicial corrigida.')
 
           PY
+          python3 scripts/patch_appcheck_runtime_diagnostic.py /tmp/android/RVTEC_Android
           cd /tmp/android/RVTEC_Android
           echo '--- CHECK PREVIEW / GEMINI / FIREBASE ---'
           ! grep -q 'window.RVTEC_HTML_PREVIEW=true' app/src/main/assets/index.html
