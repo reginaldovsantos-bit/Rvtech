@@ -1,0 +1,26 @@
+name: Ler trechos para montagem RVTEC 1.8.5 Android
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/read-rvtec185-integration.yml'
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          set -euo pipefail
+          mkdir -p /tmp/a /tmp/b
+          unzip -q RVTEC_Android_v1.4.0_FOTO_IA_FONTE.zip -d /tmp/a
+          unzip -q RVTEC_1.8.5_SEM_BOTAO_MENU.zip -d /tmp/b
+          echo '--- BASE FIREBASE ---'
+          sed -n '250,290p' /tmp/a/RVTEC_Android/app/src/main/assets/index.html
+          echo '--- BASE GEMINI BRIDGE ---'
+          sed -n '550,610p' /tmp/a/RVTEC_Android/app/src/main/assets/index.html
+          echo '--- 1.8.5 PREVIEW BOOTSTRAP ---'
+          sed -n '710,750p' /tmp/b/index.html
+          echo '--- 1.8.5 GEMINI TAIL ---'
+          tail -100 /tmp/b/index.html
