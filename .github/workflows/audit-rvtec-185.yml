@@ -4,6 +4,7 @@ on:
     branches: [ main ]
     paths:
       - '.github/workflows/audit-rvtec-185.yml'
+      - 'RVTEC_1.8.5_SEM_BOTAO_MENU.zip'
 permissions:
   contents: read
 jobs:
@@ -54,3 +55,5 @@ jobs:
           else
             echo 'NO_ANDROID_PROJECT_FILES'
           fi
+
+  workflow_dispatch:
