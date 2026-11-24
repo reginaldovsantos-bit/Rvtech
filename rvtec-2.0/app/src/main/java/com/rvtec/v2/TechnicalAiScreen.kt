@@ -1,0 +1,76 @@
+package com.rvtec.v2
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import com.rvtec.v2.data.TechnicalAiService
+import kotlinx.coroutines.launch
+
+@Composable
+fun TechnicalAiScreen() {
+    var question by remember { mutableStateOf("") }
+    var answer by remember { mutableStateOf("") }
+    var error by remember { mutableStateOf("") }
+    var loading by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val service = remember { TechnicalAiService() }
+
+    Column(
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Text("Memória Técnica IA", style = MaterialTheme.typography.headlineSmall)
+        Text("Assistente de diagnóstico para extrusoras, puxadores, bobinadores, motores, inversores WEG, CLP, IHM, sensores e encoders.")
+        OutlinedTextField(
+            value = question,
+            onValueChange = { question = it },
+            modifier = Modifier.fillMaxWidth(),
+            minLines = 4,
+            label = { Text("Descreva a falha ou dúvida técnica") },
+            placeholder = { Text("Ex.: CFW700 apresenta F074 quando o puxador acelera...") }
+        )
+        Button(
+            enabled = question.isNotBlank() && !loading,
+            onClick = {
+                loading = true
+                error = ""
+                answer = ""
+                scope.launch {
+                    try {
+                        answer = service.diagnose(question.trim())
+                    } catch (e: Exception) {
+                        error = when {
+                            e.message.orEmpty().contains("Firebase", ignoreCase = true) ||
+                                e.message.orEmpty().contains("CONFIGURATION_NOT_FOUND", ignoreCase = true) ->
+                                "Firebase ainda não está configurado para esta versão do RVTEC. É necessário registrar o pacote instalado no Firebase, adicionar o google-services.json correto e habilitar Firebase AI Logic."
+                            else -> e.message ?: "Falha ao consultar a IA. Verifique a conexão e tente novamente."
+                        }
+                    } finally {
+                        loading = false
+                    }
+                }
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            if (loading) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+            else Text("Consultar Gemini")
+        }
+        if (error.isNotBlank()) {
+            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)) {
+                Text(error, Modifier.padding(12.dp), color = MaterialTheme.colorScheme.onErrorContainer)
+            }
+        }
+        if (answer.isNotBlank()) {
+            Text("Análise técnica", style = MaterialTheme.typography.titleLarge)
+            Card(Modifier.fillMaxWidth()) { Text(answer, Modifier.padding(14.dp)) }
+        }
+        Text(
+            "Segurança: use a análise como apoio. Confirme medições, diagramas e procedimentos do fabricante antes de intervir. Não trabalhe em circuitos energizados sem autorização e procedimento apropriado.",
+            style = MaterialTheme.typography.bodySmall
+        )
+    }
+}
