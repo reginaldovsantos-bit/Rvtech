@@ -1,21 +1,26 @@
 package com.rvtec.v2.data
 
-import com.google.firebase.Firebase
-import com.google.firebase.ai.type.GenerativeBackend
+import com.google.firebase.FirebaseApp
+import com.google.firebase.ai.Firebase
 import com.google.firebase.ai.ai
+import com.google.firebase.ai.type.GenerativeBackend
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
  * Assistente técnico RVTEC baseado em Firebase AI Logic.
- * Requer google-services.json registrado para o applicationId da versão instalada
- * e Firebase AI Logic habilitado no projeto.
+ * Recebe explicitamente a instância Firebase usada no bootstrap do aplicativo,
+ * evitando depender de uma instância default implícita diferente.
  */
-class TechnicalAiService {
+class TechnicalAiService(private val firebaseApp: FirebaseApp) {
     suspend fun diagnose(question: String): String = withContext(Dispatchers.IO) {
         require(question.isNotBlank()) { "Descreva a falha ou dúvida técnica." }
-        val model = Firebase.ai(backend = GenerativeBackend.googleAI())
-            .generativeModel("gemini-2.5-flash")
+
+        val model = Firebase.ai(
+            app = firebaseApp,
+            backend = GenerativeBackend.googleAI()
+        ).generativeModel("gemini-2.5-flash")
+
         val prompt = """
             Você é o assistente técnico do RVTEC, especializado em manutenção industrial
             e linhas de extrusão de filme plástico. Responda em português brasileiro,
@@ -30,6 +35,7 @@ class TechnicalAiService {
             Não invente parâmetros de fabricante.
             Dúvida/ocorrência: $question
         """.trimIndent()
+
         val response = model.generateContent(prompt)
         response.text?.takeIf { it.isNotBlank() }
             ?: error("A IA não retornou uma resposta. Tente novamente.")
