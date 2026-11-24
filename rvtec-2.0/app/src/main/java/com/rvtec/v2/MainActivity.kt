@@ -13,7 +13,7 @@ import androidx.compose.ui.unit.dp
 import com.rvtec.v2.data.MaintenanceRepository
 import com.rvtec.v2.domain.*
 
-private val pages = listOf("Início", "Máquinas", "Paradas", "Ordens de serviço", "Apontamentos")
+private val pages = listOf("Início", "Máquinas", "Paradas", "Ordens de serviço", "Apontamentos", "Memória Técnica IA")
 
 @OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
@@ -139,6 +139,7 @@ class MainActivity : ComponentActivity() {
                                     }
                                 } }
                             }
+                            "Memória Técnica IA" -> TechnicalAiScreen()
                             "Apontamentos" -> {
                                 val entries = remember(revision) { repository.listEntries() }
                                 val orders = remember(revision) { repository.listOrders() }
