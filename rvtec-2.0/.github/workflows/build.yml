@@ -18,7 +18,7 @@ jobs:
           gradle-version: '8.9'
       - name: Build debug APK
         working-directory: rvtec-2.0
-        run: gradle assembleDebug
+        run: gradle testDebugUnitTest assembleDebug
       - uses: actions/upload-artifact@v4
         with:
           name: rvtec-2.0-debug
