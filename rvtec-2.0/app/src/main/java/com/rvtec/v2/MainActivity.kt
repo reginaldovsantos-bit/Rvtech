@@ -142,7 +142,7 @@ class MainActivity : ComponentActivity() {
                                     }
                                 } }
                             }
-                            "Memória Técnica IA" -> TechnicalAiScreen()
+                            "Memória Técnica IA" -> TechnicalAiScreen(firebaseServices.firebaseApp)
                             "Apontamentos" -> {
                                 val entries = remember(revision) { repository.listEntries() }
                                 val orders = remember(revision) { repository.listOrders() }
