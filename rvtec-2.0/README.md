@@ -13,3 +13,17 @@ Esta pasta é uma aplicação Android nova e isolada da base legada. O identific
 
 ## Estado
 Fundação de interface criada. Ainda não é uma versão funcional de produção: módulos, persistência, Firebase, IA, importação e testes precisam ser implementados e aprovados.
+
+
+## Integração Firebase — etapa alpha02
+
+- Firebase Android BoM 35.2.0, Auth, Cloud Firestore, App Check Play Integrity e Firebase AI Logic adicionados.
+- `FirebaseServices` prepara bootstrap, App Check e transferência explícita de snapshot para o caminho isolado `users/{uid}/rvtec/snapshot`.
+- O repositório local continua funcionando sem Firebase e não envia dados automaticamente.
+- Regras Firestore em `firestore.rules` limitam leitura e escrita ao UID autenticado.
+- A aplicação precisa ser registrada no Firebase com o applicationId `com.rvtec.manutencao.v2`; depois, adicionar o `google-services.json` correspondente ao módulo `app`. Não reutilizar o arquivo da versão 1.8.5.
+- A sincronização ainda não está ligada à interface e requer fluxo de autenticação antes de habilitar envio/recebimento. Não habilitar regras abertas.
+
+## Correção de integridade de OS
+
+Uma OS sem parada vinculada não pode marcar a máquina como liberada. A conclusão sem parada mantém o estado operacional existente; a liberação explícita permanece vinculada ao encerramento da parada. Testes unitários cobrem os dois caminhos.
