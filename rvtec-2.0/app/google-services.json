@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "171095099635",
+    "project_id": "rvtech-cfd2e",
+    "storage_bucket": "rvtech-cfd2e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:171095099635:android:630d311ede0f916e7ecf86",
+        "android_client_info": {
+          "package_name": "com.rvtec.manutencao"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBxqR2LSN3Hp54aoW_D2QkaTi4KnHBjZCo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:171095099635:android:c0b45a5ed8fd00147ecf86",
+        "android_client_info": {
+          "package_name": "com.rvtec.manutencao.v2"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBxqR2LSN3Hp54aoW_D2QkaTi4KnHBjZCo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
