@@ -115,7 +115,7 @@ class MainActivity : ComponentActivity() {
                                                 if (o.status == WorkOrderStatus.OPEN) Button(onClick = { perform { repository.startWork(o.id) } }) { Text("Iniciar") }
                                                 if (o.status == WorkOrderStatus.IN_PROGRESS) {
                                                     OutlinedButton(onClick = { showEntryFor = o.id }) { Text("Apontar") }
-                                                    Button(onClick = { perform { repository.completeWork(o.id, if (o.stopId != null) "Serviço concluído" else "", true) } }) { Text("Concluir") }
+                                                    Button(onClick = { perform { repository.completeWork(o.id, if (o.stopId != null) "Serviço concluído" else "", o.stopId != null) } }) { Text("Concluir") }
                                                 }
                                             }
                                         }
