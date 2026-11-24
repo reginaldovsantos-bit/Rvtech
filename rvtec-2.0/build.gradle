@@ -1,7 +1,6 @@
 plugins {
     id 'com.android.application' version '8.7.3' apply false
-    // Firebase Auth 25.0.0 (Firebase BoM 35.2.0) publishes Kotlin metadata 2.4.0.
-    // Keep the Android Gradle Plugin stable and align both Kotlin plugins with that metadata.
     id 'org.jetbrains.kotlin.android' version '2.4.21' apply false
     id 'org.jetbrains.kotlin.plugin.compose' version '2.4.21' apply false
+    id 'com.google.gms.google-services' version '4.4.2' apply false
 }
