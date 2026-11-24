@@ -74,4 +74,15 @@ class MaintenanceRepositoryTest {
             fail("Deveria bloquear vínculo cruzado")
         } catch (_: IllegalArgumentException) { }
     }
+    @Test fun stopRequiresCause() {
+        val repo = MaintenanceRepository()
+        repo.addMachine(Machine("m1", "Extrusora 108"))
+        try {
+            repo.registerStop("m1", "   ")
+            fail("Não deve aceitar parada sem causa")
+        } catch (_: IllegalArgumentException) { }
+        assertEquals(MachineStatus.RUNNING, repo.listMachines().single().status)
+        assertTrue(repo.listStops().isEmpty())
+    }
+
 }
