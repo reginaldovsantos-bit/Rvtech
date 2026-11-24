@@ -69,6 +69,15 @@ class MaintenanceRepository {
             .also { entries[it.id] = it }
     }
 
+    @Synchronized fun releaseMachine(machineId: String): Machine {
+        val machine = machines[machineId] ?: error("Máquina não encontrada.")
+        check(machine.status == MachineStatus.MAINTENANCE) { "Máquina não está aguardando liberação." }
+        val activeStop = machine.activeStopId?.let { stops[it] }
+        check(activeStop == null || activeStop.status == StopStatus.CLOSED) { "Existe parada aberta vinculada à máquina." }
+        return machine.copy(status = MachineStatus.RUNNING, activeStopId = null)
+            .also { machines[machineId] = it }
+    }
+
     @Synchronized fun completeWork(orderId: String, solution: String, releaseMachine: Boolean, now: Long = System.currentTimeMillis()): WorkOrder {
         val order = orders[orderId] ?: error("OS não encontrada.")
         check(order.status == WorkOrderStatus.IN_PROGRESS) { "Somente OS em execução pode ser concluída." }
