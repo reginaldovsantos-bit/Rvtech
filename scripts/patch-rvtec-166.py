@@ -9,24 +9,27 @@ if not html_path.is_file() or not gradle_path.is_file():
 html = html_path.read_text(encoding="utf-8")
 gradle = gradle_path.read_text(encoding="utf-8")
 
-# Remove somente o controle visual do menu hambúrguer; não remove telas ou navegação.
+# Primeiro tenta o símbolo hambúrguer dentro de um botão; em seguida, o controle
+# identificado explicitamente como menu/hambúrguer. Não altera telas ou rotas.
 patterns = [
-    re.compile(r'<button\\b(?=[^>]*(?:id|class|aria-label|title)=["\\'][^"\\']*(?:menu|hamb|nav)[^"\\']*["\\'])[^>]*>.*?(?:☰|&#9776;|&#x2630;|\\\\u2630|menu-icon|hamburger).*?</button>', re.I | re.S),
-    re.compile(r'<button\\b[^>]*>\\s*(?:☰|&#9776;|&#x2630;|\\\\u2630)\\s*</button>', re.I | re.S),
+    re.compile(r"""<button\b[^>]*>[\s\S]*?(?:☰|&#9776;|&#x2630;)[\s\S]*?</button>""", re.I),
+    re.compile(r"""<button\b(?=[^>]*(?:id|class|aria-label|title)="[^"]*(?:menu|hamb|nav)[^"]*")[^>]*>[\s\S]*?</button>""", re.I),
 ]
-matches = []
+found = []
 for pattern in patterns:
-    matches.extend(list(pattern.finditer(html)))
-# Deduplicate overlapping spans.
-spans = sorted(set((m.start(), m.end()) for m in matches))
+    found.extend((m.start(), m.end()) for m in pattern.finditer(html))
+spans = sorted(set(found))
 if len(spans) != 1:
-    raise SystemExit(f"Esperava encontrar exatamente 1 botão hambúrguer; encontrados: {len(spans)}. Nenhuma alteração aplicada.")
+    raise SystemExit(f"Esperava exatamente 1 botão de menu sem função; encontrados: {len(spans)}. Nenhuma alteração aplicada.")
 
 start, end = spans[0]
-html = html[:start] + html[end:]
+removed = html[start:end]
+# Proteção: só aceitar o controle visual, nunca um container de navegação ou tela.
+if not re.search(r"(?:☰|&#9776;|&#x2630;|menu|hamb|nav)", removed, re.I):
+    raise SystemExit("Elemento encontrado não foi reconhecido como botão de menu.")
 
-# Confirma que o controle não permaneceu no HTML.
-if re.search(r'<button\\b[^>]*>\\s*(?:☰|&#9776;|&#x2630;|\\\\u2630)\\s*</button>', html, re.I | re.S):
+html = html[:start] + html[end:]
+if re.search(r"""<button\b[^>]*>[\s\S]*?(?:☰|&#9776;|&#x2630;)[\s\S]*?</button>""", html, re.I):
     raise SystemExit("O botão hambúrguer ainda aparece após o patch.")
 
 if "versionCode 165" not in gradle or "versionName '1.6.5'" not in gradle:
@@ -36,4 +39,4 @@ gradle = gradle.replace("versionName '1.6.5'", "versionName '1.6.6'", 1)
 
 html_path.write_text(html, encoding="utf-8")
 gradle_path.write_text(gradle, encoding="utf-8")
-print("RVTEC 1.6.6: botão hambúrguer removido; telas, Firebase, Gemini e login preservados.")
+print("RVTEC 1.6.6: botão de menu removido; restante da aplicação preservado.")
