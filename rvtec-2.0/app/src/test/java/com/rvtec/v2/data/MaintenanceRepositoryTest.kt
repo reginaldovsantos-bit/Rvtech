@@ -29,6 +29,18 @@ class MaintenanceRepositoryTest {
         } catch (_: IllegalStateException) { }
     }
 
+    @Test fun maintenanceRequiresExplicitRelease() {
+        val repo = MaintenanceRepository()
+        repo.addMachine(Machine("m1", "Extrusora 108"))
+        val stop = repo.registerStop("m1", "Falha")
+        val order = repo.openWorkOrder("m1", "Reparo", stopId = stop.id)
+        repo.startWork(order.id)
+        repo.completeWork(order.id, "Reparo concluído", releaseMachine = false)
+        assertEquals(MachineStatus.MAINTENANCE, repo.listMachines().single().status)
+        repo.releaseMachine("m1")
+        assertEquals(MachineStatus.RUNNING, repo.listMachines().single().status)
+    }
+
     @Test fun stopCannotLinkToAnotherMachinesOrder() {
         val repo = MaintenanceRepository()
         repo.addMachine(Machine("m1", "Extrusora 108"))
