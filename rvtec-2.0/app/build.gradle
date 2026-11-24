@@ -34,6 +34,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-auth'
     implementation 'com.google.firebase:firebase-firestore'
     implementation 'com.google.firebase:firebase-appcheck-playintegrity'
+    debugImplementation 'com.google.firebase:firebase-appcheck-debug'
     implementation 'com.google.firebase:firebase-ai'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.9.0'
     testImplementation 'junit:junit:4.13.2'
