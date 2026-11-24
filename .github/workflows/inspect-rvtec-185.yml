@@ -1,0 +1,27 @@
+name: Inspecionar fonte RVTEC 1.8.5
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/inspect-rvtec-185.yml'
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Listar e validar ZIP 1.8.5
+        run: |
+          set -euo pipefail
+          unzip -t RVTEC_1.8.5_SEM_BOTAO_MENU.zip
+          echo '--- ARQUIVOS DO PACOTE ---'
+          unzip -Z1 RVTEC_1.8.5_SEM_BOTAO_MENU.zip
+          mkdir -p /tmp/rvtec185
+          unzip -q RVTEC_1.8.5_SEM_BOTAO_MENU.zip -d /tmp/rvtec185
+          echo '--- ESTRUTURA ---'
+          find /tmp/rvtec185 -maxdepth 4 -type f -printf '%p %s bytes\n' | sort
+          echo '--- VERIFICAÇÃO DE PROJETO ANDROID ---'
+          find /tmp/rvtec185 -type f \( -name 'build.gradle' -o -name 'settings.gradle' -o -name 'gradlew' -o -name 'AndroidManifest.xml' \) -print
+          echo '--- IDENTIFICAÇÃO DO HTML ---'
+          grep -RniE 'firebase|gemini|version|rvtec' /tmp/rvtec185 --include='*.html' | head -80 || true
