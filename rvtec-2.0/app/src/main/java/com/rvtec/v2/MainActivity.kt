@@ -29,6 +29,7 @@ class MainActivity : ComponentActivity() {
                 var showStopFor by remember { mutableStateOf<String?>(null) }
                 var showOrder by remember { mutableStateOf(false) }
                 var showEntryFor by remember { mutableStateOf<String?>(null) }
+                var showCompleteFor by remember { mutableStateOf<String?>(null) }
                 fun refresh() { revision++ }
                 fun perform(action: () -> Unit) {
                     try { action(); error = null; refresh() } catch (e: Exception) { error = e.message ?: "Falha na operação." }
@@ -46,12 +47,24 @@ class MainActivity : ComponentActivity() {
                                 val machines = remember(revision) { repository.listMachines() }
                                 val stops = remember(revision) { repository.listStops() }
                                 val orders = remember(revision) { repository.listOrders() }
+                                val periodEnd = System.currentTimeMillis()
+                                val periodStart = periodEnd - 30L * 24L * 60L * 60L * 1000L
+                                val indicators = remember(revision) {
+                                    MaintenanceIndicatorsCalculator.calculate(stops, periodStart, periodEnd)
+                                }
                                 Text("Painel operacional", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(vertical = 12.dp))
                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     Summary("Máquinas", machines.size.toString(), Modifier.weight(1f))
                                     Summary("Paradas abertas", stops.count { it.status != StopStatus.CLOSED }.toString(), Modifier.weight(1f))
                                     Summary("OS abertas", orders.count { it.status != WorkOrderStatus.COMPLETED && it.status != WorkOrderStatus.CANCELLED }.toString(), Modifier.weight(1f))
                                 }
+                                Text("Indicadores • últimos 30 dias corridos", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 18.dp, bottom = 8.dp))
+                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Summary("Disponibilidade*", String.format("%.1f%%", indicators.availabilityPercent), Modifier.weight(1f))
+                                    Summary("MTTR*", indicators.mttrHours?.let { String.format("%.1f h", it) } ?: "—", Modifier.weight(1f))
+                                    Summary("MTBF*", indicators.mtbfHours?.let { String.format("%.1f h", it) } ?: "—", Modifier.weight(1f))
+                                }
+                                Text("* Cálculo em horas corridas, não desconta turnos ou paradas programadas. MTTR considera paradas encerradas; MTBF é tempo operacional dividido pelas falhas iniciadas no período.", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 6.dp))
                                 Text("Cadastre as máquinas para iniciar os apontamentos de manutenção.", modifier = Modifier.padding(top = 16.dp))
                             }
                             "Máquinas" -> {
@@ -114,7 +127,7 @@ class MainActivity : ComponentActivity() {
                                                 if (o.status == WorkOrderStatus.OPEN) Button(onClick = { perform { repository.startWork(o.id) } }) { Text("Iniciar") }
                                                 if (o.status == WorkOrderStatus.IN_PROGRESS) {
                                                     OutlinedButton(onClick = { showEntryFor = o.id }) { Text("Apontar") }
-                                                    Button(onClick = { perform { repository.completeWork(o.id, if (o.stopId != null) "Serviço concluído" else "", o.stopId != null) } }) { Text("Concluir") }
+                                                    Button(onClick = { showCompleteFor = o.id }) { Text("Concluir") }
                                                 }
                                             }
                                         }
@@ -154,6 +167,18 @@ class MainActivity : ComponentActivity() {
                     EntryDialog(onDismiss = { showEntryFor = null }) { technician, description, parts, minutes ->
                         perform { repository.addExecution(orderId, technician, description, parts, minutes) }
                         showEntryFor = null
+                    }
+                }
+                showCompleteFor?.let { orderId ->
+                    val order = repository.listOrders().firstOrNull { it.id == orderId }
+                    if (order != null) {
+                        CompleteWorkDialog(
+                            linkedToStop = order.stopId != null,
+                            onDismiss = { showCompleteFor = null }
+                        ) { solution, releaseMachine ->
+                            perform { repository.completeWork(orderId, solution, releaseMachine) }
+                            showCompleteFor = null
+                        }
                     }
                 }
             }
@@ -246,6 +271,49 @@ private fun orderText(s: WorkOrderStatus) = when (s) {
             Button(enabled = cause.isNotBlank(), onClick = { onConfirm(cause.trim()) }) {
                 Text("Confirmar parada")
             }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
+    )
+}
+
+
+@Composable private fun CompleteWorkDialog(
+    linkedToStop: Boolean,
+    onDismiss: () -> Unit,
+    onConfirm: (String, Boolean) -> Unit
+) {
+    var solution by remember { mutableStateOf("") }
+    var releaseMachine by remember { mutableStateOf(true) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Concluir ordem de serviço") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (linkedToStop) {
+                    OutlinedTextField(
+                        value = solution,
+                        onValueChange = { solution = it },
+                        label = { Text("Solução aplicada") },
+                        placeholder = { Text("Descreva o reparo realizado") }
+                    )
+                    Text("Confirme a condição da máquina:")
+                    Row {
+                        RadioButton(selected = releaseMachine, onClick = { releaseMachine = true })
+                        Text("Liberar para produção", modifier = Modifier.padding(top = 12.dp))
+                    }
+                    Row {
+                        RadioButton(selected = !releaseMachine, onClick = { releaseMachine = false })
+                        Text("Manter em manutenção", modifier = Modifier.padding(top = 12.dp))
+                    }
+                } else {
+                    Text("Esta OS não está vinculada a uma parada. A conclusão não altera o estado da máquina.")
+                }
+            }
+        },
+        confirmButton = {
+            Button(enabled = !linkedToStop || solution.isNotBlank(), onClick = {
+                onConfirm(solution.trim(), linkedToStop && releaseMachine)
+            }) { Text("Confirmar conclusão") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
     )
