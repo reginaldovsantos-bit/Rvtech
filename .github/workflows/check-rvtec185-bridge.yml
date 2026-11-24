@@ -1,0 +1,29 @@
+name: Verificar compatibilidade WebView e IA RVTEC 1.8.5
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/check-rvtec185-bridge.yml'
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspecionar ponte nativa e IA HTML
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/a /tmp/b
+          unzip -q RVTEC_Android_v1.4.0_FOTO_IA_FONTE.zip -d /tmp/a
+          unzip -q RVTEC_1.8.5_SEM_BOTAO_MENU.zip -d /tmp/b
+          echo '--- ANDROID MAINACTIVITY COMPLETE ---'
+          cat /tmp/a/RVTEC_Android/app/src/main/java/com/rvtec/manutencao/MainActivity.java
+          echo '--- HTML BRIDGE / AI / INIT REFERENCES ---'
+          grep -nE 'Android|android|rvtecAskAI|rvtecAI|FirebaseAI|googleAI|generativeModel|native|bridge|sendPhoto|selectPhoto|camera|gallery|window\.' /tmp/b/index.html | tail -180
+          echo '--- HTML CORE AROUND FIREBASE AND AI ---'
+          sed -n '700,755p' /tmp/b/index.html
+          sed -n '1310,1415p' /tmp/b/index.html
+          echo '--- 1.4.0 NOTES ---'
+          cat /tmp/a/RVTEC_Android/ATUALIZACAO_1.4.0_NOTAS.txt
+          cat /tmp/a/RVTEC_Android/MIGRACAO_IA_SEM_CLOUD.md
