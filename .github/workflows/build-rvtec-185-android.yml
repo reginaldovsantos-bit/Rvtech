@@ -102,14 +102,13 @@ jobs:
           # Não registrar JWT App Check: ele não é o segredo que deve ser cadastrado na allowlist.
           if 'import android.util.Log;' in j:
               j=j.replace('import android.util.Log;\\n','')
-          debug_block='''            if (BuildConfig.DEBUG) {
-                android.util.Log.i("RVTEC_APP_CHECK", "Debug provider ativo; consulte DebugAppCheckProvider no Logcat para obter o debug secret.");
-            }
-            GenerativeModel model = FirebaseAI.getInstance(app, GenerativeBackend.googleAI(), true)'''
-          marker='''            GenerativeModel model = FirebaseAI.getInstance(app, GenerativeBackend.googleAI(), true)'''
-          if 'Debug provider ativo' not in j:
-              if marker not in j: raise SystemExit('Ponto de inicialização Firebase AI Logic não encontrado')
-              j=j.replace(marker,debug_block,1)
+          # Ativar tokens App Check de uso limitado (necessários para replay protection do Firebase AI Logic).
+          old_call='FirebaseAI.getInstance(app, GenerativeBackend.googleAI())'
+          new_call='FirebaseAI.getInstance(app, GenerativeBackend.googleAI(), true)'
+          if old_call in j:
+              j=j.replace(old_call,new_call,1)
+          if j.count(new_call) != 1:
+              raise SystemExit('Inicialização Firebase AI Logic não foi atualizada para tokens de uso limitado')
           java.write_text(j)
           # Firebase AI Logic usa tokens App Check de uso limitado para compatibilidade com replay protection.
           if j.count('FirebaseAI.getInstance(app, GenerativeBackend.googleAI(), true)') != 1:
