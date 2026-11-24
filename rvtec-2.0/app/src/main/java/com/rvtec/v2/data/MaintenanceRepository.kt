@@ -96,6 +96,13 @@ class MaintenanceRepository(context: Context? = null) {
     @Synchronized fun openWorkOrder(machineId: String, title: String, description: String = "", stopId: String? = null, now: Long = System.currentTimeMillis()): WorkOrder {
         require(title.isNotBlank()) { "Informe o título da OS." }
         val machine = machines[machineId] ?: error("Máquina não encontrada.")
+        val activeOrder = orders.values.firstOrNull {
+            it.machineId == machineId &&
+                (it.status == WorkOrderStatus.OPEN || it.status == WorkOrderStatus.IN_PROGRESS)
+        }
+        check(activeOrder == null) {
+            "Já existe uma OS ativa para esta máquina: ${activeOrder?.title}. Reutilize a OS existente em vez de abrir outra."
+        }
         val stop = stopId?.let { stops[it] ?: error("Parada não encontrada.") }
         if (stop != null) {
             require(stop.machineId == machineId) { "A parada pertence a outra máquina." }
