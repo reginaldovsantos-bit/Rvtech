@@ -80,6 +80,11 @@ class MainActivity : ComponentActivity() {
                                             Text("Código: ${m.code.ifBlank { "—" }} | Setor: ${m.sector.ifBlank { "—" }}")
                                             Text("Produção: ${m.productionKgPerHour} kg/h")
                                             Text("Estado: ${statusText(m.status)}")
+                                            if (m.status == MachineStatus.MAINTENANCE) {
+                                                Button(onClick = { perform { repository.releaseMachine(m.id) } }) {
+                                                    Text("Liberar máquina")
+                                                }
+                                            }
                                         }
                                     }
                                 } }
