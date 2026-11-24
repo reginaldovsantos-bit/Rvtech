@@ -19,7 +19,7 @@ class TechnicalAiService(private val firebaseApp: FirebaseApp) {
         val model = Firebase.ai(
             app = firebaseApp,
             backend = GenerativeBackend.googleAI()
-        ).generativeModel("gemini-2.5-flash")
+        ).generativeModel("gemini-3.8-flash")
 
         val prompt = """
             Você é o assistente técnico do RVTEC, especializado em manutenção industrial
