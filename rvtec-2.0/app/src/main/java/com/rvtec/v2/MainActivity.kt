@@ -26,6 +26,7 @@ class MainActivity : ComponentActivity() {
                 var revision by remember { mutableIntStateOf(0) }
                 var error by remember { mutableStateOf<String?>(null) }
                 var showMachine by remember { mutableStateOf(false) }
+                var showStopFor by remember { mutableStateOf<String?>(null) }
                 var showOrder by remember { mutableStateOf(false) }
                 var showEntryFor by remember { mutableStateOf<String?>(null) }
                 fun refresh() { revision++ }
@@ -82,9 +83,7 @@ class MainActivity : ComponentActivity() {
                                                     Text(m.name, style = MaterialTheme.typography.titleMedium)
                                                     Text(statusText(m.status))
                                                 }
-                                                Button(enabled = m.status == MachineStatus.RUNNING, onClick = {
-                                                    perform { repository.registerStop(m.id, "Parada registrada pela operação") }
-                                                }) { Text("Parar") }
+                                                Button(enabled = m.status == MachineStatus.RUNNING, onClick = { showStopFor = m.id }) { Text("Parar") }
                                             }
                                         }
                                     }
@@ -139,6 +138,13 @@ class MainActivity : ComponentActivity() {
                 if (showMachine) MachineDialog(onDismiss = { showMachine = false }) { name, code, sector, rate ->
                     perform { repository.addMachine(Machine(java.util.UUID.randomUUID().toString(), name, code, sector, rate)) }
                     showMachine = false
+                }
+                showStopFor?.let { machineId ->
+                    val machineName = repository.listMachines().firstOrNull { it.id == machineId }?.name ?: machineId
+                    StopDialog(machineName, onDismiss = { showStopFor = null }) { cause ->
+                        perform { repository.registerStop(machineId, cause) }
+                        showStopFor = null
+                    }
                 }
                 if (showOrder) OrderDialog(machines = repository.listMachines(), stops = repository.listStops(), onDismiss = { showOrder = false }) { machineId, title, description, stopId ->
                     perform { repository.openWorkOrder(machineId, title, description, stopId) }
@@ -213,4 +219,34 @@ private fun orderText(s: WorkOrderStatus) = when (s) {
     }, confirmButton = { Button(enabled = technician.isNotBlank() && description.isNotBlank() && (minutes.toIntOrNull() ?: -1) >= 0,
         onClick = { onSave(technician,description,parts,minutes.toIntOrNull() ?: 0) }) { Text("Salvar apontamento") } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } })
+}
+
+
+@Composable private fun StopDialog(
+    machineName: String,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit
+) {
+    var cause by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Registrar parada") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Máquina: $machineName")
+                OutlinedTextField(
+                    value = cause,
+                    onValueChange = { cause = it },
+                    label = { Text("Causa da parada") },
+                    placeholder = { Text("Ex.: falha no puxador, inversor em alarme...") }
+                )
+            }
+        },
+        confirmButton = {
+            Button(enabled = cause.isNotBlank(), onClick = { onConfirm(cause.trim()) }) {
+                Text("Confirmar parada")
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
+    )
 }
