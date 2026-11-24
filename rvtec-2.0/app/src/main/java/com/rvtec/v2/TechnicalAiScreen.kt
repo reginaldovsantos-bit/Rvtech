@@ -12,6 +12,7 @@ import com.google.firebase.ai.Firebase
 import com.google.firebase.ai.GenerativeBackend
 import com.google.firebase.appcheck.FirebaseAppCheck
 import com.rvtec.v2.data.TechnicalAiService
+import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.launch
 
 @Composable
