@@ -1,0 +1,46 @@
+name: RVTEC 1.8.5 feature inventory
+on:
+  push:
+    branches:
+      - feature/rvtec-2.0-native-legacy-integration
+    paths:
+      - ".github/workflows/inventory-rvtec-185.yml"
+  workflow_dispatch:
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect original 1.8.5 package
+        run: |
+          python - <<'PY'
+          import urllib.request, zipfile, io, re, json
+          url = "https://raw.githubusercontent.com/reginaldovsantos-bit/Rvtech/main/RVTEC_1.8.5_SEM_BOTAO_MENU.zip"
+          data = urllib.request.urlopen(url, timeout=30).read()
+          z = zipfile.ZipFile(io.BytesIO(data))
+          print("ZIP_FILES", json.dumps([(x.filename,x.file_size) for x in z.infolist()]))
+          html = z.read("index.html").decode("utf-8", "replace")
+          print("HTML_TITLE", re.findall(r"<title[^>]*>(.*?)</title>", html, re.I|re.S)[:2])
+          print("HTML_BYTES", len(html.encode()))
+          for label, pattern in [
+            ("NAV", r'<(?:button|a)[^>]*(?:data-tab|data-screen|onclick)[^>]*>.*?</(?:button|a)>'),
+            ("SECTIONS", r'<section[^>]*>'),
+            ("FUNCTIONS", r'(?:async\\s+)?function\\s+([A-Za-z_$][\\w$]*)\\s*\\('),
+            ("DB_KEYS", r'(?:db|state|data)\\.([A-Za-z_$][\\w$]*)'),
+            ("IDS", r'\\bid=["\']([^"\']+)["\']')
+          ]:
+            vals = re.findall(pattern, html, re.I|re.S)
+            if label == "NAV": vals = [re.sub(r"\\s+"," ",re.sub(r"<[^>]+>"," ",x)).strip()[:160] for x in vals]
+            print(label, json.dumps(list(dict.fromkeys(vals)), ensure_ascii=False))
+          with open("rvtec-185-inventory.txt","w") as f:
+            f.write("RVTEC 1.8.5 inventory\\n")
+            f.write("Title: "+str(re.findall(r"<title[^>]*>(.*?)</title>",html,re.I|re.S)[:2])+"\\n")
+            f.write("Package entries: "+str([(x.filename,x.file_size) for x in z.infolist()])+"\\n")
+            for label, pattern in [("FUNCTIONS",r'(?:async\\s+)?function\\s+([A-Za-z_$][\\w$]*)\\s*\\('),("IDS",r'\\bid=["\']([^"\']+)["\']'),("DB_KEYS",r'(?:db|state|data)\\.([A-Za-z_$][\\w$]*)')]:
+              vals=list(dict.fromkeys(re.findall(pattern,html,re.I)))
+              f.write("\\n"+label+"\\n"+"\\n".join(vals)+"\\n")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rvtec-1.8.5-inventory
+          path: rvtec-185-inventory.txt
