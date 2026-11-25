@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.rvtec.v2.data.MaintenanceRepository
 import com.rvtec.v2.data.FirebaseServices
+import com.google.firebase.auth.FirebaseAuth
 import com.rvtec.v2.domain.*
 
 private val pages = listOf("Início", "Máquinas", "Paradas", "Ordens de serviço", "Apontamentos", "Memória Técnica IA")
@@ -24,8 +25,18 @@ class MainActivity : ComponentActivity() {
         val firebaseServices = FirebaseServices(applicationContext)
         firebaseServices.installAppCheck()
         val repository = MaintenanceRepository(applicationContext)
+        val auth = FirebaseAuth.getInstance()
         setContent {
             MaterialTheme {
+                var signedIn by remember { mutableStateOf(auth.currentUser != null) }
+                DisposableEffect(auth) {
+                    val listener = FirebaseAuth.AuthStateListener { signedIn = it.currentUser != null }
+                    auth.addAuthStateListener(listener)
+                    onDispose { auth.removeAuthStateListener(listener) }
+                }
+                if (!signedIn) {
+                    FirebaseAuthScreen(auth) { signedIn = true }
+                } else {
                 var page by remember { mutableStateOf("Início") }
                 var revision by remember { mutableIntStateOf(0) }
                 var error by remember { mutableStateOf<String?>(null) }
@@ -227,6 +238,7 @@ class MainActivity : ComponentActivity() {
                             showCompleteFor = null
                         }
                     }
+                }
                 }
             }
         }
