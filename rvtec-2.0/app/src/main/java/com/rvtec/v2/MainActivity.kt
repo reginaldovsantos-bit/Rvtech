@@ -16,7 +16,7 @@ import com.rvtec.v2.data.FirebaseServices
 import com.google.firebase.auth.FirebaseAuth
 import com.rvtec.v2.domain.*
 
-private val pages = listOf("Início", "Máquinas", "Paradas", "Ordens de serviço", "Apontamentos", "Memória Técnica IA")
+private val pages = listOf("Início", "Máquinas", "Paradas", "Ordens de serviço", "Apontamentos", "Memória Técnica IA", "Sincronização")
 
 @OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
@@ -191,7 +191,7 @@ class MainActivity : ComponentActivity() {
                                     }
                                 } }
                             }
-                            "Memória Técnica IA" -> TechnicalAiScreen()
+                            "Memória Técnica IA" -> TechnicalAiScreen()\n                            "Sincronização" -> FirebaseSyncScreen(firebaseServices, repository)
                             "Apontamentos" -> {
                                 val entries = remember(revision) { repository.listEntries() }
                                 val orders = remember(revision) { repository.listOrders() }
