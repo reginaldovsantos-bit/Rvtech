@@ -108,3 +108,43 @@ Uma versão só pode ser considerada pronta quando: o código-fonte estiver vers
 
 ## 10. Primeira ação de execução
 Iniciar pela Etapa 0: identificar no código-fonte atual a versão-base mais recente, mapear módulos, dependências Firebase, regras Firestore/Storage, fluxo de autenticação e processo de build. Não iniciar alterações funcionais antes desse inventário e da confirmação de uma compilação reproduzível.
+
+
+## 11. Auditoria confirmada do pacote RVTEC 1.8.5
+**Fonte examinada:** `RVTEC_1.8.5_SEM_BOTAO_MENU.zip`, branch `main`.  
+**Execução de auditoria:** GitHub Actions run `45544769247`, concluída com sucesso em 25/11/2026.
+
+### 11.1 Estrutura real do pacote
+- `index.html`: 222.381 bytes; título interno identificado como **RVTEC 1.8.4 — Grade compacta**.
+- `manifest.webmanifest`, `sw.js`, `LEIA-ME.txt` e ícones PNG de 192 e 512 px.
+- O ZIP não contém `build.gradle`, `settings.gradle`, `gradlew` ou `AndroidManifest.xml`: é um pacote PWA/web, não um projeto Android nativo.
+- O service worker declara cache `rvtec-shell-1.8.4`. Há, portanto, divergência entre o nome do ZIP (1.8.5) e marcadores internos (1.8.4), que precisa ser esclarecida antes de rotular a versão migrada.
+
+### 11.2 Recursos comprovados no HTML
+- Estrutura com 190 IDs de elementos e 56 botões.
+- Painel com alerta visual piscante para máquinas paradas, grade de máquinas e estados.
+- Ficha/histórico de máquina com ordens, paradas abertas, MTTR e paradas mensais.
+- Ordens de serviço e apontamentos técnicos, incluindo salvamento parcial e encerramento com causa, solução, técnico e tempos.
+- Estoque com cadastro, edição, exclusão, movimentações e baixa de peças vinculada à OS.
+- Configurações de tema claro/escuro, cor de destaque, gráficos, visibilidade de telas e ícones.
+- Autenticação Firebase, Firestore e App Check aparecem no código web.
+- O código contém integração Gemini via Firebase AI Logic, com modelo declarado `gemini-2.5-flash` e ponte para resultado nativo Android.
+- Há funções de gestão de usuários/perfis e notificações no código; cada fluxo ainda precisa de teste funcional e revisão das regras de segurança.
+
+### 11.3 Limitações e cuidados identificados
+- O LEIA-ME declara que a prévia local existente não mantém Firebase e IA nativos ativos e não deve ser usada com dados reais de produção.
+- A presença de nomes, funções ou referências no HTML não prova que todos os fluxos estão operacionais. A migração deve validar cada fluxo e suas regras.
+- Não copiar o HTML inteiro para uma WebView como substituto da arquitetura Android; usar o HTML como referência de comportamento, layout e requisitos, reconstruindo os módulos no projeto Kotlin/Compose.
+- Não descartar o painel, grade, indicadores, identidade visual, menu configurável, fluxos de OS/apontamentos nem estoque ao fazer a migração.
+
+### 11.4 Ordem de recuperação recomendada
+1. Reproduzir no Android o painel, grade/semáforo de máquinas e histórico/KPIs.
+2. Completar ciclo de parada → OS → apontamento parcial/final → liberação da máquina.
+3. Completar estoque e movimentações ligadas à OS, com proteção contra baixa duplicada.
+4. Recuperar configurações de tema, menu, ícones e gráficos.
+5. Migrar usuários/perfis, notificações e anexos com regras Firebase verificadas.
+6. Integrar Gemini por Firebase AI Logic e validar a ponte nativa em aparelho real.
+7. Executar regressão dos dados e testar em múltiplos aparelhos antes de gerar prévia para aprovação.
+
+**Status da auditoria da fonte:** inventário estático concluído.  
+**Status da migração funcional:** ainda não concluída; requer implementação e testes por módulo.
