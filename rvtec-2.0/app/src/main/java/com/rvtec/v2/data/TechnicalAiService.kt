@@ -32,7 +32,7 @@ class TechnicalAiService {
             "$speaker: ${message.text}"
         }
         val model = Firebase.ai(backend = GenerativeBackend.googleAI())
-            .generativeModel("gemini-3.8-flash")
+            .generativeModel("gemini-4-hydrogen")
         val prompt = """
             Você é o assistente técnico do RVTEC, especializado em manutenção industrial
             e linhas de extrusão de filme plástico. Responda em português brasileiro,
