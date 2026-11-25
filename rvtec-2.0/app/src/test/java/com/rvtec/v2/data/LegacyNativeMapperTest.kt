@@ -62,7 +62,7 @@ class LegacyNativeMapperTest {
         assertEquals("Conector refeito", mapped.diagnostics.single().solution)
         assertEquals(0.0, mapped.stock.single().quantity, 0.0)
         assertEquals("ROL-6204", mapped.stock.single().code)
-        assertEquals(StaffRole.SUPERVISOR, mapped.staff.single().role)
+        assertEquals("SUPERVISOR", mapped.staff.single().role.name)
         assertEquals("06:00", mapped.settings.shift1Start)
         assertTrue(mapped.settings.darkTheme)
     }
