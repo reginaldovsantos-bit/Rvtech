@@ -10,14 +10,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.rvtec.v2.data.MaintenanceRepository
+import com.rvtec.v2.data.MaintenanceRepository\nimport com.rvtec.v2.data.LegacyModuleRepository
 import com.rvtec.v2.data.FirebaseServices
 import com.rvtec.v2.domain.*
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-private val pages = listOf("Início", "Máquinas", "Paradas", "Ordens de serviço", "Apontamentos", "Memória Técnica IA")
+private val pages = listOf("Início", "Máquinas", "Paradas", "Ordens de serviço", "Apontamentos", "Módulos", "Memória Técnica IA")
 
 @OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
@@ -25,7 +25,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val firebaseServices = FirebaseServices(applicationContext)
         firebaseServices.installAppCheck()
-        val repository = MaintenanceRepository(applicationContext)
+        val repository = MaintenanceRepository(applicationContext)\n        val legacyRepository = LegacyModuleRepository(applicationContext)
         setContent {
             MaterialTheme {
                 var page by remember { mutableStateOf("Início") }
@@ -145,7 +145,7 @@ class MainActivity : ComponentActivity() {
                                     }
                                 } }
                             }
-                            "Memória Técnica IA" -> TechnicalAiScreen(firebaseServices.firebaseApp)
+                            "Módulos" -> LegacyModulesScreen(legacyRepository, revision) { refresh() }\n                            "Memória Técnica IA" -> TechnicalAiScreen(firebaseServices.firebaseApp)
                             "Apontamentos" -> {
                                 val entries = remember(revision) { repository.listEntries() }
                                 val orders = remember(revision) { repository.listOrders() }
