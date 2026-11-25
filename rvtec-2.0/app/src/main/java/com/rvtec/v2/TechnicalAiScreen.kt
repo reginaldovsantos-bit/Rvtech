@@ -43,12 +43,18 @@ fun TechnicalAiScreen() {
                     try {
                         answer = service.diagnose(question.trim())
                     } catch (e: Exception) {
-                        // Preserve the original failure: Firebase/network/App Check/model errors
-                        // must not all be mislabeled as a missing google-services.json.
                         val detail = e.localizedMessage
                             ?.takeIf { it.isNotBlank() }
                             ?: e.javaClass.simpleName
-                        error = "Não foi possível consultar o Gemini. Detalhe técnico: $detail"
+                        val normalized = detail.lowercase()
+                        error = when {
+                            "app check" in normalized || "appcheck" in normalized ->
+                                "O Firebase recusou o token App Check. Confirme em Firebase Console > App Check > Apps que o token de depuração deste aparelho está cadastrado no aplicativo Android RVTEC 2.0 (com.rvtec.manutencao.v2), e não no app antigo. Depois feche e abra o RVTEC 2.0 e tente novamente. Detalhe: $detail"
+                            "unauthenticated" in normalized || "unauthorized" in normalized ->
+                                "Falha de autenticação/autorização na chamada ao Gemini. Verifique o estado do Firebase AI Logic e as credenciais do projeto. Detalhe: $detail"
+                            else ->
+                                "Não foi possível consultar o Gemini. Verifique a conexão e o serviço Firebase AI Logic. Detalhe técnico: $detail"
+                        }
                     } finally {
                         loading = false
                     }
