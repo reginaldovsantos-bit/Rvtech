@@ -15,7 +15,7 @@ class TechnicalAiService {
     suspend fun diagnose(question: String): String = withContext(Dispatchers.IO) {
         require(question.isNotBlank()) { "Descreva a falha ou dúvida técnica." }
         val model = Firebase.ai(backend = GenerativeBackend.googleAI())
-            .generativeModel("gemini-2.5-flash")
+            .generativeModel("gemini-3.8-flash")
         val prompt = """
             Você é o assistente técnico do RVTEC, especializado em manutenção industrial
             e linhas de extrusão de filme plástico. Responda em português brasileiro,
