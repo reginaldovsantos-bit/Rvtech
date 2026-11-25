@@ -35,12 +35,33 @@ class LegacyModuleRepository(context: Context) {
 
     @Synchronized fun importLegacy(data: LegacyNativeMapper.Mapped): ImportPreview {
         val preview = previewImport(data)
-        data.preventives.forEach { preventives[it.id.ifBlank { UUID.randomUUID().toString() }] = it }
-        data.diagnostics.forEach { diagnostics[it.id.ifBlank { UUID.randomUUID().toString() }] = it }
-        data.technicalMemory.forEach { memories[it.id.ifBlank { UUID.randomUUID().toString() }] = it }
-        data.stock.forEach { stock[it.id.ifBlank { UUID.randomUUID().toString() }] = it }
-        data.staff.forEach { staff[it.id.ifBlank { UUID.randomUUID().toString() }] = it }
-        data.notifications.forEach { notifications[it.id.ifBlank { UUID.randomUUID().toString() }] = it }
+        // Keep the generated identifier inside the model as well as the map key.
+        // Otherwise imported records without a legacy ID would be impossible to
+        // reference reliably from screens and future edit/delete operations.
+        data.preventives.forEach { item ->
+            val id = item.id.ifBlank { UUID.randomUUID().toString() }
+            preventives[id] = item.copy(id = id)
+        }
+        data.diagnostics.forEach { item ->
+            val id = item.id.ifBlank { UUID.randomUUID().toString() }
+            diagnostics[id] = item.copy(id = id)
+        }
+        data.technicalMemory.forEach { item ->
+            val id = item.id.ifBlank { UUID.randomUUID().toString() }
+            memories[id] = item.copy(id = id)
+        }
+        data.stock.forEach { item ->
+            val id = item.id.ifBlank { UUID.randomUUID().toString() }
+            stock[id] = item.copy(id = id)
+        }
+        data.staff.forEach { item ->
+            val id = item.id.ifBlank { UUID.randomUUID().toString() }
+            staff[id] = item.copy(id = id)
+        }
+        data.notifications.forEach { item ->
+            val id = item.id.ifBlank { UUID.randomUUID().toString() }
+            notifications[id] = item.copy(id = id)
+        }
         settings = data.settings
         persist()
         return preview
