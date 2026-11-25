@@ -18,7 +18,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-private val pages = listOf("Início", "Máquinas", "Paradas", "Ordens de serviço", "Apontamentos", "Módulos", "Memória Técnica IA")
+private val pages = listOf("Início", "Máquinas", "Paradas", "Ordens de serviço", "Apontamentos", "Módulos", "Memória Técnica IA", "Configurações")
 
 @OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
@@ -148,6 +148,7 @@ class MainActivity : ComponentActivity() {
                                 } }
                             }
                             "Módulos" -> LegacyModulesScreen(legacyRepository, revision) { refresh() }
+                            "Configurações" -> LegacySettingsScreen(legacyRepository) { refresh() }
                             "Memória Técnica IA" -> TechnicalAiScreen(firebaseServices.firebaseApp)
                             "Apontamentos" -> {
                                 val entries = remember(revision) { repository.listEntries() }
