@@ -3,6 +3,7 @@ package com.rvtec.v2
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -77,7 +78,22 @@ class MainActivity : ComponentActivity() {
                                     Button(onClick = { showMachine = true }) { Text("Nova máquina") }
                                 }
                                 LazyColumn { items(machines) { m ->
-                                    Card(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                                    val pulse = rememberInfiniteTransition(label = "machine-status")
+                                        .animateFloat(
+                                            initialValue = 0.35f,
+                                            targetValue = 1f,
+                                            animationSpec = infiniteRepeatable(tween(700), RepeatMode.Reverse),
+                                            label = "stop-pulse"
+                                        ).value
+                                    val machineCardColor = when (m.status) {
+                                        MachineStatus.STOPPED -> MaterialTheme.colorScheme.error.copy(alpha = pulse)
+                                        MachineStatus.MAINTENANCE -> MaterialTheme.colorScheme.tertiaryContainer
+                                        MachineStatus.RUNNING -> MaterialTheme.colorScheme.surface
+                                    }
+                                    Card(
+                                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                        colors = CardDefaults.cardColors(containerColor = machineCardColor)
+                                    ) {
                                         Column(Modifier.padding(12.dp)) {
                                             Text(m.name, style = MaterialTheme.typography.titleMedium)
                                             Text("Código: ${m.code.ifBlank { "—" }} | Setor: ${m.sector.ifBlank { "—" }}")
