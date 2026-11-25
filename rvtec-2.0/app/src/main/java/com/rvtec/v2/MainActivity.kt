@@ -45,6 +45,14 @@ class MainActivity : ComponentActivity() {
                                 Tab(selected = page == item, onClick = { page = item }, text = { Text(item) })
                             }
                         }
+                        if (repository.hasStorageError()) {
+                            Text(
+                                "ATENÇÃO: os dados locais não puderam ser lidos. O armazenamento foi bloqueado para evitar sobrescrever informações. Procure recuperar os dados antes de continuar.",
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.padding(8.dp)
+                            )
+                        }
                         error?.let { Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(8.dp)) }
                         when (page) {
                             "Início" -> {
