@@ -23,7 +23,10 @@ jobs:
           echo '--- ESTRUTURA ---'
           find /tmp/rvtec185 -maxdepth 4 -type f -printf '%p %s bytes\\n' | sort
           echo '--- ARQUIVOS ANDROID ---'
-          find /tmp/rvtec185 -type f \\( -name 'build.gradle' -o -name 'settings.gradle' -o -name 'gradlew' -o -name 'AndroidManifest.xml' \\) -print
+          find /tmp/rvtec185 -type f -name build.gradle -print
+          find /tmp/rvtec185 -type f -name settings.gradle -print
+          find /tmp/rvtec185 -type f -name gradlew -print
+          find /tmp/rvtec185 -type f -name AndroidManifest.xml -print
           echo '--- METADADOS E FUNCIONALIDADES ---'
           grep -RniE '<title>|firebase|gemini|manifest|serviceWorker|localStorage|QRCode|preventives|technicalMemory|stock|notifications' /tmp/rvtec185 --include='*.html' --include='*.js' --include='*.json' | head -160 || true
           echo '--- LEIA-ME ---'
