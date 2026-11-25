@@ -15,7 +15,6 @@ fun LegacyModulesScreen(repository: LegacyModuleRepository, revision: Int, onRef
     val preventives = remember(revision) { repository.listPreventives() }
     val diagnostics = remember(revision) { repository.listDiagnostics() }
     val memories = remember(revision) { repository.listMemories() }
-    val stock = remember(revision) { repository.listStock() }
     val staff = remember(revision) { repository.listStaff() }
     val notifications = remember(revision) { repository.listNotifications() }
     val settings = remember(revision) { repository.getSettings() }
@@ -54,11 +53,7 @@ fun LegacyModulesScreen(repository: LegacyModuleRepository, revision: Int, onRef
             items(memories, key = { "m:${it.id}" }) { m ->
                 ModuleCard(m.title, "${m.content}\nTags: ${m.tags.joinToString()}")
             }
-            item { Text("Estoque", style = MaterialTheme.typography.titleMedium) }
-            if (stock.isEmpty()) item { EmptyModule("Nenhuma peça cadastrada.") }
-            items(stock, key = { "s:${it.id}" }) { s ->
-                ModuleCard(s.name, "Código: ${s.code.ifBlank { "—" }} • Saldo: ${s.quantity} ${s.unit}\nMínimo: ${s.minimumQuantity} • Local: ${s.location}")
-            }
+            item { LegacyStockSection(repository, revision, onRefresh) }
             item { Text("Equipe", style = MaterialTheme.typography.titleMedium) }
             if (staff.isEmpty()) item { EmptyModule("Nenhum usuário importado.") }
             items(staff, key = { "u:${it.id}" }) { u ->
