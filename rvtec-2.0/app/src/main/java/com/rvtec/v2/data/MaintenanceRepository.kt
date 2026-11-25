@@ -108,6 +108,57 @@ class MaintenanceRepository(context: Context? = null) {
     }
     fun hasStorageError(): Boolean = restoreFailed
 
+    /** Snapshot completo dos dados locais atualmente suportados pela versão 2.0. */
+    @Synchronized fun exportCloudSnapshot(): JSONObject {
+        check(!restoreFailed) { "Dados locais protegidos por erro de leitura; sincronização bloqueada." }
+        val raw = prefs?.getString("database", null)
+        return if (raw.isNullOrBlank()) JSONObject()
+        else JSONObject(raw)
+    }
+
+    /**
+     * Restaura snapshot somente em instalação local vazia. Nunca mescla nem sobrescreve
+     * dados existentes automaticamente; a origem local continua preservada em caso de erro.
+     */
+    @Synchronized fun restoreCloudSnapshot(snapshot: JSONObject) {
+        check(!restoreFailed) { "Dados locais protegidos por erro de leitura; restauração bloqueada." }
+        check(machines.isEmpty() && stops.isEmpty() && orders.isEmpty() && entries.isEmpty()) {
+            "Este aparelho já possui dados. A restauração automática foi bloqueada para evitar sobrescrever o histórico local."
+        }
+        val machineArray = snapshot.optJSONArray("machines")
+            ?: error("Backup sem a coleção de máquinas.")
+        val stopArray = snapshot.optJSONArray("stops")
+            ?: error("Backup sem a coleção de paradas.")
+        val orderArray = snapshot.optJSONArray("orders")
+            ?: error("Backup sem a coleção de ordens.")
+        val entryArray = snapshot.optJSONArray("entries")
+            ?: JSONArray()
+        for (i in 0 until machineArray.length()) require(machineArray.optJSONObject(i) != null) { "Registro de máquina inválido." }
+        for (i in 0 until stopArray.length()) require(stopArray.optJSONObject(i) != null) { "Registro de parada inválido." }
+        for (i in 0 until orderArray.length()) require(orderArray.optJSONObject(i) != null) { "Registro de OS inválido." }
+        for (i in 0 until entryArray.length()) require(entryArray.optJSONObject(i) != null) { "Registro de apontamento inválido." }
+        val candidate = JSONObject()
+            .put("machines", machineArray)
+            .put("stops", stopArray)
+            .put("orders", orderArray)
+            .put("entries", entryArray)
+        val p = prefs ?: error("Armazenamento local indisponível.")
+        val oldRaw = p.getString("database", null)
+        check(p.edit().putString("database", candidate.toString()).commit()) {
+            "Não foi possível gravar o backup restaurado no aparelho."
+        }
+        try {
+            restore()
+            check(!restoreFailed) { "O backup foi gravado, mas não passou pela leitura local." }
+        } catch (failure: Exception) {
+            p.edit().putString("database", oldRaw).commit()
+            machines.clear(); stops.clear(); orders.clear(); entries.clear()
+            restoreFailed = false
+            restore()
+            throw failure
+        }
+    }
+
     @Synchronized fun listMachines(): List<Machine> = machines.values.toList()
     @Synchronized fun listStops(): List<StopRecord> = stops.values.toList()
     @Synchronized fun listOrders(): List<WorkOrder> = orders.values.toList()
