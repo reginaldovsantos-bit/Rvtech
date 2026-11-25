@@ -8,8 +8,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.google.firebase.FirebaseApp
-import com.google.firebase.ai.Firebase
-import com.google.firebase.ai.GenerativeBackend
 import com.google.firebase.appcheck.FirebaseAppCheck
 import com.rvtec.v2.data.TechnicalAiService
 import kotlinx.coroutines.tasks.await
