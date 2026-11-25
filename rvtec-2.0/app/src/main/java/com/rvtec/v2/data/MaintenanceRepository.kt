@@ -178,6 +178,18 @@ class MaintenanceRepository(context: Context? = null) {
         require(!releaseMachine || stop != null) {
             "A máquina só pode ser liberada ao concluir uma OS vinculada a uma parada."
         }
+        if (stop != null) {
+            require(solution.isNotBlank()) { "Informe a solução para encerrar a parada." }
+            require(stop.machineId == order.machineId) { "A parada pertence a outra máquina. Conclusão bloqueada." }
+            require(stop.workOrderId == order.id && stop.status == StopStatus.LINKED_TO_ORDER) {
+                "O vínculo entre a parada e esta OS não está íntegro. Conclusão bloqueada."
+            }
+            require(now >= stop.startedAt) { "O horário de conclusão não pode ser anterior ao início da parada." }
+            val machine = machines[order.machineId] ?: error("Máquina não encontrada.")
+            require(machine.activeStopId == stop.id && machine.status == MachineStatus.STOPPED) {
+                "O estado atual da máquina não corresponde à parada desta OS. Conclusão bloqueada."
+            }
+        }
         return transaction {
             if (stop != null) {
                 val machine = machines[order.machineId] ?: error("Máquina não encontrada.")
