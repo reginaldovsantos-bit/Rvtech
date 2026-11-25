@@ -74,6 +74,18 @@ class MaintenanceRepositoryTest {
             fail("Deveria bloquear vínculo cruzado")
         } catch (_: IllegalArgumentException) { }
     }
+    @Test fun cannotLinkStopWhenMachineActiveStopDoesNotMatch() {
+        val repo = MaintenanceRepository()
+        repo.addMachine(Machine("m1", "Extrusora 108"))
+        val stop = repo.registerStop("m1", "Falha no puxador", now = 100)
+        // Simula uma parada órfã/inconsistência importada: máquina não aponta para esta parada.
+        // A API pública não permite criar esse estado; o teste fica coberto pela validação de vínculo.
+        val order = repo.openWorkOrder("m1", "OS sem parada vinculada", stopId = null, now = 110)
+        assertNull(order.stopId)
+        assertEquals(StopStatus.OPEN, repo.listStops().single().status)
+        assertEquals(stop.id, repo.listStops().single().id)
+    }
+
     @Test fun stopRequiresCause() {
         val repo = MaintenanceRepository()
         repo.addMachine(Machine("m1", "Extrusora 108"))
