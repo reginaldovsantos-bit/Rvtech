@@ -191,7 +191,8 @@ class MainActivity : ComponentActivity() {
                                     }
                                 } }
                             }
-                            "Memória Técnica IA" -> TechnicalAiScreen()\n                            "Sincronização" -> FirebaseSyncScreen(firebaseServices, repository)
+                            "Memória Técnica IA" -> TechnicalAiScreen()
+                            "Sincronização" -> FirebaseSyncScreen(firebaseServices, repository)
                             "Apontamentos" -> {
                                 val entries = remember(revision) { repository.listEntries() }
                                 val orders = remember(revision) { repository.listOrders() }
