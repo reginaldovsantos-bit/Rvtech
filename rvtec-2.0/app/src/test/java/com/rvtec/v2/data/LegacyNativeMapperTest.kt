@@ -44,4 +44,36 @@ class LegacyNativeMapperTest {
         assertTrue(mapped.staff.isEmpty())
         assertTrue(mapped.notifications.isEmpty())
     }
-}
+
+    @Test fun mapsLegacyAliasesAndNormalizesInvalidQuantities() {
+        val mapped = LegacyNativeMapper.map(JSONObject(
+            """
+            {
+              "failures":[{"uid":"d-alias","machine_id":"extrusora-108","failure":"Falha no encoder","causes":"Cabo rompido","resolution":"Conector refeito","timestamp":1234}],
+              "stock":[{"uid":"rol-1","sku":"ROL-6204","title":"Rolamento","qty":-3,"minStock":2,"measure":"un","warehouse":"A1"}],
+              "staff":[{"uid":"sup-1","displayName":"Supervisor","profile":"supervisor","email":"sup@example.com"}],
+              "settings":{"turno1Inicio":"06:00","turno1Fim":"14:00","darkMode":true}
+            }
+            """.trimIndent()
+        ))
+        assertEquals("d-alias", mapped.diagnostics.single().id)
+        assertEquals("extrusora-108", mapped.diagnostics.single().machineId)
+        assertEquals("Falha no encoder", mapped.diagnostics.single().title)
+        assertEquals("Conector refeito", mapped.diagnostics.single().solution)
+        assertEquals(0.0, mapped.stock.single().quantity, 0.0)
+        assertEquals("ROL-6204", mapped.stock.single().code)
+        assertEquals(StaffRole.SUPERVISOR, mapped.staff.single().role)
+        assertEquals("06:00", mapped.settings.shift1Start)
+        assertTrue(mapped.settings.darkTheme)
+    }
+
+    @Test fun malformedOptionalFieldsDoNotBreakOtherModules() {
+        val mapped = LegacyNativeMapper.map(JSONObject(
+            """{"preventives":[{"id":"p","intervalDays":0}],
+               "technicalMemory":[{"id":"m","tags":"WEG;CLP"}],
+               "notifications":[{"id":"n","seen":true}]}"""
+        ))
+        assertEquals(1, mapped.preventives.single().intervalDays)
+        assertEquals(listOf("WEG", "CLP"), mapped.technicalMemory.single().tags)
+        assertTrue(mapped.notifications.single().read)
+    }
