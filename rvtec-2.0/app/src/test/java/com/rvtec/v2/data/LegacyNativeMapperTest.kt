@@ -77,3 +77,4 @@ class LegacyNativeMapperTest {
         assertEquals(listOf("WEG", "CLP"), mapped.technicalMemory.single().tags)
         assertTrue(mapped.notifications.single().read)
     }
+}
