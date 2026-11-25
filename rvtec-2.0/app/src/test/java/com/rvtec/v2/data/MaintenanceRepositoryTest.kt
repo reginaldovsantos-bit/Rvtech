@@ -84,5 +84,16 @@ class MaintenanceRepositoryTest {
         assertEquals(MachineStatus.RUNNING, repo.listMachines().single().status)
         assertTrue(repo.listStops().isEmpty())
     }
+    @Test fun independentWorkOrdersCanCoexistOnSameMachine() {
+        val repo = MaintenanceRepository()
+        repo.addMachine(Machine("m1", "Extrusora 108"))
+
+        val first = repo.openWorkOrder("m1", "Inspecionar puxador")
+        val second = repo.openWorkOrder("m1", "Verificar bobinador")
+
+        assertNotEquals(first.id, second.id)
+        assertEquals(2, repo.listOrders().size)
+        assertEquals(setOf(first.id, second.id), repo.listOrders().map { it.id }.toSet())
+    }
 
 }
