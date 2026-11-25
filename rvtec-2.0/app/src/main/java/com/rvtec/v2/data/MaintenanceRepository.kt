@@ -13,6 +13,7 @@ class MaintenanceRepository(context: Context? = null) {
     private val stops = linkedMapOf<String, StopRecord>()
     private val orders = linkedMapOf<String, WorkOrder>()
     private val entries = linkedMapOf<String, ExecutionEntry>()
+    private var restoreFailed = false
 
     init { restore() }
 
@@ -55,12 +56,20 @@ class MaintenanceRepository(context: Context? = null) {
                 entries[e.id] = e
             }
         } catch (_: Exception) {
-            // Corrupt storage is not overwritten; user data remains available for recovery.
+            // Keep the original persisted payload untouched and block writes until recovery.
+            machines.clear()
+            stops.clear()
+            orders.clear()
+            entries.clear()
+            restoreFailed = true
         }
     }
 
     /** Aplica a alteração em memória e persiste. Se a gravação falhar, restaura todos os mapas. */
     private inline fun <T> transaction(block: () -> T): T {
+        check(!restoreFailed) {
+            "Os dados locais estão inconsistentes e foram protegidos contra sobrescrita. É necessária uma recuperação antes de continuar."
+        }
         val machineSnapshot = machines.toMap()
         val stopSnapshot = stops.toMap()
         val orderSnapshot = orders.toMap()
