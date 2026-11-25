@@ -95,6 +95,7 @@ class MainActivity : ComponentActivity() {
                             "Paradas" -> {
                                 val machines = remember(revision) { repository.listMachines() }
                                 val stops = remember(revision) { repository.listStops() }
+                                val orders = remember(revision) { repository.listOrders() }
                                 Text("Registrar parada", style = MaterialTheme.typography.titleLarge)
                                 LazyColumn {
                                     items(machines) { m ->
@@ -111,8 +112,21 @@ class MainActivity : ComponentActivity() {
                                     item { Text("Histórico de paradas", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 12.dp)) }
                                     items(stops.reversed()) { s ->
                                         val machineName = machines.firstOrNull { it.id == s.machineId }?.name ?: s.machineId
+                                        val linkedOrder = orders.firstOrNull { it.id == s.workOrderId }
                                         ListItem(headlineContent = { Text(machineName) }, supportingContent = {
-                                            Text("${s.cause} • ${if (s.status == StopStatus.CLOSED) "Encerrada" else "Aberta"}")
+                                            Column {
+                                                Text("${s.cause} • ${when (s.status) {
+                                                    StopStatus.OPEN -> "Aberta"
+                                                    StopStatus.LINKED_TO_ORDER -> "Vinculada à OS"
+                                                    StopStatus.CLOSED -> "Encerrada"
+                                                }}")
+                                                if (linkedOrder != null) Text("OS: ${linkedOrder.title}")
+                                                if (s.solution.isNotBlank()) Text("Solução: ${s.solution}")
+                                                Text("Início: ${java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", java.util.Locale("pt", "BR")).format(java.util.Date(s.startedAt))}")
+                                                s.endedAt?.let { ended ->
+                                                    Text("Fim: ${java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", java.util.Locale("pt", "BR")).format(java.util.Date(ended))}")
+                                                }
+                                            }
                                         })
                                     }
                                 }
