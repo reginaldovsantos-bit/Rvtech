@@ -22,12 +22,15 @@ class TechnicalAiService {
         history: List<TechnicalChatMessage> = emptyList()
     ): String = withContext(Dispatchers.IO) {
         require(question.isNotBlank()) { "Descreva a falha ou dúvida técnica." }
-        val conversationContext = history
+        // A tela já adiciona a pergunta atual ao histórico antes da chamada.
+        // Removê-la daqui evita enviar a mesma mensagem duas vezes no prompt.
+        val previousMessages = history
+            .dropLast(1)
             .takeLast(30)
-            .joinToString("\n") { message ->
-                val speaker = if (message.role == "user") "Técnico" else "Assistente RVTEC"
-                "$speaker: ${message.text}"
-            }
+        val conversationContext = previousMessages.joinToString("\n") { message ->
+            val speaker = if (message.role == "user") "Técnico" else "Assistente RVTEC"
+            "$speaker: ${message.text}"
+        }
         val model = Firebase.ai(backend = GenerativeBackend.googleAI())
             .generativeModel("gemini-3.8-flash")
         val prompt = """
