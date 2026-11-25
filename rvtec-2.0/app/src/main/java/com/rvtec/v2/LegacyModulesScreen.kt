@@ -15,6 +15,7 @@ fun LegacyModulesScreen(repository: LegacyModuleRepository, revision: Int, onRef
     val preventives = remember(revision) { repository.listPreventives() }
     val diagnostics = remember(revision) { repository.listDiagnostics() }
     val memories = remember(revision) { repository.listMemories() }
+    val stock = remember(revision) { repository.listStock() }
     val staff = remember(revision) { repository.listStaff() }
     val notifications = remember(revision) { repository.listNotifications() }
     val settings = remember(revision) { repository.getSettings() }
