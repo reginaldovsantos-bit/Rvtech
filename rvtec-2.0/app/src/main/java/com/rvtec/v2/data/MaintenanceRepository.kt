@@ -106,6 +106,8 @@ class MaintenanceRepository(context: Context? = null) {
         check(!machines.containsKey(machine.id)) { "Máquina já cadastrada." }
         transaction { machines[machine.id] = machine }
     }
+    fun hasStorageError(): Boolean = restoreFailed
+
     @Synchronized fun listMachines(): List<Machine> = machines.values.toList()
     @Synchronized fun listStops(): List<StopRecord> = stops.values.toList()
     @Synchronized fun listOrders(): List<WorkOrder> = orders.values.toList()
