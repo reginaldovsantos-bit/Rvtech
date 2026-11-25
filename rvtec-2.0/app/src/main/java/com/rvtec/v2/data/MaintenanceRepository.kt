@@ -67,7 +67,9 @@ class MaintenanceRepository(context: Context? = null) {
         root.put("stops", arr(stops.values.map { JSONObject().put("id",it.id).put("machineId",it.machineId).put("startedAt",it.startedAt).put("endedAt",it.endedAt ?: JSONObject.NULL).put("cause",it.cause).put("solution",it.solution).put("status",it.status.name).put("workOrderId",it.workOrderId ?: "") }))
         root.put("orders", arr(orders.values.map { JSONObject().put("id",it.id).put("machineId",it.machineId).put("stopId",it.stopId ?: "").put("title",it.title).put("description",it.description).put("status",it.status.name).put("createdAt",it.createdAt).put("completedAt",it.completedAt ?: JSONObject.NULL).put("releasedMachine",it.releasedMachine) }))
         root.put("entries", arr(entries.values.map { JSONObject().put("id",it.id).put("workOrderId",it.workOrderId).put("technician",it.technician).put("description",it.description).put("partsUsed",it.partsUsed).put("durationMinutes",it.durationMinutes).put("createdAt",it.createdAt) }))
-        p.edit().putString("database", root.toString()).commit()
+        check(p.edit().putString("database", root.toString()).commit()) {
+            "Não foi possível salvar os dados de manutenção no aparelho. Verifique o espaço disponível e tente novamente."
+        }
     }
 
     @Synchronized fun addMachine(machine: Machine) {
@@ -130,21 +132,34 @@ class MaintenanceRepository(context: Context? = null) {
     @Synchronized fun releaseMachine(machineId: String): Machine {
         val machine = machines[machineId] ?: error("Máquina não encontrada.")
         check(machine.status == MachineStatus.MAINTENANCE) { "Máquina não está aguardando liberação." }
-        val activeStop = machine.activeStopId?.let { stops[it] }
-        check(activeStop == null || activeStop.status == StopStatus.CLOSED) { "Existe parada aberta vinculada à máquina." }
+        val activeStopId = machine.activeStopId
+            ?: error("Não existe parada vinculada para validar a liberação.")
+        val activeStop = stops[activeStopId]
+            ?: error("A parada vinculada não foi encontrada. Liberação bloqueada.")
+        check(activeStop.machineId == machineId) { "A parada vinculada pertence a outra máquina." }
+        check(activeStop.status == StopStatus.CLOSED) { "A parada ainda não foi encerrada. Liberação bloqueada." }
         return machine.copy(status = MachineStatus.RUNNING, activeStopId = null).also { machines[machineId] = it; persist() }
     }
 
     @Synchronized fun completeWork(orderId: String, solution: String, releaseMachine: Boolean, now: Long = System.currentTimeMillis()): WorkOrder {
         val order = orders[orderId] ?: error("OS não encontrada.")
         check(order.status == WorkOrderStatus.IN_PROGRESS) { "Somente OS em execução pode ser concluída." }
+        require(now >= order.createdAt) { "O horário de conclusão não pode ser anterior à abertura da OS." }
         val stop = order.stopId?.let { stops[it] }
         require(!releaseMachine || stop != null) {
             "A máquina só pode ser liberada ao concluir uma OS vinculada a uma parada."
         }
         if (stop != null) {
             require(solution.isNotBlank()) { "Informe a solução para encerrar a parada." }
+            require(stop.machineId == order.machineId) { "A parada pertence a outra máquina. Conclusão bloqueada." }
+            require(stop.workOrderId == order.id && stop.status == StopStatus.LINKED_TO_ORDER) {
+                "O vínculo entre a parada e esta OS não está íntegro. Conclusão bloqueada."
+            }
+            require(now >= stop.startedAt) { "O horário de conclusão não pode ser anterior ao início da parada." }
             val machine = machines[order.machineId] ?: error("Máquina não encontrada.")
+            require(machine.activeStopId == stop.id && machine.status == MachineStatus.STOPPED) {
+                "O estado atual da máquina não corresponde à parada desta OS. Conclusão bloqueada."
+            }
             stops[stop.id] = stop.copy(endedAt = now, solution = solution.trim(), status = StopStatus.CLOSED)
             machines[order.machineId] = machine.copy(status = if (releaseMachine) MachineStatus.RUNNING else MachineStatus.MAINTENANCE,
                 activeStopId = if (releaseMachine) null else stop.id)
