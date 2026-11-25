@@ -1,9 +1,10 @@
 name: Inspecionar fonte RVTEC 1.8.5
 on:
   push:
-    branches: [ main ]
+    branches: [ main, feature/rvtec-2.0-native-legacy-integration ]
     paths:
       - '.github/workflows/inspect-rvtec-185.yml'
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
@@ -11,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Listar e validar ZIP 1.8.5
+      - name: Validar e inventariar pacote 1.8.5
         run: |
           set -euo pipefail
           unzip -t RVTEC_1.8.5_SEM_BOTAO_MENU.zip
@@ -20,8 +21,10 @@ jobs:
           mkdir -p /tmp/rvtec185
           unzip -q RVTEC_1.8.5_SEM_BOTAO_MENU.zip -d /tmp/rvtec185
           echo '--- ESTRUTURA ---'
-          find /tmp/rvtec185 -maxdepth 4 -type f -printf '%p %s bytes\n' | sort
-          echo '--- VERIFICAÇÃO DE PROJETO ANDROID ---'
-          find /tmp/rvtec185 -type f \( -name 'build.gradle' -o -name 'settings.gradle' -o -name 'gradlew' -o -name 'AndroidManifest.xml' \) -print
-          echo '--- IDENTIFICAÇÃO DO HTML ---'
-          grep -RniE 'firebase|gemini|version|rvtec' /tmp/rvtec185 --include='*.html' | head -80 || true
+          find /tmp/rvtec185 -maxdepth 4 -type f -printf '%p %s bytes\\n' | sort
+          echo '--- ARQUIVOS ANDROID ---'
+          find /tmp/rvtec185 -type f \\( -name 'build.gradle' -o -name 'settings.gradle' -o -name 'gradlew' -o -name 'AndroidManifest.xml' \\) -print
+          echo '--- METADADOS E FUNCIONALIDADES ---'
+          grep -RniE '<title>|firebase|gemini|manifest|serviceWorker|localStorage|QRCode|preventives|technicalMemory|stock|notifications' /tmp/rvtec185 --include='*.html' --include='*.js' --include='*.json' | head -160 || true
+          echo '--- LEIA-ME ---'
+          find /tmp/rvtec185 -iname 'LEIA-ME*' -exec cat {} \\; || true
