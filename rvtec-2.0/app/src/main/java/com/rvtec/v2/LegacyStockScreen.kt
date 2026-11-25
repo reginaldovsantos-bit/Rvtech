@@ -18,11 +18,13 @@ fun LegacyStockSection(repository: LegacyModuleRepository, revision: Int, onChan
     val movements = remember(revision) { repository.listMovements() }
     var showNewItem by remember { mutableStateOf(false) }
     var movementItem by remember { mutableStateOf<StockItem?>(null) }
+    var operationError by remember { mutableStateOf<String?>(null) }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text("Estoque", style = MaterialTheme.typography.titleMedium)
-            Button(onClick = { showNewItem = true }) { Text("Nova peça") }
+            Button(onClick = { operationError = null; showNewItem = true }) { Text("Nova peça") }
         }
+        operationError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         if (stock.isEmpty()) Text("Nenhuma peça cadastrada.")
         stock.forEach { item ->
             Card(Modifier.fillMaxWidth()) {
@@ -51,9 +53,18 @@ fun LegacyStockSection(repository: LegacyModuleRepository, revision: Int, onChan
         NewStockItemDialog(
             onDismiss = { showNewItem = false },
             onSave = { code, name, description, unit, quantity, minimum, location ->
-                repository.addStock(StockItem(UUID.randomUUID().toString(), code, name, description, unit, quantity, minimum, location))
-                showNewItem = false
-                onChanged()
+                runCatching {
+                    val id = UUID.randomUUID().toString()
+                    repository.addStock(StockItem(id, code, name, description, unit, 0.0, minimum, location))
+                    if (quantity > 0) repository.moveStock(
+                        id, StockMovementType.ENTRY, quantity,
+                        "Saldo inicial do cadastro", responsible = "Cadastro inicial"
+                    )
+                }.onSuccess {
+                    showNewItem = false
+                    operationError = null
+                    onChanged()
+                }.onFailure { operationError = it.message ?: "Não foi possível cadastrar a peça." }
             }
         )
     }
@@ -62,9 +73,13 @@ fun LegacyStockSection(repository: LegacyModuleRepository, revision: Int, onChan
             item = item,
             onDismiss = { movementItem = null },
             onSave = { type, quantity, reason, responsible, workOrder ->
-                repository.moveStock(item.id, type, quantity, reason, workOrder.ifBlank { null }, responsible)
-                movementItem = null
-                onChanged()
+                runCatching { repository.moveStock(item.id, type, quantity, reason, workOrder.ifBlank { null }, responsible) }
+                    .onSuccess {
+                        movementItem = null
+                        operationError = null
+                        onChanged()
+                    }
+                    .onFailure { operationError = it.message ?: "Não foi possível movimentar o estoque." }
             }
         )
     }
