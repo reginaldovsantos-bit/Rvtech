@@ -33,7 +33,7 @@ class LegacyModuleRepository(context: Context) {
         data.stock.size, data.staff.size, data.notifications.size
     )
 
-    @Synchronized fun import(data: LegacyNativeMapper.Mapped): ImportPreview {
+    @Synchronized fun importLegacy(data: LegacyNativeMapper.Mapped): ImportPreview {
         val preview = previewImport(data)
         data.preventives.forEach { preventives[it.id.ifBlank { UUID.randomUUID().toString() }] = it }
         data.diagnostics.forEach { diagnostics[it.id.ifBlank { UUID.randomUUID().toString() }] = it }
@@ -134,7 +134,7 @@ class LegacyModuleRepository(context: Context) {
         array("movements") { o ->
             val m = StockMovement(o.getString("id"), o.getString("itemId"),
                 StockMovementType.valueOf(o.getString("type")), o.getDouble("quantity"),
-                o.optString("reason"), o.optString("workOrderId").ifBlank { null },
+                o.optString("reason"), o.optString("workOrderId").takeIf { it.isNotBlank() },
                 o.getLong("createdAt"), o.optString("responsible"))
             movements[m.id] = m
         }
@@ -153,7 +153,7 @@ class LegacyModuleRepository(context: Context) {
             diagnostics[d.id] = d
         }
         array("memories") { o ->
-            val m = TechnicalMemoryRecord(o.getString("id"),o.optString("machineId").ifBlank { null },
+            val m = TechnicalMemoryRecord(o.getString("id"),o.optString("machineId").takeIf { it.isNotBlank() },
                 o.optString("title"),o.optString("content"),
                 (o.optJSONArray("tags") ?: JSONArray()).let { a -> (0 until a.length()).map { a.optString(it) } },
                 o.optLong("createdAt"),o.optLong("updatedAt"))
