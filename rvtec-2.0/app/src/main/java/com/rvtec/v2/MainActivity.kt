@@ -10,13 +10,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.rvtec.v2.data.MaintenanceRepository
 import com.rvtec.v2.data.FirebaseServices
 import com.google.firebase.auth.FirebaseAuth
 import com.rvtec.v2.domain.*
 
-private val pages = listOf("Início", "Máquinas", "Paradas", "Ordens de serviço", "Apontamentos", "Memória Técnica IA", "Sincronização")
+private val pages = listOf("Início", "Máquinas", "Paradas", "Ordens de serviço", "Apontamentos", "Memória Técnica IA", "Sincronização", "Configurações")
 
 @OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
@@ -26,8 +27,28 @@ class MainActivity : ComponentActivity() {
         firebaseServices.installAppCheck()
         val repository = MaintenanceRepository(applicationContext)
         val auth = FirebaseAuth.getInstance()
+        val settings = getSharedPreferences("rvtec_settings", MODE_PRIVATE)
         setContent {
-            MaterialTheme {
+            var appearance by remember { mutableStateOf(settings.getString("appearance", "Atual/Referência") ?: "Atual/Referência") }
+            val rvtecColors = when (appearance) {
+                "Moderno" -> darkColorScheme(
+                    primary = Color(0xFFD6B45A), onPrimary = Color(0xFF171717),
+                    secondary = Color(0xFFC6A15B), background = Color(0xFF101216),
+                    surface = Color(0xFF1B1E24), surfaceVariant = Color(0xFF2A2D34),
+                    onBackground = Color(0xFFF4F1E8), onSurface = Color(0xFFF4F1E8)
+                )
+                "Antigo/Clássico" -> lightColorScheme(
+                    primary = Color(0xFF2F5D50), secondary = Color(0xFFA0784A),
+                    background = Color(0xFFF3EFE7), surface = Color(0xFFFFFDF8),
+                    surfaceVariant = Color(0xFFE8E0D2)
+                )
+                else -> lightColorScheme(
+                    primary = Color(0xFF2563EB), secondary = Color(0xFF64748B),
+                    background = Color(0xFFF4F7FB), surface = Color(0xFFFFFFFF),
+                    surfaceVariant = Color(0xFFEAF0F8)
+                )
+            }
+            MaterialTheme(colorScheme = rvtecColors) {
                 var signedIn by remember { mutableStateOf(auth.currentUser != null) }
                 DisposableEffect(auth) {
                     val listener = FirebaseAuth.AuthStateListener { signedIn = it.currentUser != null }
@@ -66,6 +87,10 @@ class MainActivity : ComponentActivity() {
                         }
                         error?.let { Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(8.dp)) }
                         when (page) {
+                            "Configurações" -> AppearanceSettingsScreen(appearance) { selected ->
+                                appearance = selected
+                                settings.edit().putString("appearance", selected).apply()
+                            }
                             "Início" -> {
                                 val machines = remember(revision) { repository.listMachines() }
                                 val stops = remember(revision) { repository.listStops() }
@@ -377,4 +402,43 @@ private fun orderText(s: WorkOrderStatus) = when (s) {
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
     )
+}
+
+
+@Composable
+private fun AppearanceSettingsScreen(selected: String, onSelect: (String) -> Unit) {
+    val styles = listOf(
+        "Atual/Referência" to "Visual claro, cabeçalho azul e cartões suaves — modelo de referência aprovado.",
+        "Moderno" to "Visual escuro sofisticado, com detalhes dourados.",
+        "Antigo/Clássico" to "Visual clássico inspirado nas versões anteriores do RVTEC."
+    )
+    Column(
+        Modifier.fillMaxSize().padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text("Configurações", style = MaterialTheme.typography.headlineSmall)
+        Text("Aparência do aplicativo", style = MaterialTheme.typography.titleMedium)
+        Text("Escolha um dos três estilos. A preferência fica salva neste aparelho e é aplicada em todas as telas.")
+        styles.forEach { (name, description) ->
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (selected == name) MaterialTheme.colorScheme.secondaryContainer
+                    else MaterialTheme.colorScheme.surface
+                )
+            ) {
+                Row(
+                    Modifier.fillMaxWidth().padding(12.dp),
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                ) {
+                    RadioButton(selected = selected == name, onClick = { onSelect(name) })
+                    Column(Modifier.weight(1f).padding(start = 8.dp)) {
+                        Text(name, style = MaterialTheme.typography.titleMedium)
+                        Text(description, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            }
+        }
+        Text("A troca de estilo não altera nem apaga máquinas, paradas, ordens ou apontamentos.")
+    }
 }
