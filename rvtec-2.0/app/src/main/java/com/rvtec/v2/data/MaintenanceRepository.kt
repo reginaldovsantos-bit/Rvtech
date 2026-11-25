@@ -106,6 +106,9 @@ class MaintenanceRepository(context: Context? = null) {
             require(stop.machineId == machineId) { "A parada pertence a outra máquina." }
             require(stop.status != StopStatus.CLOSED) { "A parada já está encerrada." }
             require(stop.workOrderId == null) { "A parada já possui uma OS vinculada." }
+            require(machine.status == MachineStatus.STOPPED && machine.activeStopId == stop.id) {
+                "A máquina não está no estado de parada correspondente. Vínculo com OS bloqueado."
+            }
         }
         val order = WorkOrder(UUID.randomUUID().toString(), machineId, stopId, title.trim(), description.trim(), createdAt = now)
         orders[order.id] = order
