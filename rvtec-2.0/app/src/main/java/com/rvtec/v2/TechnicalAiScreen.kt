@@ -10,36 +10,43 @@ import androidx.compose.ui.unit.dp
 import com.google.firebase.FirebaseApp
 import com.google.firebase.appcheck.FirebaseAppCheck
 import com.rvtec.v2.data.TechnicalAiService
+import com.rvtec.v2.data.TechnicalAiTurn
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.launch
+
+private data class AiChatMessage(val question: String, val answer: String)
 
 @Composable
 fun TechnicalAiScreen(firebaseApp: FirebaseApp?) {
     var question by remember { mutableStateOf("") }
-    var answer by remember { mutableStateOf("") }
     var error by remember { mutableStateOf("") }
     var appCheckStatus by remember { mutableStateOf("") }
     var checkingAppCheck by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(false) }
+    val messages = remember { mutableStateListOf<AiChatMessage>() }
     val scope = rememberCoroutineScope()
     val service = remember(firebaseApp) { firebaseApp?.let(::TechnicalAiService) }
 
     LaunchedEffect(service) {
-        if (service == null) {
-            error = "Firebase não inicializou nesta instalação. Confira se o APK foi compilado com o google-services.json que contém o pacote com.rvtec.manutencao.v2."
-        } else {
-            error = ""
-        }
+        error = if (service == null) {
+            "Firebase não inicializou nesta instalação. Confira o google-services.json do pacote com.rvtec.manutencao.v2."
+        } else ""
     }
 
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        Text("Memória Técnica IA", style = MaterialTheme.typography.headlineSmall)
-        Text("Assistente de diagnóstico para extrusoras, puxadores, bobinadores, motores, inversores WEG, CLP, IHM, sensores e encoders.")
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text("Memória Técnica IA", style = MaterialTheme.typography.headlineSmall)
+            TextButton(enabled = messages.isNotEmpty() && !loading, onClick = {
+                messages.clear()
+                error = ""
+            }) { Text("Nova conversa") }
+        }
+        Text("Assistente técnico do RVTEC para extrusão de filme plástico, puxadores, bobinadores, motores, inversores WEG, CLP, IHM, sensores e encoders.")
 
-        if (com.rvtec.v2.BuildConfig.DEBUG && firebaseApp != null) {
+        if (BuildConfig.DEBUG && firebaseApp != null) {
             OutlinedButton(
                 enabled = !checkingAppCheck,
                 onClick = {
@@ -49,13 +56,11 @@ fun TechnicalAiScreen(firebaseApp: FirebaseApp?) {
                         try {
                             val result = FirebaseAppCheck.getInstance(firebaseApp).getToken(false).await()
                             appCheckStatus = if (result.token.isNotBlank()) {
-                                "App Check conseguiu obter um token. Isso confirma a comunicação com o serviço de App Check, mas não garante que o token esteja aceito pela API Gemini."
-                            } else {
-                                "O serviço App Check retornou um token vazio."
-                            }
+                                "Token App Check obtido. Isso não garante, sozinho, a autorização da API Gemini."
+                            } else "O serviço App Check retornou um token vazio."
                         } catch (e: Exception) {
                             val detail = e.localizedMessage?.takeIf { it.isNotBlank() } ?: e.javaClass.simpleName
-                            appCheckStatus = "Falha ao obter token App Check: $detail"
+                            appCheckStatus = "Falha no App Check: $detail"
                         } finally {
                             checkingAppCheck = false
                         }
@@ -67,8 +72,32 @@ fun TechnicalAiScreen(firebaseApp: FirebaseApp?) {
                 else Text("Testar App Check")
             }
             if (appCheckStatus.isNotBlank()) {
+                Text(appCheckStatus, style = MaterialTheme.typography.bodySmall)
+            }
+        }
+
+        if (messages.isEmpty()) {
+            Card(Modifier.fillMaxWidth()) {
+                Text(
+                    "Descreva o equipamento, o modelo, o código de falha e em que condição o problema acontece. A IA fará perguntas quando faltarem informações.",
+                    Modifier.padding(14.dp)
+                )
+            }
+        } else {
+            messages.forEachIndexed { index, message ->
+                Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer
+                )) {
+                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text("Você", style = MaterialTheme.typography.labelLarge)
+                        Text(message.question)
+                    }
+                }
                 Card(Modifier.fillMaxWidth()) {
-                    Text(appCheckStatus, Modifier.padding(12.dp), style = MaterialTheme.typography.bodyMedium)
+                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text("RVTEC IA • resposta ${index + 1}", style = MaterialTheme.typography.labelLarge)
+                        Text(message.answer)
+                    }
                 }
             }
         }
@@ -77,24 +106,26 @@ fun TechnicalAiScreen(firebaseApp: FirebaseApp?) {
             value = question,
             onValueChange = { question = it },
             modifier = Modifier.fillMaxWidth(),
-            minLines = 4,
-            label = { Text("Descreva a falha ou dúvida técnica") },
+            minLines = 2,
+            maxLines = 5,
+            label = { Text("Digite sua pergunta técnica") },
             placeholder = { Text("Ex.: CFW700 apresenta F074 quando o puxador acelera...") }
         )
         Button(
             enabled = question.isNotBlank() && !loading && service != null,
             onClick = {
+                val submitted = question.trim()
+                val previous = messages.map { TechnicalAiTurn(it.question, it.answer) }
+                question = ""
                 loading = true
                 error = ""
-                answer = ""
                 scope.launch {
                     try {
-                        answer = requireNotNull(service).diagnose(question.trim())
+                        val response = requireNotNull(service).diagnose(submitted, previous)
+                        messages.add(AiChatMessage(submitted, response))
                     } catch (e: Exception) {
-                        val detail = e.localizedMessage
-                            ?.takeIf { it.isNotBlank() }
-                            ?: e.javaClass.simpleName
-                        error = "Não foi possível consultar o Gemini. Detalhe técnico: $detail"
+                        question = submitted
+                        error = "Não foi possível consultar o Gemini: ${e.localizedMessage?.takeIf { it.isNotBlank() } ?: e.javaClass.simpleName}"
                     } finally {
                         loading = false
                     }
@@ -103,19 +134,16 @@ fun TechnicalAiScreen(firebaseApp: FirebaseApp?) {
             modifier = Modifier.fillMaxWidth()
         ) {
             if (loading) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
-            else Text("Consultar Gemini")
+            else Text("Enviar pergunta")
         }
+        if (loading) Text("Analisando a ocorrência...")
         if (error.isNotBlank()) {
             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)) {
                 Text(error, Modifier.padding(12.dp), color = MaterialTheme.colorScheme.onErrorContainer)
             }
         }
-        if (answer.isNotBlank()) {
-            Text("Análise técnica", style = MaterialTheme.typography.titleLarge)
-            Card(Modifier.fillMaxWidth()) { Text(answer, Modifier.padding(14.dp)) }
-        }
         Text(
-            "Segurança: use a análise como apoio. Confirme medições, diagramas e procedimentos do fabricante antes de intervir. Não trabalhe em circuitos energizados sem autorização e procedimento apropriado.",
+            "Segurança: use a análise como apoio. Confirme medições, diagramas e procedimentos do fabricante. Não intervenha em circuitos energizados sem autorização e procedimento apropriado.",
             style = MaterialTheme.typography.bodySmall
         )
     }
