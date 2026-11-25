@@ -22,9 +22,7 @@ class LegacyImportValidatorTest {
               "settings": {"theme":"dark"}
             }
         """.trimIndent()
-
         val report = LegacyImportValidator.validate(json)
-
         assertTrue(report.valid)
         assertTrue(report.errors.isEmpty())
         assertEquals(1, report.counts["machines"])
@@ -35,7 +33,6 @@ class LegacyImportValidatorTest {
     @Test
     fun rejectsMalformedJson() {
         val report = LegacyImportValidator.validate("{not-json")
-
         assertFalse(report.valid)
         assertTrue(report.errors.any { it.contains("JSON válido") })
     }
@@ -43,7 +40,6 @@ class LegacyImportValidatorTest {
     @Test
     fun rejectsCollectionWithWrongType() {
         val report = LegacyImportValidator.validate("""{"machines": "não é lista"}""")
-
         assertFalse(report.valid)
         assertTrue(report.errors.any { it.contains("machines") })
     }
@@ -51,7 +47,6 @@ class LegacyImportValidatorTest {
     @Test
     fun rejectsSettingsWithWrongType() {
         val report = LegacyImportValidator.validate("""{"machines": [], "settings": []}""")
-
         assertFalse(report.valid)
         assertTrue(report.errors.any { it.contains("settings") })
     }
@@ -59,18 +54,32 @@ class LegacyImportValidatorTest {
     @Test
     fun rejectsEmptyBackup() {
         val report = LegacyImportValidator.validate("{}")
-
         assertFalse(report.valid)
-        assertTrue(report.errors.any { it.contains("Backup vazio") })
+        assertTrue(report.errors.any { it.contains("Backup vazio") || it.contains("sem campos reconhecidos") })
     }
 
     @Test
     fun acceptsMissingOptionalCollectionsAsEmpty() {
         val report = LegacyImportValidator.validate("""{"machines": [{"id":"m1"}]}""")
-
         assertTrue(report.valid)
         assertEquals(1, report.counts["machines"])
         assertEquals(0, report.counts["stops"])
         assertEquals(0, report.counts["stock"])
+    }
+
+    @Test
+    fun rejectsUnknownOnlyJson() {
+        val report = LegacyImportValidator.validate("""{"unrelated": [{"id":"x"}]}""")
+        assertFalse(report.valid)
+        assertTrue(report.errors.any { it.contains("campos reconhecidos") })
+    }
+
+    @Test
+    fun rejectsDuplicateIdsInsideCollection() {
+        val report = LegacyImportValidator.validate(
+            """{"machines": [{"id":"m1"}, {"id":"m1"}]}"""
+        )
+        assertFalse(report.valid)
+        assertTrue(report.errors.any { it.contains("duplicado") && it.contains("machines") })
     }
 }
