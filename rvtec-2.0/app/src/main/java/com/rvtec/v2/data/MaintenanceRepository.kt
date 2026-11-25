@@ -59,6 +59,25 @@ class MaintenanceRepository(context: Context? = null) {
         }
     }
 
+    /** Aplica a alteração em memória e persiste. Se a gravação falhar, restaura todos os mapas. */
+    private inline fun <T> transaction(block: () -> T): T {
+        val machineSnapshot = machines.toMap()
+        val stopSnapshot = stops.toMap()
+        val orderSnapshot = orders.toMap()
+        val entrySnapshot = entries.toMap()
+        return try {
+            val result = block()
+            persist()
+            result
+        } catch (failure: Exception) {
+            machines.clear(); machines.putAll(machineSnapshot)
+            stops.clear(); stops.putAll(stopSnapshot)
+            orders.clear(); orders.putAll(orderSnapshot)
+            entries.clear(); entries.putAll(entrySnapshot)
+            throw failure
+        }
+    }
+
     private fun persist() {
         val p = prefs ?: return
         val root = JSONObject()
@@ -76,8 +95,7 @@ class MaintenanceRepository(context: Context? = null) {
         require(machine.id.isNotBlank() && machine.name.isNotBlank())
         require(machine.productionKgPerHour >= 0)
         check(!machines.containsKey(machine.id)) { "Máquina já cadastrada." }
-        machines[machine.id] = machine
-        persist()
+        transaction { machines[machine.id] = machine }
     }
     @Synchronized fun listMachines(): List<Machine> = machines.values.toList()
     @Synchronized fun listStops(): List<StopRecord> = stops.values.toList()
@@ -89,10 +107,11 @@ class MaintenanceRepository(context: Context? = null) {
         val machine = machines[machineId] ?: error("Máquina não encontrada.")
         check(machine.status == MachineStatus.RUNNING && machine.activeStopId == null) { "Máquina já está parada ou em manutenção." }
         val stop = StopRecord(UUID.randomUUID().toString(), machineId, now, cause = cause.trim())
-        stops[stop.id] = stop
-        machines[machineId] = machine.copy(status = MachineStatus.STOPPED, activeStopId = stop.id)
-        persist()
-        return stop
+        return transaction {
+            stops[stop.id] = stop
+            machines[machineId] = machine.copy(status = MachineStatus.STOPPED, activeStopId = stop.id)
+            stop
+        }
     }
 
     @Synchronized fun openWorkOrder(machineId: String, title: String, description: String = "", stopId: String? = null, now: Long = System.currentTimeMillis()): WorkOrder {
@@ -111,16 +130,19 @@ class MaintenanceRepository(context: Context? = null) {
             }
         }
         val order = WorkOrder(UUID.randomUUID().toString(), machineId, stopId, title.trim(), description.trim(), createdAt = now)
-        orders[order.id] = order
-        if (stop != null) stops[stop.id] = stop.copy(status = StopStatus.LINKED_TO_ORDER, workOrderId = order.id)
-        persist()
-        return order
+        return transaction {
+            orders[order.id] = order
+            if (stop != null) stops[stop.id] = stop.copy(status = StopStatus.LINKED_TO_ORDER, workOrderId = order.id)
+            order
+        }
     }
 
     @Synchronized fun startWork(orderId: String): WorkOrder {
         val order = orders[orderId] ?: error("OS não encontrada.")
         check(order.status == WorkOrderStatus.OPEN || order.status == WorkOrderStatus.IN_PROGRESS)
-        return order.copy(status = WorkOrderStatus.IN_PROGRESS).also { orders[orderId] = it; persist() }
+        return transaction {
+            order.copy(status = WorkOrderStatus.IN_PROGRESS).also { orders[orderId] = it }
+        }
     }
 
     @Synchronized fun addExecution(orderId: String, technician: String, description: String, partsUsed: String = "", durationMinutes: Int = 0, now: Long = System.currentTimeMillis()): ExecutionEntry {
@@ -128,8 +150,10 @@ class MaintenanceRepository(context: Context? = null) {
         check(order.status == WorkOrderStatus.IN_PROGRESS) { "Inicie a OS antes de apontar execução." }
         require(technician.isNotBlank() && description.isNotBlank())
         require(durationMinutes >= 0)
-        return ExecutionEntry(UUID.randomUUID().toString(), orderId, technician.trim(), description.trim(), partsUsed.trim(), durationMinutes, now)
-            .also { entries[it.id] = it; persist() }
+        return transaction {
+            ExecutionEntry(UUID.randomUUID().toString(), orderId, technician.trim(), description.trim(), partsUsed.trim(), durationMinutes, now)
+                .also { entries[it.id] = it }
+        }
     }
 
     @Synchronized fun releaseMachine(machineId: String): Machine {
@@ -141,7 +165,9 @@ class MaintenanceRepository(context: Context? = null) {
             ?: error("A parada vinculada não foi encontrada. Liberação bloqueada.")
         check(activeStop.machineId == machineId) { "A parada vinculada pertence a outra máquina." }
         check(activeStop.status == StopStatus.CLOSED) { "A parada ainda não foi encerrada. Liberação bloqueada." }
-        return machine.copy(status = MachineStatus.RUNNING, activeStopId = null).also { machines[machineId] = it; persist() }
+        return transaction {
+            machine.copy(status = MachineStatus.RUNNING, activeStopId = null).also { machines[machineId] = it }
+        }
     }
 
     @Synchronized fun completeWork(orderId: String, solution: String, releaseMachine: Boolean, now: Long = System.currentTimeMillis()): WorkOrder {
@@ -152,22 +178,15 @@ class MaintenanceRepository(context: Context? = null) {
         require(!releaseMachine || stop != null) {
             "A máquina só pode ser liberada ao concluir uma OS vinculada a uma parada."
         }
-        if (stop != null) {
-            require(solution.isNotBlank()) { "Informe a solução para encerrar a parada." }
-            require(stop.machineId == order.machineId) { "A parada pertence a outra máquina. Conclusão bloqueada." }
-            require(stop.workOrderId == order.id && stop.status == StopStatus.LINKED_TO_ORDER) {
-                "O vínculo entre a parada e esta OS não está íntegro. Conclusão bloqueada."
+        return transaction {
+            if (stop != null) {
+                val machine = machines[order.machineId] ?: error("Máquina não encontrada.")
+                stops[stop.id] = stop.copy(endedAt = now, solution = solution.trim(), status = StopStatus.CLOSED)
+                machines[order.machineId] = machine.copy(status = if (releaseMachine) MachineStatus.RUNNING else MachineStatus.MAINTENANCE,
+                    activeStopId = if (releaseMachine) null else stop.id)
             }
-            require(now >= stop.startedAt) { "O horário de conclusão não pode ser anterior ao início da parada." }
-            val machine = machines[order.machineId] ?: error("Máquina não encontrada.")
-            require(machine.activeStopId == stop.id && machine.status == MachineStatus.STOPPED) {
-                "O estado atual da máquina não corresponde à parada desta OS. Conclusão bloqueada."
-            }
-            stops[stop.id] = stop.copy(endedAt = now, solution = solution.trim(), status = StopStatus.CLOSED)
-            machines[order.machineId] = machine.copy(status = if (releaseMachine) MachineStatus.RUNNING else MachineStatus.MAINTENANCE,
-                activeStopId = if (releaseMachine) null else stop.id)
+            order.copy(status = WorkOrderStatus.COMPLETED, completedAt = now, releasedMachine = releaseMachine)
+                .also { orders[orderId] = it }
         }
-        return order.copy(status = WorkOrderStatus.COMPLETED, completedAt = now, releasedMachine = releaseMachine)
-            .also { orders[orderId] = it; persist() }
     }
 }
