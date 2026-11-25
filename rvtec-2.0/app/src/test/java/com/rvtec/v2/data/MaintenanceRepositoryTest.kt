@@ -96,4 +96,38 @@ class MaintenanceRepositoryTest {
         assertEquals(setOf(first.id, second.id), repo.listOrders().map { it.id }.toSet())
     }
 
+    @Test fun completionBeforeStopStartIsRejectedWithoutChangingMachineOrStop() {
+        val repo = MaintenanceRepository()
+        repo.addMachine(Machine("m1", "Extrusora 108"))
+        val stop = repo.registerStop("m1", "Falha no puxador", now = 100)
+        val order = repo.openWorkOrder("m1", "Reparar puxador", stopId = stop.id, now = 90)
+        repo.startWork(order.id)
+
+        try {
+            repo.completeWork(order.id, "Sensor substituído", releaseMachine = true, now = 99)
+            fail("Não deve encerrar uma parada antes do seu início")
+        } catch (_: IllegalArgumentException) { }
+
+        assertEquals(MachineStatus.STOPPED, repo.listMachines().single().status)
+        assertEquals(StopStatus.LINKED_TO_ORDER, repo.listStops().single().status)
+        assertNull(repo.listStops().single().endedAt)
+        assertEquals(WorkOrderStatus.IN_PROGRESS, repo.listOrders().single().status)
+    }
+
+    @Test fun linkedStopCanOnlyBeClosedByItsOwnWorkOrder() {
+        val repo = MaintenanceRepository()
+        repo.addMachine(Machine("m1", "Extrusora 108"))
+        val stop = repo.registerStop("m1", "Falha no bobinador", now = 100)
+        val order = repo.openWorkOrder("m1", "Verificar bobinador", stopId = stop.id, now = 110)
+        repo.startWork(order.id)
+
+        val completed = repo.completeWork(order.id, "Encoder ajustado", releaseMachine = false, now = 200)
+
+        assertEquals(WorkOrderStatus.COMPLETED, completed.status)
+        assertEquals(StopStatus.CLOSED, repo.listStops().single().status)
+        assertEquals("Encoder ajustado", repo.listStops().single().solution)
+        assertEquals(MachineStatus.MAINTENANCE, repo.listMachines().single().status)
+        assertEquals(stop.id, repo.listMachines().single().activeStopId)
+    }
+
 }
