@@ -62,7 +62,7 @@ class MainActivity : ComponentActivity() {
                 var visiblePages by remember {
                     mutableStateOf(settings.getStringSet("visible_pages", null)?.toSet() ?: pages.toSet())
                 }
-                val menuPages = pages.filter { it == "Início" || it in visiblePages }
+                val menuPages = pages.filter { it == "Início" || it == "Configurações" || it in visiblePages }
                 var revision by remember { mutableIntStateOf(0) }
                 var error by remember { mutableStateOf<String?>(null) }
                 var showMachine by remember { mutableStateOf(false) }
@@ -99,10 +99,12 @@ class MainActivity : ComponentActivity() {
                                     settings.edit().putString("appearance", selected).apply()
                                 },
                                 onModuleToggle = { module, enabled ->
-                                    val updated = if (enabled) visiblePages + module else visiblePages - module
-                                    visiblePages = updated + "Início"
-                                    settings.edit().putStringSet("visible_pages", visiblePages.toSet()).apply()
-                                    if (!enabled && page == module) page = "Início"
+                                    if (module != "Início" && module != "Configurações") {
+                                        val updated = if (enabled) visiblePages + module else visiblePages - module
+                                        visiblePages = updated + "Início" + "Configurações"
+                                        settings.edit().putStringSet("visible_pages", visiblePages.toSet()).apply()
+                                        if (!enabled && page == module) page = "Início"
+                                    }
                                 }
                             )
                             "Início" -> {
@@ -467,8 +469,8 @@ private fun AppearanceSettingsScreen(
                 verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
             ) {
                 Checkbox(
-                    checked = module == "Início" || module in visiblePages,
-                    enabled = module != "Início",
+                    checked = module == "Início" || module == "Configurações" || module in visiblePages,
+                    enabled = module != "Início" && module != "Configurações",
                     onCheckedChange = { checked -> onModuleToggle(module, checked) }
                 )
                 Text(module, style = MaterialTheme.typography.bodyLarge)
