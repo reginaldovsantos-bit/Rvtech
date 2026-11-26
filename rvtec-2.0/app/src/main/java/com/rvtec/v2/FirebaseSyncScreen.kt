@@ -17,6 +17,26 @@ fun FirebaseSyncScreen(firebase: FirebaseServices, repository: MaintenanceReposi
     Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text("Sincronização segura", style = MaterialTheme.typography.headlineSmall)
         Text("Conta autenticada: sincronização individual por usuário. O envio substitui a cópia na nuvem pela fotografia atual deste aparelho.")
+        OutlinedButton(
+            enabled = !busy,
+            onClick = {
+                scope.launch {
+                    busy = true
+                    message = "Verificando obtenção do token App Check..."
+                    try {
+                        val obtained = firebase.validateAppCheck()
+                        message = if (obtained) {
+                            "O aparelho conseguiu obter um token App Check. Isso confirma a geração local, mas não confirma que o token de depuração já foi cadastrado/aceito pelo Firebase. Em build debug, confira o Logcat e cadastre o token no app Android RVTEC 2.0 do Firebase Console."
+                        } else {
+                            "O Firebase não retornou um token App Check válido."
+                        }
+                    } catch (e: Exception) {
+                        message = "Falha ao obter token App Check: ${e.localizedMessage ?: e.javaClass.simpleName}"
+                    } finally { busy = false }
+                }
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) { Text("Diagnosticar App Check") }
         Button(
             enabled = !busy && !repository.hasStorageError(),
             onClick = {
