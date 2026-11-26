@@ -1,4 +1,8 @@
 name: RVTEC 2.0 Build
+
+concurrency:
+  group: rvtec-2-build-${{ github.ref }}
+  cancel-in-progress: true
 on:
   workflow_dispatch:
   push:
