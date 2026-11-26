@@ -429,9 +429,11 @@ private fun DashboardScreen(
     val stopped=machines.count{it.status==MachineStatus.STOPPED}
     val attending=machines.count{it.status==MachineStatus.MAINTENANCE}
     val capacity=machines.sumOf{it.productionKgPerHour}
-    val ink=Color(0xFF173451)
-    val muted=Color(0xFF637B92)
-    LazyColumn(Modifier.fillMaxSize().background(Color(0xFFE3EFFB)),contentPadding=PaddingValues(10.dp,12.dp,10.dp,24.dp),verticalArrangement=Arrangement.spacedBy(14.dp)) {
+    val ink=MaterialTheme.colorScheme.onSurface
+    val muted=MaterialTheme.colorScheme.onSurfaceVariant
+    val panel=MaterialTheme.colorScheme.surface
+    val outline=MaterialTheme.colorScheme.outlineVariant
+    LazyColumn(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),contentPadding=PaddingValues(10.dp,12.dp,10.dp,24.dp),verticalArrangement=Arrangement.spacedBy(14.dp)) {
         item {
             Row(Modifier.fillMaxWidth(),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) { Text("Painel geral",color=ink,style=MaterialTheme.typography.headlineSmall); Text("Visão geral da manutenção",color=muted) }
@@ -441,21 +443,21 @@ private fun DashboardScreen(
         item {
             Column(verticalArrangement=Arrangement.spacedBy(10.dp)) {
                 Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
-                    DashboardMetric("Máquinas cadastradas",machines.size.toString(),Color(0xFFEAF5FF),Modifier.weight(1f),onMachines)
-                    DashboardMetric("Máquinas paradas agora",stopped.toString(),Color(0xFFFBE6E6),Modifier.weight(1f),onStops)
+                    DashboardMetric("Máquinas cadastradas",machines.size.toString(),panel,Modifier.weight(1f),onMachines)
+                    DashboardMetric("Máquinas paradas agora",stopped.toString(),Color(0xFF49272D),Modifier.weight(1f),onStops)
                 }
                 Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
-                    DashboardMetric("Máquinas em atendimento",attending.toString(),Color(0xFFFFF1CC),Modifier.weight(1f),onMachines)
-                    DashboardMetric("OS pendentes",ordersOpen.toString(),Color(0xFFEAF5FF),Modifier.weight(1f),onOrders)
+                    DashboardMetric("Máquinas em atendimento",attending.toString(),Color(0xFF493A1D),Modifier.weight(1f),onMachines)
+                    DashboardMetric("OS pendentes",ordersOpen.toString(),panel,Modifier.weight(1f),onOrders)
                 }
                 Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
-                    DashboardMetric("Máquinas operando",running.toString(),Color(0xFFE1F4E9),Modifier.weight(1f),onMachines)
-                    DashboardMetric("Paradas abertas",stopsOpen.toString(),Color(0xFFFBE6E6),Modifier.weight(1f),onStops)
+                    DashboardMetric("Máquinas operando",running.toString(),Color(0xFF1D4034),Modifier.weight(1f),onMachines)
+                    DashboardMetric("Paradas abertas",stopsOpen.toString(),Color(0xFF49272D),Modifier.weight(1f),onStops)
                 }
             }
         }
         item {
-            Card(Modifier.fillMaxWidth().clickable(onClick=onMachines),colors=CardDefaults.cardColors(containerColor=Color(0xFFF9FCFF)),border=androidx.compose.foundation.BorderStroke(1.dp,Color(0xFFB8CEE2)),shape=MaterialTheme.shapes.extraLarge) {
+            Card(Modifier.fillMaxWidth().clickable(onClick=onMachines),colors=CardDefaults.cardColors(containerColor=panel),border=androidx.compose.foundation.BorderStroke(1.dp,outline),shape=MaterialTheme.shapes.extraLarge) {
                 Column(Modifier.fillMaxWidth().padding(16.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
                     Text("Máquinas em atendimento",color=ink,style=MaterialTheme.typography.titleLarge)
                     val active=machines.filter{it.status!=MachineStatus.RUNNING}
@@ -471,14 +473,14 @@ private fun DashboardScreen(
                                 Text(if(isStopped)"Parada" else "Atendimento",Modifier.padding(horizontal=10.dp,vertical=6.dp),color=if(isStopped)Color(0xFFB3261E) else Color(0xFF875900),style=MaterialTheme.typography.labelLarge)
                             }
                         }
-                        if(index<active.take(5).lastIndex) HorizontalDivider(color=Color(0xFFD8E4EF))
+                        if(index<active.take(5).lastIndex) HorizontalDivider(color=outline)
                     }
                 }
             }
         }
         item {
             Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
-                Card(Modifier.weight(1f),colors=CardDefaults.cardColors(containerColor=Color(0xFFF9FCFF))) {
+                Card(Modifier.weight(1f),colors=CardDefaults.cardColors(containerColor=panel)) {
                     Column(Modifier.padding(13.dp),verticalArrangement=Arrangement.spacedBy(5.dp)) {
                         Text("Disponibilidade",color=muted,style=MaterialTheme.typography.labelLarge)
                         Text(String.format(java.util.Locale("pt","BR"),"%.1f%%",availability),color=ink,style=MaterialTheme.typography.headlineSmall)
@@ -486,7 +488,7 @@ private fun DashboardScreen(
                         Text("MTTR: ${mttr?.let{String.format(java.util.Locale("pt","BR"),"%.1f h",it)}?:"—"}",color=muted)
                     }
                 }
-                Card(Modifier.weight(1f),colors=CardDefaults.cardColors(containerColor=Color(0xFFF9FCFF))) {
+                Card(Modifier.weight(1f),colors=CardDefaults.cardColors(containerColor=panel)) {
                     Column(Modifier.padding(13.dp),verticalArrangement=Arrangement.spacedBy(5.dp)) {
                         Text("Produção / Capacidade",color=muted,style=MaterialTheme.typography.labelLarge)
                         Text(String.format(java.util.Locale("pt","BR"),"%.0f kg/h",capacity),color=ink,style=MaterialTheme.typography.headlineSmall)
@@ -509,10 +511,10 @@ private fun DashboardScreen(
 
 @Composable
 private fun DashboardMetric(label:String,value:String,color:Color,modifier:Modifier=Modifier,onClick:()->Unit) {
-    Card(modifier=modifier.heightIn(min=104.dp).clickable(onClick=onClick),colors=CardDefaults.cardColors(containerColor=color),shape=MaterialTheme.shapes.large,border=androidx.compose.foundation.BorderStroke(1.dp,Color(0xFFD0DFEC))) {
+    Card(modifier=modifier.heightIn(min=104.dp).clickable(onClick=onClick),colors=CardDefaults.cardColors(containerColor=color),shape=MaterialTheme.shapes.large,border=androidx.compose.foundation.BorderStroke(1.dp,MaterialTheme.colorScheme.outlineVariant)) {
         Column(Modifier.fillMaxWidth().padding(14.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
-            Text(label,color=Color(0xFF526A80),style=MaterialTheme.typography.labelLarge,minLines=2)
-            Text(value,color=Color(0xFF173451),style=MaterialTheme.typography.headlineLarge)
+            Text(label,color=MaterialTheme.colorScheme.onSurfaceVariant,style=MaterialTheme.typography.labelLarge,minLines=2)
+            Text(value,color=MaterialTheme.colorScheme.onSurface,style=MaterialTheme.typography.headlineLarge)
         }
     }
 }
