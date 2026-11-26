@@ -53,7 +53,7 @@ class MainActivity : ComponentActivity() {
                 } else {
                 var page by remember { mutableStateOf("Início") }
                 var visiblePages by remember {
-                    mutableStateOf(settings.getStringSet("visible_pages", null)?.toSet() ?: pages.toSet())
+                    mutableStateOf(settings.getStringSet("visible_pages", null)?.toSet()?.plus("Módulos legados") ?: pages.toSet())
                 }
                 val menuPages = pages.filter { it == "Início" || it == "Configurações" || it in visiblePages }
                 var revision by remember { mutableIntStateOf(0) }
