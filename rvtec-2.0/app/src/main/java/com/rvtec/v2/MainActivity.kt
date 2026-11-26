@@ -5,6 +5,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
@@ -68,6 +71,7 @@ class MainActivity : ComponentActivity() {
                 var showMachine by remember { mutableStateOf(false) }
                 var showEditMachineId by remember { mutableStateOf<String?>(null) }
                 var showDeleteMachineId by remember { mutableStateOf<String?>(null) }
+                var selectedMachineId by remember { mutableStateOf<String?>(null) }
                 var showStopFor by remember { mutableStateOf<String?>(null) }
                 var showOrder by remember { mutableStateOf(false) }
                 var showEntryFor by remember { mutableStateOf<String?>(null) }
@@ -161,44 +165,99 @@ class MainActivity : ComponentActivity() {
                             }
                             "Máquinas" -> {
                                 val machines = remember(revision) { repository.listMachines() }
-                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                    Text("Cadastro de máquinas", style = MaterialTheme.typography.titleLarge)
-                                    Button(onClick = { showMachine = true }) { Text("Nova máquina") }
-                                }
-                                LazyColumn { items(machines) { m ->
-                                    val pulse = rememberInfiniteTransition(label = "machine-status")
-                                        .animateFloat(
-                                            initialValue = 0.35f,
-                                            targetValue = 1f,
-                                            animationSpec = infiniteRepeatable(tween(700), RepeatMode.Reverse),
-                                            label = "stop-pulse"
-                                        ).value
-                                    val machineCardColor = when (m.status) {
-                                        MachineStatus.STOPPED -> MaterialTheme.colorScheme.error.copy(alpha = pulse)
-                                        MachineStatus.MAINTENANCE -> MaterialTheme.colorScheme.tertiaryContainer
-                                        MachineStatus.RUNNING -> MaterialTheme.colorScheme.surface
-                                    }
-                                    Card(
-                                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                                        colors = CardDefaults.cardColors(containerColor = machineCardColor)
+                                val selectedMachine = machines.firstOrNull { it.id == selectedMachineId }
+                                    ?: machines.firstOrNull()
+                                Column(Modifier.fillMaxSize()) {
+                                    Row(
+                                        Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
                                     ) {
-                                        Column(Modifier.padding(12.dp)) {
-                                            Text(m.name, style = MaterialTheme.typography.titleMedium)
-                                            Text("Código: ${m.code.ifBlank { "—" }} | Setor: ${m.sector.ifBlank { "—" }}")
-                                            Text("Produção: ${m.productionKgPerHour} kg/h")
-                                            Text("Estado: ${statusText(m.status)}")
-                                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                                OutlinedButton(onClick = { showEditMachineId = m.id }) { Text("Editar") }
-                                                TextButton(onClick = { showDeleteMachineId = m.id }) { Text("Excluir") }
-                                                if (m.status == MachineStatus.MAINTENANCE) {
-                                                    Button(onClick = { perform { repository.releaseMachine(m.id) } }) {
-                                                        Text("Liberar máquina")
+                                        Column(Modifier.weight(1f)) {
+                                            Text("Máquinas", style = MaterialTheme.typography.titleLarge)
+                                            Text("Situação das máquinas", style = MaterialTheme.typography.bodySmall)
+                                        }
+                                        Button(onClick = { showMachine = true }) { Text("Nova") }
+                                    }
+                                    Row(
+                                        Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 10.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        StatusCount("OPERAÇÃO", machines.count { it.status == MachineStatus.RUNNING }, Color(0xFF16834B), Modifier.weight(1f))
+                                        StatusCount("ATEND.", machines.count { it.status == MachineStatus.MAINTENANCE }, Color(0xFFD9A000), Modifier.weight(1f))
+                                        StatusCount("PARADA", machines.count { it.status == MachineStatus.STOPPED }, Color(0xFFC62828), Modifier.weight(1f))
+                                    }
+                                    if (machines.isEmpty()) {
+                                        Text("Nenhuma máquina cadastrada. Toque em Nova para começar.", modifier = Modifier.padding(vertical = 16.dp))
+                                    } else {
+                                        LazyVerticalGrid(
+                                            columns = GridCells.Fixed(4),
+                                            modifier = Modifier.fillMaxWidth().heightIn(max = 330.dp),
+                                            horizontalArrangement = Arrangement.spacedBy(7.dp),
+                                            verticalArrangement = Arrangement.spacedBy(7.dp)
+                                        ) {
+                                            items(machines.size) { index ->
+                                                val machine = machines[index]
+                                                val tileColor = when (machine.status) {
+                                                    MachineStatus.RUNNING -> Color(0xFF16834B)
+                                                    MachineStatus.MAINTENANCE -> Color(0xFFD9A000)
+                                                    MachineStatus.STOPPED -> Color(0xFFC62828)
+                                                }
+                                                val tileText = if (machine.status == MachineStatus.MAINTENANCE) Color(0xFF342500) else Color.White
+                                                Card(
+                                                    modifier = Modifier.fillMaxWidth().height(70.dp)
+                                                        .clickable { selectedMachineId = machine.id },
+                                                    colors = CardDefaults.cardColors(containerColor = tileColor),
+                                                    border = if (selectedMachine?.id == machine.id) androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.onSurface) else null
+                                                ) {
+                                                    Column(
+                                                        Modifier.fillMaxSize().padding(horizontal = 2.dp, vertical = 7.dp),
+                                                        verticalArrangement = Arrangement.Center,
+                                                        horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
+                                                    ) {
+                                                        Text(
+                                                            machine.code.ifBlank { machine.name },
+                                                            color = tileText,
+                                                            style = MaterialTheme.typography.titleSmall,
+                                                            maxLines = 1
+                                                        )
+                                                        Text(
+                                                            when (machine.status) {
+                                                                MachineStatus.RUNNING -> "OPERAÇÃO"
+                                                                MachineStatus.MAINTENANCE -> "ATEND."
+                                                                MachineStatus.STOPPED -> "PARADA"
+                                                            },
+                                                            color = tileText,
+                                                            style = MaterialTheme.typography.labelSmall,
+                                                            maxLines = 1
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        selectedMachine?.let { machine ->
+                                            Card(
+                                                Modifier.fillMaxWidth().padding(top = 12.dp),
+                                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                                            ) {
+                                                Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                                                    Text(machine.name, style = MaterialTheme.typography.titleMedium)
+                                                    Text("Código: ${machine.code.ifBlank { "—" }}")
+                                                    Text("Setor: ${machine.sector.ifBlank { "—" }}")
+                                                    Text("Produção: ${machine.productionKgPerHour} kg/h")
+                                                    Text("Estado: ${statusText(machine.status)}")
+                                                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                                        OutlinedButton(onClick = { showEditMachineId = machine.id }) { Text("Editar") }
+                                                        TextButton(onClick = { showDeleteMachineId = machine.id }) { Text("Excluir") }
+                                                        if (machine.status == MachineStatus.MAINTENANCE) {
+                                                            Button(onClick = { perform { repository.releaseMachine(machine.id) } }) { Text("Liberar") }
+                                                        }
                                                     }
                                                 }
                                             }
                                         }
                                     }
-                                } }
+                                }
                             }
                             "Paradas" -> {
                                 val machines = remember(revision) { repository.listMachines() }
@@ -341,6 +400,16 @@ class MainActivity : ComponentActivity() {
                 }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun StatusCount(label: String, count: Int, color: Color, modifier: Modifier = Modifier) {
+    Card(modifier = modifier, colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.13f))) {
+        Column(Modifier.padding(horizontal = 7.dp, vertical = 8.dp), horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
+            Text(count.toString(), color = color, style = MaterialTheme.typography.titleMedium)
+            Text(label, color = color, style = MaterialTheme.typography.labelSmall, maxLines = 1)
         }
     }
 }
