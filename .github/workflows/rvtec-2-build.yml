@@ -20,9 +20,18 @@ jobs:
       - name: Build RVTEC 2.0 debug APK
         working-directory: rvtec-2.0
         run: gradle testDebugUnitTest assembleDebug --stacktrace
+      - name: Extract and validate 1.8.5 visual reference
+        run: |
+          set -euo pipefail
+          unzip -t RVTEC_1.8.5_SEM_BOTAO_MENU.zip
+          mkdir -p rvtec-185-reference
+          unzip -q RVTEC_1.8.5_SEM_BOTAO_MENU.zip -d rvtec-185-reference
+          echo "Reference files:"
+          find rvtec-185-reference -maxdepth 4 -type f -printf '%p %s bytes\\n' | sort
       - uses: actions/upload-artifact@v4
         with:
           name: rvtec-2.0-debug
           path: |
             rvtec-2.0/app/build/outputs/apk/debug/app-debug.apk
             RVTEC_1.8.5_SEM_BOTAO_MENU.zip
+            rvtec-185-reference/**
