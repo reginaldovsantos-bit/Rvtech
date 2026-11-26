@@ -74,13 +74,39 @@ class MainActivity : ComponentActivity() {
                 fun perform(action: () -> Unit) {
                     try { action(); error = null; refresh() } catch (e: Exception) { error = e.message ?: "Falha na operação." }
                 }
-                Scaffold(topBar = { TopAppBar(title = { Text("RVTEC 2.0") }) }) { padding ->
-                    Column(Modifier.fillMaxSize().padding(padding).padding(horizontal = 12.dp)) {
-                        ScrollableTabRow(selectedTabIndex = menuPages.indexOf(page).coerceAtLeast(0)) {
+                val referenceStyle = appearance == "Atual/Referência"
+                val headerColor = if (referenceStyle) Color(0xFFBFDDF2) else MaterialTheme.colorScheme.surface
+                val headerContentColor = if (referenceStyle) Color(0xFF173653) else MaterialTheme.colorScheme.onSurface
+                val menuColor = if (referenceStyle) Color(0xFF142D4E) else MaterialTheme.colorScheme.surfaceVariant
+                val menuTextColor = if (referenceStyle) Color(0xFFF4F7FB) else MaterialTheme.colorScheme.onSurfaceVariant
+                Scaffold(
+                    topBar = {
+                        TopAppBar(
+                            title = { Text("RVTEC 2.0") },
+                            colors = TopAppBarDefaults.topAppBarColors(
+                                containerColor = headerColor,
+                                titleContentColor = headerContentColor
+                            )
+                        )
+                    }
+                ) { padding ->
+                    Column(Modifier.fillMaxSize().padding(padding)) {
+                        ScrollableTabRow(
+                            selectedTabIndex = menuPages.indexOf(page).coerceAtLeast(0),
+                            containerColor = menuColor,
+                            contentColor = menuTextColor
+                        ) {
                             menuPages.forEach { item ->
-                                Tab(selected = page == item, onClick = { page = item }, text = { Text(item) })
+                                Tab(
+                                    selected = page == item,
+                                    onClick = { page = item },
+                                    selectedContentColor = if (referenceStyle) Color.White else MaterialTheme.colorScheme.primary,
+                                    unselectedContentColor = menuTextColor,
+                                    text = { Text(item) }
+                                )
                             }
                         }
+                        Column(Modifier.fillMaxSize().padding(horizontal = 12.dp)) {
                         if (repository.hasStorageError()) {
                             Text(
                                 "ATENÇÃO: os dados locais não puderam ser lidos. O armazenamento foi bloqueado para evitar sobrescrever informações. Procure recuperar os dados antes de continuar.",
@@ -245,6 +271,7 @@ class MainActivity : ComponentActivity() {
                                     })
                                 } }
                             }
+                        }
                         }
                     }
                 }
