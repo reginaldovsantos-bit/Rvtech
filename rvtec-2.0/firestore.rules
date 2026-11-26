@@ -1,8 +1,38 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /users/{userId}/rvtec/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isCompanyMember(companyId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/companies/$(companyId)/members/$(request.auth.uid));
+    }
+
+    // Perfil individual: o cliente pode consultar apenas o próprio perfil.
+    // Criação/alteração de role e companyId deve ocorrer por processo confiável.
+    match /users/{userId} {
+      allow read: if signedIn() && request.auth.uid == userId;
+      allow create, update, delete: if false;
+
+      // Compatibilidade com o snapshot legado individual do RVTEC.
+      match /rvtec/{document=**} {
+        allow read, write: if signedIn() && request.auth.uid == userId;
+      }
+    }
+
+    // Associação da conta à empresa: somente leitura pelo próprio membro.
+    // Nenhum cliente pode conceder a si mesmo empresa ou permissões.
+    match /companies/{companyId} {
+      allow read: if isCompanyMember(companyId);
+      allow create, update, delete: if false;
+
+      match /members/{userId} {
+        allow read: if signedIn() && request.auth.uid == userId;
+        allow create, update, delete: if false;
+      }
     }
   }
 }
