@@ -106,6 +106,32 @@ class MaintenanceRepository(context: Context? = null) {
         check(!machines.containsKey(machine.id)) { "Máquina já cadastrada." }
         transaction { machines[machine.id] = machine }
     }
+
+    @Synchronized fun updateMachine(machineId: String, name: String, code: String, sector: String, productionKgPerHour: Double): Machine {
+        require(name.isNotBlank()) { "Informe o nome da máquina." }
+        require(productionKgPerHour >= 0) { "A produção não pode ser negativa." }
+        val current = machines[machineId] ?: error("Máquina não encontrada.")
+        return transaction {
+            current.copy(
+                name = name.trim(),
+                code = code.trim(),
+                sector = sector.trim(),
+                productionKgPerHour = productionKgPerHour
+            ).also { machines[machineId] = it }
+        }
+    }
+
+    @Synchronized fun deleteMachine(machineId: String) {
+        val machine = machines[machineId] ?: error("Máquina não encontrada.")
+        check(machine.status == MachineStatus.RUNNING && machine.activeStopId == null) {
+            "Não é possível excluir uma máquina parada ou em manutenção."
+        }
+        check(stops.values.none { it.machineId == machineId } && orders.values.none { it.machineId == machineId }) {
+            "Esta máquina possui histórico de paradas ou ordens. Preserve o histórico e não exclua o cadastro."
+        }
+        transaction { machines.remove(machineId) }
+    }
+
     fun hasStorageError(): Boolean = restoreFailed
 
     /** Snapshot completo dos dados locais atualmente suportados pela versão 2.0. */
