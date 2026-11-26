@@ -92,19 +92,12 @@ class MainActivity : ComponentActivity() {
                                     Text("v2.0", color=Color(0xFFB8D7F4), style=MaterialTheme.typography.labelLarge)
                                 }
                             }
-                            ScrollableTabRow(selectedTabIndex=menuPages.indexOf(page).coerceAtLeast(0), containerColor=Color(0xFF102D50), contentColor=Color.White, edgePadding=10.dp) {
-                                val mainNav=listOf("Início","Ordens de serviço","Máquinas","Relatórios","Configurações","Paradas","Preventivas","Apontamentos","Memória Técnica IA","Sincronização","Módulos legados").filter { it=="Início" || it=="Configurações" || it in visiblePages }
+                            val mainNav=listOf("Início","Ordens de serviço","Máquinas","Relatórios","Configurações","Paradas","Preventivas","Apontamentos","Memória Técnica IA","Sincronização","Módulos legados").filter { it=="Início" || it=="Configurações" || it in visiblePages }
+                            ScrollableTabRow(selectedTabIndex=mainNav.indexOf(page).coerceAtLeast(0), containerColor=Color(0xFF102D50), contentColor=Color.White, edgePadding=10.dp) {
                                 mainNav.forEach { target ->
                                     Tab(selected=page==target,onClick={page=target},
                                         text={Text(when(target){"Ordens de serviço"->"OS";"Configurações"->"Ajustes";"Memória Técnica IA"->"IA";"Sincronização"->"Nuvem";else->target},maxLines=1)},
                                         icon={Text(when(target){"Início"->"⌂";"Ordens de serviço"->"🔧";"Máquinas"->"⚙";"Relatórios"->"▥";"Configurações"->"⚙";"Paradas"->"⚠";"Preventivas"->"☑";"Apontamentos"->"▤";"Sincronização"->"☁";else->"✦"})})
-                                }
-                            }
-                            Row(Modifier.fillMaxWidth().padding(vertical=5.dp).horizontalScroll(rememberScrollState()).background(Color(0xFF102D50),MaterialTheme.shapes.large).padding(6.dp), horizontalArrangement=Arrangement.spacedBy(7.dp)) {
-                                listOf("Solicitações" to "Ordens de serviço","Ordens" to "Ordens de serviço","Apontamentos" to "Apontamentos","Preventivas" to "Preventivas","IA Técnica" to "Memória Técnica IA").forEach { (label,target) ->
-                                    Card(Modifier.widthIn(min=112.dp).height(44.dp).clickable{page=target},colors=CardDefaults.cardColors(containerColor=Color(0xFF1B416B)),shape=MaterialTheme.shapes.large) {
-                                        Box(Modifier.fillMaxSize().padding(horizontal=10.dp),contentAlignment=androidx.compose.ui.Alignment.Center) { Text(label,color=Color.White,style=MaterialTheme.typography.labelLarge,maxLines=1) }
-                                    }
                                 }
                             }
                         } else {
