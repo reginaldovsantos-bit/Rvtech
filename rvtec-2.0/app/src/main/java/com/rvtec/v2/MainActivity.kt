@@ -11,13 +11,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.rvtec.v2.data.MaintenanceRepository
+import com.rvtec.v2.data.LegacyModuleRepository
 import com.rvtec.v2.data.FirebaseServices
 import com.rvtec.v2.domain.*
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-private val pages = listOf("Início", "Máquinas", "Paradas", "Ordens de serviço", "Apontamentos", "Memória Técnica IA")
+private val pages = listOf("Início", "Máquinas", "Paradas", "Ordens de serviço", "Apontamentos", "Módulos", "Memória Técnica IA", "Configurações")
 
 @OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
@@ -26,6 +27,7 @@ class MainActivity : ComponentActivity() {
         val firebaseServices = FirebaseServices(applicationContext)
         firebaseServices.installAppCheck()
         val repository = MaintenanceRepository(applicationContext)
+        val legacyRepository = LegacyModuleRepository(applicationContext)
         setContent {
             MaterialTheme {
                 var page by remember { mutableStateOf("Início") }
@@ -85,7 +87,7 @@ class MainActivity : ComponentActivity() {
                                             Text(m.name, style = MaterialTheme.typography.titleMedium)
                                             Text("Código: ${m.code.ifBlank { "—" }} | Setor: ${m.sector.ifBlank { "—" }}")
                                             Text("Produção: ${m.productionKgPerHour} kg/h")
-                                            Text("Estado: ${statusText(m.status)}")
+                                            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {\n                                                Text("Estado: ")\n                                                MachineStatusIndicator(m.status)\n                                            }
                                             if (m.status == MachineStatus.MAINTENANCE) {
                                                 Button(onClick = { perform { repository.releaseMachine(m.id) } }) {
                                                     Text("Liberar máquina")
@@ -145,6 +147,8 @@ class MainActivity : ComponentActivity() {
                                     }
                                 } }
                             }
+                            "Módulos" -> LegacyModulesScreen(legacyRepository, revision) { refresh() }
+                            "Configurações" -> LegacySettingsScreen(legacyRepository) { refresh() }
                             "Memória Técnica IA" -> TechnicalAiScreen(firebaseServices.firebaseApp)
                             "Apontamentos" -> {
                                 val entries = remember(revision) { repository.listEntries() }
@@ -201,7 +205,34 @@ class MainActivity : ComponentActivity() {
 @Composable private fun Summary(label: String, value: String, modifier: Modifier = Modifier) {
     Card(modifier) { Column(Modifier.padding(10.dp)) { Text(value, style = MaterialTheme.typography.headlineSmall); Text(label, style = MaterialTheme.typography.labelSmall) } }
 }
-private fun statusText(s: MachineStatus) = when (s) {
+
+@Composable
+private fun MachineStatusIndicator(status: MachineStatus) {
+    val color = when (status) {
+        MachineStatus.RUNNING -> MaterialTheme.colorScheme.primary
+        MachineStatus.STOPPED -> {
+            val transition = androidx.compose.animation.core.rememberInfiniteTransition(label = "machine-stopped")
+            transition.animateColor(
+                initialValue = MaterialTheme.colorScheme.error,
+                targetValue = MaterialTheme.colorScheme.error.copy(alpha = 0.25f),
+                animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+                    animation = androidx.compose.animation.core.tween(650),
+                    repeatMode = androidx.compose.animation.core.RepeatMode.Reverse
+                ),
+                label = "stopped-blink"
+            ).value
+        }
+        MachineStatus.MAINTENANCE -> MaterialTheme.colorScheme.tertiary
+    }
+    val label = statusText(status)
+    Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+        androidx.compose.foundation.Canvas(Modifier.size(10.dp)) {
+            drawCircle(color = color)
+        }
+        Text(" $label", color = color, style = MaterialTheme.typography.bodyMedium)
+    }
+}
+\nprivate fun statusText(s: MachineStatus) = when (s) {
     MachineStatus.RUNNING -> "Em operação"
     MachineStatus.STOPPED -> "Parada"
     MachineStatus.MAINTENANCE -> "Aguardando liberação"

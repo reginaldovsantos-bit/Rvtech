@@ -1,0 +1,42 @@
+name: RVTEC 1.8.5 feature inventory
+on:
+  push:
+    branches:
+      - feature/rvtec-2.0-native-legacy-integration
+    paths:
+      - ".github/workflows/inventory-rvtec-185.yml"
+  workflow_dispatch:
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect original 1.8.5 package
+        run: |
+          python - <<'PY'
+          import urllib.request, zipfile, io, re, json
+          url = "https://raw.githubusercontent.com/reginaldovsantos-bit/Rvtech/main/RVTEC_1.8.5_SEM_BOTAO_MENU.zip"
+          z = zipfile.ZipFile(io.BytesIO(urllib.request.urlopen(url, timeout=30).read()))
+          html = z.read("index.html").decode("utf-8", "replace")
+          print("ZIP_FILES", json.dumps([(x.filename,x.file_size) for x in z.infolist()]))
+          print("HTML_TITLE", re.findall(r"<title[^>]*>(.*?)</title>", html, re.I|re.S)[:2])
+          patterns = {
+            "SECTIONS": r'<section[^>]*>',
+            "FUNCTIONS": r'function\s+([A-Za-z_$][\w$]*)\s*\(',
+            "IDS": r'id="([^"]+)"',
+            "DB_KEYS": r'(?:db|state|data)\.([A-Za-z_$][\w$]*)'
+          }
+          report = ["RVTEC 1.8.5 inventory", "HTML bytes: "+str(len(html.encode()))]
+          for label, pattern in patterns.items():
+            values = list(dict.fromkeys(re.findall(pattern, html, re.I)))
+            print(label, json.dumps(values, ensure_ascii=False))
+            report += ["", label] + values
+          nav = re.findall(r'<(?:button|a)[^>]*(?:data-tab|data-screen|onclick)[^>]*>.*?</(?:button|a)>', html, re.I|re.S)
+          nav = [re.sub(r'\s+',' ',re.sub(r'<[^>]+>',' ',x)).strip()[:160] for x in nav]
+          report += ["", "NAVIGATION"] + nav
+          open("rvtec-185-inventory.txt","w").write("\n".join(report))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rvtec-1.8.5-inventory
+          path: rvtec-185-inventory.txt

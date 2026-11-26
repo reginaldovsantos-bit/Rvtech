@@ -1,9 +1,10 @@
 name: Inspecionar fonte RVTEC 1.8.5
 on:
   push:
-    branches: [ main ]
+    branches: [ main, feature/rvtec-2.0-native-legacy-integration ]
     paths:
       - '.github/workflows/inspect-rvtec-185.yml'
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
@@ -11,17 +12,57 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Listar e validar ZIP 1.8.5
+      - name: Inventário funcional e visual da 1.8.5
         run: |
           set -euo pipefail
           unzip -t RVTEC_1.8.5_SEM_BOTAO_MENU.zip
-          echo '--- ARQUIVOS DO PACOTE ---'
-          unzip -Z1 RVTEC_1.8.5_SEM_BOTAO_MENU.zip
-          mkdir -p /tmp/rvtec185
+          rm -rf /tmp/rvtec185 && mkdir -p /tmp/rvtec185
           unzip -q RVTEC_1.8.5_SEM_BOTAO_MENU.zip -d /tmp/rvtec185
-          echo '--- ESTRUTURA ---'
-          find /tmp/rvtec185 -maxdepth 4 -type f -printf '%p %s bytes\n' | sort
-          echo '--- VERIFICAÇÃO DE PROJETO ANDROID ---'
-          find /tmp/rvtec185 -type f \( -name 'build.gradle' -o -name 'settings.gradle' -o -name 'gradlew' -o -name 'AndroidManifest.xml' \) -print
-          echo '--- IDENTIFICAÇÃO DO HTML ---'
-          grep -RniE 'firebase|gemini|version|rvtec' /tmp/rvtec185 --include='*.html' | head -80 || true
+          echo '--- LEIA-ME ---'
+          cat /tmp/rvtec185/LEIA-ME.txt
+          echo '--- MANIFEST ---'
+          cat /tmp/rvtec185/manifest.webmanifest
+          echo '--- HTML INVENTORY ---'
+          python3 - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+          import re
+          src=Path('/tmp/rvtec185/index.html').read_text()
+          class Scan(HTMLParser):
+              def __init__(self):
+                  super().__init__(); self.ids=[]; self.buttons=[]; self.sections=[]; self.title=False; self.in_title=False; self.title_text=''
+              def handle_starttag(self,t,a):
+                  d=dict(a)
+                  if 'id' in d: self.ids.append((t,d['id']))
+                  if t in ('button','nav','section','main','header'): self.sections.append((t,d.get('id'),d.get('class'),d.get('onclick')))
+                  if t=='button': self.buttons.append((d.get('id'),d.get('onclick'),d.get('aria-label')))
+                  if t=='title': self.in_title=True
+              def handle_data(self,d):
+                  if self.in_title: self.title_text+=d
+              def handle_endtag(self,t):
+                  if t=='title': self.in_title=False
+          p=Scan(); p.feed(src)
+          print('HTML bytes:',len(src.encode()),'title:',p.title_text.strip())
+          print('Element IDs:',len(p.ids))
+          print('Buttons:',len(p.buttons))
+          print('--- NAV/SECTION/MAIN/HEADER ---')
+          for x in p.sections: print(x)
+          print('--- BUTTONS ---')
+          for x in p.buttons: print(x)
+          print('--- DATA MODEL / FEATURE TOKENS ---')
+          terms=['machines','stops','orders','stock','stockMovements','preventive','maintenance','users','notifications','reports','history','diagnostic','gemini','firebase','qr','photo','attachment','shift','settings','production','MTBF','MTTR']
+          for term in terms:
+              hits=len(re.findall(term,src,re.I))
+              if hits: print(term,hits)
+          print('--- CSS THEME TOKENS ---')
+          for x in re.findall(r'--[a-zA-Z0-9_-]+\\s*:',src):
+              print(x)
+          print('--- VERSION MARKERS ---')
+          for line in src.splitlines():
+              if re.search(r'1\\.8\\.[0-9]|v1\\.8|RVTEC',line,re.I):
+                  if len(line)<250: print(line.strip()[:250])
+          PY
+          echo '--- SERVICE WORKER ---'
+          cat /tmp/rvtec185/sw.js
+          echo '--- ANDROID PROJECT FILES IN ZIP ---'
+          find /tmp/rvtec185 -type f -name build.gradle -o -name settings.gradle -o -name gradlew -o -name AndroidManifest.xml
