@@ -215,11 +215,23 @@ class MainActivity : ComponentActivity() {
                                                     MachineStatus.MAINTENANCE -> Color(0xFFD9A000)
                                                     MachineStatus.STOPPED -> Color(0xFFC62828)
                                                 }
+                                                val pulse = if (machine.status == MachineStatus.STOPPED) {
+                                                    rememberInfiniteTransition(label = "stopped-machine-${machine.id}")
+                                                        .animateFloat(
+                                                            initialValue = 0.48f,
+                                                            targetValue = 1f,
+                                                            animationSpec = infiniteRepeatable(tween(650), RepeatMode.Reverse),
+                                                            label = "stopped-pulse"
+                                                        ).value
+                                                } else 1f
                                                 val tileText = if (machine.status == MachineStatus.MAINTENANCE) Color(0xFF342500) else Color.White
+                                                val tileLabel = machine.code.filter { it.isDigit() }.take(4)
+                                                    .ifBlank { machine.name.filter { it.isDigit() }.take(4) }
+                                                    .ifBlank { machine.name.take(4) }
                                                 Card(
                                                     modifier = Modifier.fillMaxWidth().height(70.dp)
                                                         .clickable { selectedMachineId = machine.id },
-                                                    colors = CardDefaults.cardColors(containerColor = tileColor),
+                                                    colors = CardDefaults.cardColors(containerColor = tileColor.copy(alpha = pulse)),
                                                     border = if (selectedMachine?.id == machine.id) androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.onSurface) else null
                                                 ) {
                                                     Column(
