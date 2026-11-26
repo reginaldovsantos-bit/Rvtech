@@ -59,6 +59,11 @@ class MainActivity : ComponentActivity() {
                     FirebaseAuthScreen(auth) { signedIn = true }
                 } else {
                 var page by remember { mutableStateOf("Início") }
+                var visiblePages by remember {
+                    mutableStateOf(pages.filter { item ->
+                        item == "Início" || settings.getBoolean("module_$item", true)
+                    })
+                }
                 var revision by remember { mutableIntStateOf(0) }
                 var error by remember { mutableStateOf<String?>(null) }
                 var showMachine by remember { mutableStateOf(false) }
@@ -72,8 +77,8 @@ class MainActivity : ComponentActivity() {
                 }
                 Scaffold(topBar = { TopAppBar(title = { Text("RVTEC 2.0") }) }) { padding ->
                     Column(Modifier.fillMaxSize().padding(padding).padding(horizontal = 12.dp)) {
-                        ScrollableTabRow(selectedTabIndex = pages.indexOf(page).coerceAtLeast(0)) {
-                            pages.forEach { item ->
+                        ScrollableTabRow(selectedTabIndex = visiblePages.indexOf(page).coerceAtLeast(0)) {
+                            visiblePages.forEach { item ->
                                 Tab(selected = page == item, onClick = { page = item }, text = { Text(item) })
                             }
                         }
@@ -87,10 +92,21 @@ class MainActivity : ComponentActivity() {
                         }
                         error?.let { Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(8.dp)) }
                         when (page) {
-                            "Configurações" -> AppearanceSettingsScreen(appearance) { selected ->
-                                appearance = selected
-                                settings.edit().putString("appearance", selected).apply()
-                            }
+                            "Configurações" -> AppearanceSettingsScreen(
+                                selected = appearance,
+                                visiblePages = visiblePages,
+                                onSelectAppearance = { selected ->
+                                    appearance = selected
+                                    settings.edit().putString("appearance", selected).apply()
+                                },
+                                onTogglePage = { item, enabled ->
+                                    settings.edit().putBoolean("module_$item", enabled).apply()
+                                    visiblePages = pages.filter { candidate ->
+                                        candidate == "Início" || settings.getBoolean("module_$candidate", true)
+                                    }
+                                    if (page !in visiblePages) page = "Início"
+                                }
+                            )
                             "Início" -> {
                                 val machines = remember(revision) { repository.listMachines() }
                                 val stops = remember(revision) { repository.listStops() }
@@ -406,14 +422,20 @@ private fun orderText(s: WorkOrderStatus) = when (s) {
 
 
 @Composable
-private fun AppearanceSettingsScreen(selected: String, onSelect: (String) -> Unit) {
+private fun AppearanceSettingsScreen(
+    selected: String,
+    visiblePages: List<String>,
+    onSelectAppearance: (String) -> Unit,
+    onTogglePage: (String, Boolean) -> Unit
+) {
     val styles = listOf(
         "Atual/Referência" to "Visual claro, cabeçalho azul e cartões suaves — modelo de referência aprovado.",
         "Moderno" to "Visual escuro sofisticado, com detalhes dourados.",
         "Antigo/Clássico" to "Visual clássico inspirado nas versões anteriores do RVTEC."
     )
+    val optionalPages = pages.filter { it != "Início" }
     Column(
-        Modifier.fillMaxSize().padding(16.dp),
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text("Configurações", style = MaterialTheme.typography.headlineSmall)
@@ -431,7 +453,7 @@ private fun AppearanceSettingsScreen(selected: String, onSelect: (String) -> Uni
                     Modifier.fillMaxWidth().padding(12.dp),
                     verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
                 ) {
-                    RadioButton(selected = selected == name, onClick = { onSelect(name) })
+                    RadioButton(selected = selected == name, onClick = { onSelectAppearance(name) })
                     Column(Modifier.weight(1f).padding(start = 8.dp)) {
                         Text(name, style = MaterialTheme.typography.titleMedium)
                         Text(description, style = MaterialTheme.typography.bodySmall)
@@ -439,6 +461,28 @@ private fun AppearanceSettingsScreen(selected: String, onSelect: (String) -> Uni
                 }
             }
         }
-        Text("A troca de estilo não altera nem apaga máquinas, paradas, ordens ou apontamentos.")
+        HorizontalDivider()
+        Text("Módulos do menu", style = MaterialTheme.typography.titleMedium)
+        Text("Desmarque uma aba para ocultá-la da navegação. Os dados e as funções continuam salvos; você pode ativá-la novamente quando quiser.")
+        Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+            Checkbox(checked = true, onCheckedChange = null, enabled = false)
+            Column {
+                Text("Início")
+                Text("Obrigatório — não pode ser ocultado.", style = MaterialTheme.typography.bodySmall)
+            }
+        }
+        optionalPages.forEach { item ->
+            Row(
+                Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+            ) {
+                Checkbox(
+                    checked = item in visiblePages,
+                    onCheckedChange = { enabled -> onTogglePage(item, enabled) }
+                )
+                Text(item, modifier = Modifier.weight(1f))
+            }
+        }
+        Text("Ocultar uma aba não apaga máquinas, paradas, ordens ou histórico. A escolha fica salva neste aparelho.")
     }
 }
