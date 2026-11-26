@@ -460,14 +460,17 @@ private fun AppearanceSettingsScreen(
         "Moderno" to "Visual escuro sofisticado, com detalhes dourados.",
         "Antigo/Clássico" to "Visual clássico inspirado nas versões anteriores do RVTEC."
     )
-    Column(
+    LazyColumn(
         Modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("Configurações", style = MaterialTheme.typography.headlineSmall)
-        Text("Aparência do aplicativo", style = MaterialTheme.typography.titleMedium)
-        Text("Escolha um dos três estilos. A preferência fica salva neste aparelho e é aplicada em todas as telas.")
-        styles.forEach { (name, description) ->
+        item {
+            Text("Configurações", style = MaterialTheme.typography.headlineSmall)
+            Text("Aparência do aplicativo", style = MaterialTheme.typography.titleMedium)
+            Text("Escolha um dos três estilos. A preferência fica salva neste aparelho e é aplicada em todas as telas.")
+        }
+        items(styles) { style ->
+            val (name, description) = style
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
@@ -487,10 +490,12 @@ private fun AppearanceSettingsScreen(
                 }
             }
         }
-        HorizontalDivider()
-        Text("Módulos do menu", style = MaterialTheme.typography.titleMedium)
-        Text("Desmarque para ocultar uma aba. Os dados e as funções permanecem salvos.")
-        pages.forEach { module ->
+        item {
+            HorizontalDivider()
+            Text("Módulos do menu", style = MaterialTheme.typography.titleMedium)
+            Text("Desmarque para ocultar uma aba. Os dados e as funções permanecem salvos.")
+        }
+        items(pages) { module ->
             Row(
                 Modifier.fillMaxWidth().padding(vertical = 2.dp),
                 verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
@@ -503,6 +508,7 @@ private fun AppearanceSettingsScreen(
                 Text(module, style = MaterialTheme.typography.bodyLarge)
             }
         }
-        Text("A aba Início é obrigatória. Ocultar módulos não exclui máquinas, paradas, ordens ou apontamentos.")
-    }
+        item {
+            Text("Início e Configurações permanecem disponíveis. Ocultar outros módulos não exclui máquinas, paradas, ordens ou apontamentos.")
+        }
 }
