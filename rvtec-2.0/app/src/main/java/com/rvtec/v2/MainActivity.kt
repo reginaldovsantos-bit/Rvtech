@@ -512,3 +512,4 @@ private fun AppearanceSettingsScreen(
             Text("Início e Configurações permanecem disponíveis. Ocultar outros módulos não exclui máquinas, paradas, ordens ou apontamentos.")
         }
 }
+}
