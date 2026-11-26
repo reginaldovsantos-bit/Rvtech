@@ -16,11 +16,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.rvtec.v2.data.MaintenanceRepository
+import com.rvtec.v2.data.LegacyModuleRepository
 import com.rvtec.v2.data.FirebaseServices
 import com.google.firebase.auth.FirebaseAuth
 import com.rvtec.v2.domain.*
 
-private val pages = listOf("Início", "Máquinas", "Paradas", "Ordens de serviço", "Preventivas", "Relatórios", "Apontamentos", "Memória Técnica IA", "Sincronização", "Configurações")
+private val pages = listOf("Início", "Máquinas", "Paradas", "Ordens de serviço", "Preventivas", "Relatórios", "Apontamentos", "Memória Técnica IA", "Sincronização", "Módulos legados", "Configurações")
 
 @OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
@@ -29,6 +30,7 @@ class MainActivity : ComponentActivity() {
         val firebaseServices = FirebaseServices(applicationContext)
         firebaseServices.installAppCheck()
         val repository = MaintenanceRepository(applicationContext)
+        val legacyRepository = LegacyModuleRepository(applicationContext)
         val auth = FirebaseAuth.getInstance()
         val settings = getSharedPreferences("rvtec_settings", MODE_PRIVATE)
         setContent {
@@ -347,6 +349,7 @@ class MainActivity : ComponentActivity() {
                             }
                             "Memória Técnica IA" -> TechnicalAiScreen()
                             "Sincronização" -> FirebaseSyncScreen(firebaseServices, repository)
+                            "Módulos legados" -> LegacyModulesScreen(legacyRepository, revision) { refresh() }
                             "Apontamentos" -> {
                                 val entries = remember(revision) { repository.listEntries() }
                                 val orders = remember(revision) { repository.listOrders() }
