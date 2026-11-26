@@ -18,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 import com.rvtec.v2.data.MaintenanceRepository
 import com.rvtec.v2.data.FirebaseServices
 import com.google.firebase.auth.FirebaseAuth
@@ -54,6 +55,8 @@ class MainActivity : ComponentActivity() {
                     FirebaseAuthScreen(auth) { signedIn = true }
                 } else {
                 var page by remember { mutableStateOf("Início") }
+                val drawerState = rememberDrawerState(DrawerValue.Closed)
+                val drawerScope = rememberCoroutineScope()
                 var visiblePages by remember {
                     mutableStateOf(settings.getStringSet("visible_pages", null)?.toSet() ?: pages.toSet())
                 }
@@ -74,41 +77,68 @@ class MainActivity : ComponentActivity() {
                 }
                 val referenceStyle = appearance == "Atual/Referência"
                 val menuColor = Color(0xFF102849)
+                ModalNavigationDrawer(
+                    drawerState = drawerState,
+                    drawerContent = {
+                        ModalDrawerSheet(
+                            drawerContainerColor = Color(0xFF061629),
+                            drawerContentColor = Color(0xFFF4F7FB)
+                        ) {
+                            Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                                Text("RVTEC 2.0", color = Color(0xFF18C7D8), style = MaterialTheme.typography.headlineSmall)
+                                Text("Manutenção Industrial", color = Color(0xFFB8D7F4))
+                                HorizontalDivider(Modifier.padding(vertical = 14.dp), color = Color(0xFF244767))
+                                Text(auth.currentUser?.displayName?.takeIf { it.isNotBlank() } ?: "Técnico", style = MaterialTheme.typography.titleMedium)
+                                Text(workSchedule.ifBlank { "Turno não configurado" }, color = Color(0xFF18C7D8), style = MaterialTheme.typography.bodySmall)
+                                HorizontalDivider(Modifier.padding(vertical = 14.dp), color = Color(0xFF244767))
+                            }
+                            LazyColumn(contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp)) {
+                                items(menuPages) { target ->
+                                    NavigationDrawerItem(
+                                        label = { Text(target) },
+                                        selected = page == target,
+                                        onClick = {
+                                            page = target
+                                            drawerScope.launch { drawerState.close() }
+                                        },
+                                        modifier = Modifier.padding(vertical = 3.dp),
+                                        colors = NavigationDrawerItemDefaults.colors(
+                                            selectedContainerColor = Color(0xFF07577C),
+                                            selectedTextColor = Color.White,
+                                            unselectedTextColor = Color(0xFFE0EAF5)
+                                        )
+                                    )
+                                }
+                            }
+                            Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                                HorizontalDivider(color = Color(0xFF244767))
+                                Text("RVTEC 2.0 • v2.0", Modifier.padding(top = 12.dp), color = Color(0xFF8DA8C2), style = MaterialTheme.typography.labelSmall)
+                            }
+                        }
+                    }
+                ) {
                 Scaffold(containerColor=MaterialTheme.colorScheme.background) { padding ->
                     Column(Modifier.fillMaxSize().padding(padding)) {
-                        if (referenceStyle) {
-                            Card(Modifier.fillMaxWidth().padding(horizontal=10.dp, vertical=8.dp), colors=CardDefaults.cardColors(containerColor=Color(0xFF102849)), shape=MaterialTheme.shapes.extraLarge) {
-                                Row(
-                                    Modifier.fillMaxWidth().padding(horizontal=16.dp, vertical=13.dp),
-                                    verticalAlignment=androidx.compose.ui.Alignment.CenterVertically
-                                ) {
-                                    Text("⚙", color=Color(0xFF18C7D8), style=MaterialTheme.typography.headlineLarge)
-                                    Column(Modifier.weight(1f).padding(start=12.dp)) {
-                                        Text("RVTEC 2.0", color=Color.White, style=MaterialTheme.typography.headlineSmall)
-                                        Text("Manutenção Industrial", color=Color(0xFFB8D7F4), style=MaterialTheme.typography.titleSmall)
-                                    }
-                                    Text("v2.0", color=Color(0xFFB8D7F4), style=MaterialTheme.typography.labelLarge)
+                        Card(
+                            Modifier.fillMaxWidth().padding(horizontal=10.dp, vertical=8.dp),
+                            colors = CardDefaults.cardColors(containerColor = if (referenceStyle) Color(0xFF102849) else MaterialTheme.colorScheme.surface),
+                            shape = MaterialTheme.shapes.extraLarge
+                        ) {
+                            Row(
+                                Modifier.fillMaxWidth().padding(horizontal=16.dp, vertical=13.dp),
+                                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    "☰",
+                                    Modifier.clickable { drawerScope.launch { drawerState.open() } }.padding(end = 14.dp),
+                                    color = Color(0xFF18C7D8),
+                                    style = MaterialTheme.typography.headlineLarge
+                                )
+                                Column(Modifier.weight(1f)) {
+                                    Text(appName.ifBlank { "RVTEC 2.0" }, color = Color.White, style = MaterialTheme.typography.headlineSmall)
+                                    Text("Manutenção Industrial", color = Color(0xFFB8D7F4), style = MaterialTheme.typography.titleSmall)
                                 }
-                            }
-                            ScrollableTabRow(selectedTabIndex=menuPages.indexOf(page).coerceAtLeast(0), containerColor=Color(0xFF102D50), contentColor=Color.White, edgePadding=10.dp) {
-                                val mainNav=listOf("Início","Ordens de serviço","Máquinas","Relatórios","Configurações","Paradas","Preventivas","Apontamentos","Memória Técnica IA").filter { it=="Início" || it=="Configurações" || it in visiblePages }
-                                mainNav.forEach { target ->
-                                    Tab(selected=page==target,onClick={page=target},
-                                        text={Text(when(target){"Ordens de serviço"->"OS";"Configurações"->"Ajustes";"Memória Técnica IA"->"IA";else->target},maxLines=1)},
-                                        icon={Text(when(target){"Início"->"⌂";"Ordens de serviço"->"🔧";"Máquinas"->"⚙";"Relatórios"->"▥";"Configurações"->"⚙";"Paradas"->"⚠";"Preventivas"->"☑";"Apontamentos"->"▤";else->"✦"})})
-                                }
-                            }
-                            Row(Modifier.fillMaxWidth().padding(vertical=5.dp).horizontalScroll(rememberScrollState()).background(Color(0xFF102D50),MaterialTheme.shapes.large).padding(6.dp), horizontalArrangement=Arrangement.spacedBy(7.dp)) {
-                                listOf("Solicitações" to "Ordens de serviço","Ordens" to "Ordens de serviço","Apontamentos" to "Apontamentos","Preventivas" to "Preventivas","IA Técnica" to "Memória Técnica IA").forEach { (label,target) ->
-                                    Card(Modifier.widthIn(min=112.dp).height(44.dp).clickable{page=target},colors=CardDefaults.cardColors(containerColor=Color(0xFF1B416B)),shape=MaterialTheme.shapes.large) {
-                                        Box(Modifier.fillMaxSize().padding(horizontal=10.dp),contentAlignment=androidx.compose.ui.Alignment.Center) { Text(label,color=Color.White,style=MaterialTheme.typography.labelLarge,maxLines=1) }
-                                    }
-                                }
-                            }
-                        } else {
-                            TopAppBar(title={ Text(appName.ifBlank { "RVTEC 2.0" }) })
-                            ScrollableTabRow(selectedTabIndex=menuPages.indexOf(page).coerceAtLeast(0),containerColor=menuColor) {
-                                menuPages.forEach { item -> Tab(selected=page==item,onClick={page=item},text={Text(item,maxLines=1)}) }
+                                Text("v2.0", color = Color(0xFFB8D7F4), style = MaterialTheme.typography.labelLarge)
                             }
                         }
                         Column(Modifier.fillMaxSize().padding(horizontal = 12.dp)) {
@@ -353,6 +383,7 @@ class MainActivity : ComponentActivity() {
                         }
                         }
                     }
+                }
                 }
                 if (showMachine) MachineDialog(onDismiss = { showMachine = false }) { name, code, sector, rate ->
                     perform { repository.addMachine(Machine(java.util.UUID.randomUUID().toString(), name, code, sector, rate)) }
