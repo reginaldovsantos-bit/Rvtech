@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.rvtec.v2.data.MaintenanceRepository
@@ -423,12 +424,12 @@ private fun DashboardScreen(
     onNewStop: () -> Unit, onNewOrder: () -> Unit, onEntries: () -> Unit
 ) {
     val running = machines.count { it.status == MachineStatus.RUNNING }
-    val stoppedMachines = machines.filter { it.status == MachineStatus.STOPPED }
     val activeOrders = orders.filter { it.status == WorkOrderStatus.IN_PROGRESS }
     val attendingMachines = activeOrders.mapNotNull { order ->
         machines.firstOrNull { it.id == order.machineId }?.let { machine -> order to machine }
     }.distinctBy { it.second.id }
-    val openStops = stops.count { it.status != StopStatus.CLOSED }
+    val attendingMachineIds = attendingMachines.map { it.second.id }.toSet()
+    val stoppedMachines = machines.filter { it.status == MachineStatus.STOPPED && it.id !in attendingMachineIds }
     val pendingOrders = orders.count { it.status == WorkOrderStatus.OPEN || it.status == WorkOrderStatus.IN_PROGRESS }
     val todayStart = java.util.Calendar.getInstance().apply {
         set(java.util.Calendar.HOUR_OF_DAY, 0); set(java.util.Calendar.MINUTE, 0)
@@ -456,7 +457,6 @@ private fun DashboardScreen(
                 emptyMessage = "Nenhuma máquina em parada agora.",
                 count = stoppedMachines.size,
                 accent = Color(0xFFC62828),
-                background = Color(0xFFFFE9E9),
                 onClick = onStops
             ) {
                 val machinesOnStop = stoppedMachines
@@ -496,7 +496,6 @@ private fun DashboardScreen(
                 emptyMessage = "Nenhuma ordem em atendimento.",
                 count = attendingMachines.size,
                 accent = Color(0xFFB88600),
-                background = Color(0xFFFFF4CC),
                 onClick = onOrders
             ) {
                 val services = attendingMachines
@@ -596,8 +595,8 @@ private fun DashboardScreen(
 
 @Composable
 private fun DashboardCarouselCard(
-    title: String, emptyMessage: String, count: Int, accent: Color, background: Color,
-    onClick: () -> Unit, content: @Composable ColumnScope.() -> Unit
+    title: String, emptyMessage: String, count: Int, accent: Color,
+    onClick: () -> Unit, content: @Composable () -> Unit
 ) {
     Card(
         Modifier.fillMaxWidth().clickable(onClick = onClick),
