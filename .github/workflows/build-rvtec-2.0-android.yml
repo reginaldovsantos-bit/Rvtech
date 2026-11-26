@@ -1,0 +1,72 @@
+name: Build RVTEC 2.0 Native Android
+
+on:
+  push:
+    branches:
+      - ci/rvtec-2.0-native-build
+    paths:
+      - 'rvtec-2.0/**'
+      - '.github/workflows/build-rvtec-2.0-android.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle 8.9
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Install Android SDK components
+        run: |
+          set -euo pipefail
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
+            'platforms;android-35' \
+            'build-tools;35.0.0' \
+            'platform-tools'
+
+      - name: Validate Firebase Android package
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path("rvtec-2.0/app/google-services.json")
+          if not p.exists():
+              raise SystemExit("google-services.json ausente")
+          data = json.loads(p.read_text())
+          packages = {
+              c.get("client_info", {}).get("android_client_info", {}).get("package_name")
+              for c in data.get("client", [])
+          }
+          expected = "com.rvtec.manutencao.v2"
+          if expected not in packages:
+              raise SystemExit(f"Firebase não contém o pacote {expected}: {sorted(packages)}")
+          print(f"Firebase package OK: {expected}")
+          PY
+
+      - name: Compile RVTEC 2.0 native project
+        run: |
+          set -euo pipefail
+          gradle -p rvtec-2.0 --no-daemon clean testDebugUnitTest assembleDebug
+
+      - name: Publish RVTEC 2.0 APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: RVTEC-2.0-Alpha05-Native-Debug
+          path: rvtec-2.0/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
