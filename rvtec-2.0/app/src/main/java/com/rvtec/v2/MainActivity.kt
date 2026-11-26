@@ -472,19 +472,17 @@ private fun DashboardScreen(
             }
         }
         item {
-            Column(verticalArrangement=Arrangement.spacedBy(10.dp)) {
-                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
-                    DashboardMetric("Máquinas cadastradas",machines.size.toString(),panel,Modifier.weight(1f),onMachines)
-                    DashboardMetric("Máquinas paradas agora",stopped.toString(),Color(0xFF49272D),Modifier.weight(1f),onStops)
-                }
-                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
-                    DashboardMetric("Máquinas em atendimento",attending.toString(),Color(0xFF493A1D),Modifier.weight(1f),onMachines)
-                    DashboardMetric("OS pendentes",ordersOpen.toString(),panel,Modifier.weight(1f),onOrders)
-                }
-                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
-                    DashboardMetric("Máquinas operando",running.toString(),Color(0xFF1D4034),Modifier.weight(1f),onMachines)
-                    DashboardMetric("Paradas abertas",stopsOpen.toString(),Color(0xFF49272D),Modifier.weight(1f),onStops)
-                }
+            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)) {
+                DashboardMetric("Máquinas",machines.size.toString(),Color(0xFF102F49),Modifier.weight(1f),onMachines)
+                DashboardMetric("Paradas",stopped.toString(),Color(0xFF642326),Modifier.weight(1f),onStops)
+                DashboardMetric("Atend.",attending.toString(),Color(0xFF594313),Modifier.weight(1f),onMachines)
+                DashboardMetric("Operação",running.toString(),Color(0xFF174B38),Modifier.weight(1f),onMachines)
+            }
+        }
+        item {
+            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)) {
+                DashboardMetric("OS abertas",ordersOpen.toString(),panel,Modifier.weight(1f),onOrders)
+                DashboardMetric("Paradas abertas",stopsOpen.toString(),panel,Modifier.weight(1f),onStops)
             }
         }
         item {
