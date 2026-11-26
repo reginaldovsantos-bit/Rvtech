@@ -240,7 +240,7 @@ class MainActivity : ComponentActivity() {
                                                         horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
                                                     ) {
                                                         Text(
-                                                            machine.code.ifBlank { machine.name },
+                                                            tileLabel,
                                                             color = tileText,
                                                             style = MaterialTheme.typography.titleSmall,
                                                             maxLines = 1
