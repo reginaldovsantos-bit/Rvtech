@@ -193,8 +193,8 @@ class MainActivity : ComponentActivity() {
                                         Text("Nenhuma máquina cadastrada. Toque em Nova para começar.", modifier = Modifier.padding(vertical = 16.dp))
                                     } else {
                                         LazyVerticalGrid(
-                                            columns = GridCells.Fixed(4),
-                                            modifier = Modifier.fillMaxWidth().heightIn(max = 330.dp),
+                                            columns = GridCells.Fixed(2),
+                                            modifier = Modifier.fillMaxWidth().heightIn(max = 440.dp),
                                             horizontalArrangement = Arrangement.spacedBy(7.dp),
                                             verticalArrangement = Arrangement.spacedBy(7.dp)
                                         ) {
@@ -208,9 +208,9 @@ class MainActivity : ComponentActivity() {
                                                 val pulse = if (machine.status == MachineStatus.STOPPED) {
                                                     rememberInfiniteTransition(label = "stopped-machine-${machine.id}")
                                                         .animateFloat(
-                                                            initialValue = 0.48f,
+                                                            initialValue = 0.28f,
                                                             targetValue = 1f,
-                                                            animationSpec = infiniteRepeatable(tween(650), RepeatMode.Reverse),
+                                                            animationSpec = infiniteRepeatable(tween(2500), RepeatMode.Reverse),
                                                             label = "stopped-pulse"
                                                         ).value
                                                 } else 1f
@@ -219,7 +219,7 @@ class MainActivity : ComponentActivity() {
                                                     .ifBlank { machine.name.filter { it.isDigit() }.take(4) }
                                                     .ifBlank { machine.name.take(4) }
                                                 Card(
-                                                    modifier = Modifier.fillMaxWidth().height(70.dp)
+                                                    modifier = Modifier.fillMaxWidth().height(92.dp)
                                                         .clickable { selectedMachineId = machine.id },
                                                     colors = CardDefaults.cardColors(containerColor = tileColor.copy(alpha = pulse)),
                                                     border = if (selectedMachine?.id == machine.id) androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.onSurface) else null
@@ -232,7 +232,7 @@ class MainActivity : ComponentActivity() {
                                                         Text(
                                                             tileLabel,
                                                             color = tileText,
-                                                            style = MaterialTheme.typography.titleSmall,
+                                                            style = MaterialTheme.typography.titleLarge,
                                                             maxLines = 1
                                                         )
                                                         Text(
@@ -242,7 +242,7 @@ class MainActivity : ComponentActivity() {
                                                                 MachineStatus.STOPPED -> "PARADA"
                                                             },
                                                             color = tileText,
-                                                            style = MaterialTheme.typography.labelSmall,
+                                                            style = MaterialTheme.typography.labelMedium,
                                                             maxLines = 1
                                                         )
                                                     }
