@@ -39,7 +39,7 @@ class MainActivity : ComponentActivity() {
             var appName by remember { mutableStateOf(settings.getString("app_name", "RVTEC 2.0") ?: "RVTEC 2.0") }
             var workSchedule by remember { mutableStateOf(settings.getString("work_schedule", "") ?: "") }
             val rvtecColors = when (appearance) {
-                "Atual/Referência" -> lightColorScheme(primary=Color(0xFF173B61),secondary=Color(0xFF3986CF),background=Color(0xFFE3EFFB),surface=Color(0xFFF8FBFF),surfaceVariant=Color(0xFFD8E8F8),onBackground=Color(0xFF18334F),onSurface=Color(0xFF18334F))
+                "Atual/Referência" -> darkColorScheme(primary=Color(0xFF168BFF),secondary=Color(0xFF18C7D8),background=Color(0xFF020B1A),surface=Color(0xFF102849),surfaceVariant=Color(0xFF17375E),onBackground=Color(0xFFF4F7FB),onSurface=Color(0xFFF4F7FB))
                 "Antigo/Clássico" -> lightColorScheme(primary=Color(0xFF2F5D50),secondary=Color(0xFFA0784A),background=Color(0xFFF3EFE7),surface=Color(0xFFFFFDF8),surfaceVariant=Color(0xFFE8E0D2))
                 else -> darkColorScheme(primary=Color(0xFFD6A84B),secondary=Color(0xFFB88A32),background=Color(0xFF101318),surface=Color(0xFF202832),surfaceVariant=Color(0xFF303B48),onBackground=Color(0xFFF4F7FB),onSurface=Color(0xFFF4F7FB))
             }
@@ -77,14 +77,17 @@ class MainActivity : ComponentActivity() {
                 Scaffold(containerColor=MaterialTheme.colorScheme.background) { padding ->
                     Column(Modifier.fillMaxSize().padding(padding)) {
                         if (referenceStyle) {
-                            Card(Modifier.fillMaxWidth().padding(horizontal=10.dp, vertical=8.dp), colors=CardDefaults.cardColors(containerColor=Color(0xFFD8E8F8)), shape=MaterialTheme.shapes.extraLarge) {
-                                Column(Modifier.fillMaxWidth().padding(horizontal=18.dp, vertical=14.dp)) {
-                                    Text("MANUTENÇÃO INDUSTRIAL", color=Color(0xFF42617F), style=MaterialTheme.typography.labelLarge)
-                                    Row(verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
-                                        Text("Manutenção Industrial", modifier=Modifier.weight(1f), color=Color(0xFF173451), style=MaterialTheme.typography.headlineSmall)
-                                        Text("v2.0", color=Color(0xFF536D87), style=MaterialTheme.typography.labelLarge)
+                            Card(Modifier.fillMaxWidth().padding(horizontal=10.dp, vertical=8.dp), colors=CardDefaults.cardColors(containerColor=Color(0xFF102849)), shape=MaterialTheme.shapes.extraLarge) {
+                                Row(
+                                    Modifier.fillMaxWidth().padding(horizontal=16.dp, vertical=13.dp),
+                                    verticalAlignment=androidx.compose.ui.Alignment.CenterVertically
+                                ) {
+                                    Text("⚙", color=Color(0xFF18C7D8), style=MaterialTheme.typography.headlineLarge)
+                                    Column(Modifier.weight(1f).padding(start=12.dp)) {
+                                        Text("RVTEC 2.0", color=Color.White, style=MaterialTheme.typography.headlineSmall)
+                                        Text("Manutenção Industrial", color=Color(0xFFB8D7F4), style=MaterialTheme.typography.titleSmall)
                                     }
-                                    Text("Painel de controle da equipe", color=Color(0xFF60778E), style=MaterialTheme.typography.bodyMedium)
+                                    Text("v2.0", color=Color(0xFFB8D7F4), style=MaterialTheme.typography.labelLarge)
                                 }
                             }
                             ScrollableTabRow(selectedTabIndex=menuPages.indexOf(page).coerceAtLeast(0), containerColor=Color(0xFF102D50), contentColor=Color.White, edgePadding=10.dp) {
