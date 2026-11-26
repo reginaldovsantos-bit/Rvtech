@@ -149,9 +149,9 @@ class MainActivity : ComponentActivity() {
                                 val orders = remember(revision) { repository.listOrders() }
                                 val now = System.currentTimeMillis()
                                 val indicators = remember(revision) { MaintenanceIndicatorsCalculator.calculate(stops, now - 30L * 24 * 60 * 60 * 1000, now) }
+                                val entries = remember(revision) { repository.listEntries() }
                                 DashboardScreen(
-                                    machines, stops.count { it.status != StopStatus.CLOSED },
-                                    orders.count { it.status != WorkOrderStatus.COMPLETED && it.status != WorkOrderStatus.CANCELLED },
+                                    machines, stops, orders, entries,
                                     indicators.availabilityPercent, indicators.mtbfHours, indicators.mttrHours,
                                     { page = "Máquinas" }, { page = "Paradas" }, { page = "Ordens de serviço" },
                                     { page = "Relatórios" }, { page = "Memória Técnica IA" }, { page = "Preventivas" },
@@ -416,137 +416,205 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun DashboardScreen(
-    machines: List<Machine>, stopsOpen: Int, ordersOpen: Int, availability: Double,
-    mtbf: Double?, mttr: Double?, onMachines: () -> Unit, onStops: () -> Unit,
-    onOrders: () -> Unit, onReports: () -> Unit, onAi: () -> Unit,
-    onPreventive: () -> Unit, onNewStop: () -> Unit, onNewOrder: () -> Unit, onEntries: () -> Unit
+    machines: List<Machine>, stops: List<StopRecord>, orders: List<WorkOrder>,
+    entries: List<ExecutionEntry>, availability: Double, mtbf: Double?, mttr: Double?,
+    onMachines: () -> Unit, onStops: () -> Unit, onOrders: () -> Unit,
+    onReports: () -> Unit, onAi: () -> Unit, onPreventive: () -> Unit,
+    onNewStop: () -> Unit, onNewOrder: () -> Unit, onEntries: () -> Unit
 ) {
-    val running=machines.count { it.status==MachineStatus.RUNNING }
-    val stopped=machines.count { it.status==MachineStatus.STOPPED }
-    val attending=machines.count { it.status==MachineStatus.MAINTENANCE }
-    val ink=Color(0xFF17324D)
-    val muted=Color(0xFF687B8D)
-    val panel=Color(0xFFF8FBFF)
-    val border=Color(0xFFC9D8E7)
-    LazyColumn(Modifier.fillMaxSize().background(Color(0xFFE4EFFB)),
-        contentPadding=PaddingValues(10.dp,12.dp,10.dp,24.dp),
-        verticalArrangement=Arrangement.spacedBy(14.dp)) {
+    val running = machines.count { it.status == MachineStatus.RUNNING }
+    val stoppedMachines = machines.filter { it.status == MachineStatus.STOPPED }
+    val activeOrders = orders.filter { it.status == WorkOrderStatus.IN_PROGRESS }
+    val attendingMachines = activeOrders.mapNotNull { order ->
+        machines.firstOrNull { it.id == order.machineId }?.let { machine -> order to machine }
+    }.distinctBy { it.second.id }
+    val openStops = stops.count { it.status != StopStatus.CLOSED }
+    val pendingOrders = orders.count { it.status == WorkOrderStatus.OPEN || it.status == WorkOrderStatus.IN_PROGRESS }
+    val todayStart = java.util.Calendar.getInstance().apply {
+        set(java.util.Calendar.HOUR_OF_DAY, 0); set(java.util.Calendar.MINUTE, 0)
+        set(java.util.Calendar.SECOND, 0); set(java.util.Calendar.MILLISECOND, 0)
+    }.timeInMillis
+    val stopsToday = stops.count { it.startedAt >= todayStart }
+    val ink = Color(0xFF17324D)
+    val muted = Color(0xFF687B8D)
+    val panel = Color(0xFFF8FBFF)
+    val border = Color(0xFFC9D8E7)
+    LazyColumn(
+        Modifier.fillMaxSize().background(Color(0xFFE4EFFB)),
+        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
         item {
-            Column(verticalArrangement=Arrangement.spacedBy(3.dp)) {
-                Text("Painel geral",color=ink,style=MaterialTheme.typography.headlineSmall)
-                Text("Visão geral da manutenção",color=muted,style=MaterialTheme.typography.titleSmall)
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text("Painel geral", color = ink, style = MaterialTheme.typography.headlineSmall)
+                Text("Visão geral da manutenção", color = muted, style = MaterialTheme.typography.titleSmall)
             }
         }
         item {
-            Column(verticalArrangement=Arrangement.spacedBy(12.dp)) {
-                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
-                    DashboardMetric("Máquinas cadastradas",machines.size.toString(),panel,Modifier.weight(1f),onMachines)
-                    DashboardMetric("Máquinas paradas agora",stopped.toString(),panel,Modifier.weight(1f),onStops)
-                }
-                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
-                    DashboardMetric("Máquinas em atendimento",attending.toString(),panel,Modifier.weight(1f),onMachines)
-                    DashboardMetric("Paradas abertas",stopsOpen.toString(),panel,Modifier.weight(1f),onStops)
-                }
-                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
-                    DashboardMetric("Ordens pendentes",ordersOpen.toString(),panel,Modifier.weight(1f),onOrders)
-                    DashboardMetric("Máquinas em operação",running.toString(),panel,Modifier.weight(1f),onMachines)
-                }
-            }
-        }
-        item {
-            Card(Modifier.fillMaxWidth(),colors=CardDefaults.cardColors(containerColor=panel),
-                border=androidx.compose.foundation.BorderStroke(1.dp,border),shape=MaterialTheme.shapes.extraLarge) {
-                Column(Modifier.fillMaxWidth().padding(16.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
-                    Text("Acesso rápido",color=ink,style=MaterialTheme.typography.titleLarge)
-                    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
-                        DashboardQuickButton("＋ Registrar parada",Modifier.weight(1f),true,onNewStop)
-                        DashboardQuickButton("＋ Nova ordem",Modifier.weight(1f),false,onNewOrder)
-                    }
-                    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
-                        DashboardQuickButton("＋ Apontamento",Modifier.weight(1f),false,onEntries)
-                        DashboardQuickButton("▥ Relatórios",Modifier.weight(1f),false,onReports)
-                    }
-                }
-            }
-        }
-        item {
-            val active = machines.filter { it.status != MachineStatus.RUNNING }
-            var activeIndex by remember(active.map { it.id }) { mutableIntStateOf(0) }
-            LaunchedEffect(active.map { it.id }) {
-                while (active.isNotEmpty()) {
-                    kotlinx.coroutines.delay(5000)
-                    activeIndex = (activeIndex + 1) % active.size
-                }
-            }
-            Card(
-                Modifier.fillMaxWidth().clickable(onClick = onMachines),
-                colors = CardDefaults.cardColors(containerColor = panel),
-                border = androidx.compose.foundation.BorderStroke(1.dp, border),
-                shape = MaterialTheme.shapes.extraLarge
+            DashboardCarouselCard(
+                title = "MÁQUINAS EM PARADA",
+                emptyMessage = "Nenhuma máquina em parada agora.",
+                count = stoppedMachines.size,
+                accent = Color(0xFFC62828),
+                background = Color(0xFFFFE9E9),
+                onClick = onStops
             ) {
-                Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                        Text("Máquinas em atendimento", color = ink, style = MaterialTheme.typography.titleLarge)
-                        Text(if (active.isEmpty()) "0" else "${activeIndex + 1}/${active.size}",
-                            color = muted, style = MaterialTheme.typography.labelMedium)
+                val machinesOnStop = stoppedMachines
+                var index by remember(machinesOnStop.map { it.id }) { mutableIntStateOf(0) }
+                LaunchedEffect(machinesOnStop.map { it.id }) {
+                    while (machinesOnStop.size > 1) {
+                        kotlinx.coroutines.delay(10_000)
+                        index = (index + 1) % machinesOnStop.size
                     }
-                    if (active.isEmpty()) {
-                        Text("Nenhuma máquina parada ou em atendimento.", color = muted)
-                    } else {
-                        val machine = active[activeIndex.coerceIn(0, active.lastIndex)]
-                        val isStopped = machine.status == MachineStatus.STOPPED
-                        val pulse = if (isStopped) {
-                            rememberInfiniteTransition(label = "home-stopped-${machine.id}")
-                                .animateFloat(
-                                    initialValue = 0.38f,
-                                    targetValue = 1f,
-                                    animationSpec = infiniteRepeatable(tween(2500), RepeatMode.Reverse),
-                                    label = "home-stopped-pulse"
-                                ).value
-                        } else 1f
-                        val statusColor = if (isStopped) Color(0xFFC62828) else Color(0xFFD9A000)
-                        Card(
-                            Modifier.fillMaxWidth().heightIn(min = 112.dp),
-                            colors = CardDefaults.cardColors(containerColor = statusColor.copy(alpha = pulse)),
-                            shape = MaterialTheme.shapes.large
-                        ) {
-                            Row(
-                                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-                            ) {
-                                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                    Text("MÁQUINA", color = Color.White.copy(alpha = 0.85f), style = MaterialTheme.typography.labelLarge)
-                                    Text(machine.code.ifBlank { machine.name }, color = Color.White,
-                                        style = MaterialTheme.typography.headlineMedium, maxLines = 1)
-                                    Text(machine.sector.ifBlank { "Setor não informado" }, color = Color.White,
-                                        style = MaterialTheme.typography.bodyMedium)
-                                }
-                                Surface(color = Color.White, shape = MaterialTheme.shapes.large) {
-                                    Text(if (isStopped) "PARADA" else "EM ATENDIMENTO",
-                                        Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
-                                        color = statusColor, style = MaterialTheme.typography.labelLarge)
-                                }
-                            }
+                }
+                if (machinesOnStop.isNotEmpty()) {
+                    val machine = machinesOnStop[index.coerceIn(0, machinesOnStop.lastIndex)]
+                    val pulse = rememberInfiniteTransition(label = "dashboard-stop-${machine.id}")
+                        .animateFloat(0.55f, 1f,
+                            infiniteRepeatable(tween(1000), RepeatMode.Reverse),
+                            label = "dashboard-stop-pulse").value
+                    Column(
+                        Modifier.fillMaxWidth().clip(MaterialTheme.shapes.large)
+                            .background(Color(0xFFC62828).copy(alpha = pulse)).padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(machine.name.uppercase(), color = Color.White, style = MaterialTheme.typography.headlineSmall)
+                        Text(machine.sector.ifBlank { "Especialidade não informada" }.uppercase(),
+                            color = Color.White, style = MaterialTheme.typography.titleMedium)
+                        Text("EM PARADA", color = Color.White, style = MaterialTheme.typography.labelLarge)
+                    }
+                    if (machinesOnStop.size > 1) {
+                        Text("Máquina ${index + 1} de ${machinesOnStop.size} • alternância a cada 10 segundos",
+                            color = muted, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            }
+        }
+        item {
+            DashboardCarouselCard(
+                title = "EM ATENDIMENTO",
+                emptyMessage = "Nenhuma ordem em atendimento.",
+                count = attendingMachines.size,
+                accent = Color(0xFFB88600),
+                background = Color(0xFFFFF4CC),
+                onClick = onOrders
+            ) {
+                val services = attendingMachines
+                var index by remember(services.map { it.first.id to it.second.id }) { mutableIntStateOf(0) }
+                LaunchedEffect(services.map { it.first.id to it.second.id }) {
+                    while (services.size > 1) {
+                        kotlinx.coroutines.delay(10_000)
+                        index = (index + 1) % services.size
+                    }
+                }
+                if (services.isNotEmpty()) {
+                    val (order, machine) = services[index.coerceIn(0, services.lastIndex)]
+                    val technician = entries.filter { it.workOrderId == order.id }
+                        .maxByOrNull { it.createdAt }?.technician ?: "Técnico não informado"
+                    Column(
+                        Modifier.fillMaxWidth().clip(MaterialTheme.shapes.large)
+                            .background(Color(0xFFFFD54F)).padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(5.dp)
+                    ) {
+                        Text("OS nº ${order.id.takeLast(6).uppercase()}", color = Color(0xFF342500),
+                            style = MaterialTheme.typography.titleLarge)
+                        Text("Técnico: $technician", color = Color(0xFF342500),
+                            style = MaterialTheme.typography.titleMedium)
+                        Text("Máquina: ${machine.name}", color = Color(0xFF342500),
+                            style = MaterialTheme.typography.titleMedium)
+                    }
+                    if (services.size > 1) {
+                        Text("Máquina ${index + 1} de ${services.size} • alternância a cada 10 segundos",
+                            color = muted, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            }
+        }
+        item {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    DashboardMetric("Máquinas cadastradas", machines.size.toString(), panel, Modifier.weight(1f), onMachines)
+                    DashboardMetric("Máquinas paradas agora", stoppedMachines.size.toString(), panel, Modifier.weight(1f), onStops)
+                }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    DashboardMetric("Máquinas em atendimento", attendingMachines.size.toString(), panel, Modifier.weight(1f), onOrders)
+                    DashboardMetric("Paradas hoje", stopsToday.toString(), panel, Modifier.weight(1f), onStops)
+                }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    DashboardMetric("Ordens pendentes", pendingOrders.toString(), panel, Modifier.weight(1f), onOrders)
+                    DashboardMetric("Máquinas em operação", running.toString(), panel, Modifier.weight(1f), onMachines)
+                }
+            }
+        }
+        item {
+            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = panel),
+                border = androidx.compose.foundation.BorderStroke(1.dp, border), shape = MaterialTheme.shapes.extraLarge) {
+                Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Indicadores de manutenção", color = ink, style = MaterialTheme.typography.titleLarge)
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Column(Modifier.weight(1f)) {
+                            Text("Disponibilidade", color = muted, style = MaterialTheme.typography.labelMedium)
+                            Text(String.format(java.util.Locale("pt", "BR"), "%.1f%%", availability),
+                                color = ink, style = MaterialTheme.typography.titleLarge)
                         }
-                        if (active.size > 1) {
-                            Text("Exibição automática: uma máquina por vez, alternando a cada 5 segundos.",
-                                color = muted, style = MaterialTheme.typography.bodySmall)
+                        Column(Modifier.weight(1f)) {
+                            Text("MTBF", color = muted, style = MaterialTheme.typography.labelMedium)
+                            Text(mtbf?.let { String.format(java.util.Locale("pt", "BR"), "%.1f h", it) } ?: "—",
+                                color = ink, style = MaterialTheme.typography.titleLarge)
+                        }
+                        Column(Modifier.weight(1f)) {
+                            Text("MTTR", color = muted, style = MaterialTheme.typography.labelMedium)
+                            Text(mttr?.let { String.format(java.util.Locale("pt", "BR"), "%.1f h", it) } ?: "—",
+                                color = ink, style = MaterialTheme.typography.titleLarge)
                         }
                     }
                 }
             }
         }
         item {
-            Card(Modifier.fillMaxWidth(),colors=CardDefaults.cardColors(containerColor=panel),
-                border=androidx.compose.foundation.BorderStroke(1.dp,border),shape=MaterialTheme.shapes.extraLarge) {
-                Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(6.dp)) {
-                    Text("Indicadores de manutenção",color=ink,style=MaterialTheme.typography.titleLarge)
-                    Text("Disponibilidade: " + String.format(java.util.Locale("pt","BR"),"%.1f%%",availability),color=ink)
-                    Text("MTBF: " + (mtbf?.let { String.format(java.util.Locale("pt","BR"),"%.1f h",it) } ?: "—"),color=muted)
-                    Text("MTTR: " + (mttr?.let { String.format(java.util.Locale("pt","BR"),"%.1f h",it) } ?: "—"),color=muted)
+            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = panel),
+                border = androidx.compose.foundation.BorderStroke(1.dp, border), shape = MaterialTheme.shapes.extraLarge) {
+                Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Acesso rápido", color = ink, style = MaterialTheme.typography.titleLarge)
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        DashboardQuickButton("＋ Registrar parada", Modifier.weight(1f), true, onNewStop)
+                        DashboardQuickButton("＋ Nova ordem", Modifier.weight(1f), false, onNewOrder)
+                    }
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        DashboardQuickButton("＋ Apontamento", Modifier.weight(1f), false, onEntries)
+                        DashboardQuickButton("▥ Relatórios", Modifier.weight(1f), false, onReports)
+                    }
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        DashboardQuickButton("Preventivas", Modifier.weight(1f), false, onPreventive)
+                        DashboardQuickButton("Memória Técnica IA", Modifier.weight(1f), false, onAi)
+                    }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DashboardCarouselCard(
+    title: String, emptyMessage: String, count: Int, accent: Color, background: Color,
+    onClick: () -> Unit, content: @Composable ColumnScope.() -> Unit
+) {
+    Card(
+        Modifier.fillMaxWidth().clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FBFF)),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFC9D8E7)),
+        shape = MaterialTheme.shapes.extraLarge
+    ) {
+        Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                Text(title, color = accent, style = MaterialTheme.typography.titleMedium)
+                Text(count.toString(), color = accent, style = MaterialTheme.typography.labelLarge)
+            }
+            if (count == 0) {
+                Text(emptyMessage, color = Color(0xFF687B8D), modifier = Modifier.padding(vertical = 8.dp))
+            } else {
+                content()
             }
         }
     }
