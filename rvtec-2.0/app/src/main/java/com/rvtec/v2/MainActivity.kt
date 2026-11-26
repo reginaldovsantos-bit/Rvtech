@@ -66,6 +66,8 @@ class MainActivity : ComponentActivity() {
                 var revision by remember { mutableIntStateOf(0) }
                 var error by remember { mutableStateOf<String?>(null) }
                 var showMachine by remember { mutableStateOf(false) }
+                var showEditMachineId by remember { mutableStateOf<String?>(null) }
+                var showDeleteMachineId by remember { mutableStateOf<String?>(null) }
                 var showStopFor by remember { mutableStateOf<String?>(null) }
                 var showOrder by remember { mutableStateOf(false) }
                 var showEntryFor by remember { mutableStateOf<String?>(null) }
@@ -185,9 +187,13 @@ class MainActivity : ComponentActivity() {
                                             Text("Código: ${m.code.ifBlank { "—" }} | Setor: ${m.sector.ifBlank { "—" }}")
                                             Text("Produção: ${m.productionKgPerHour} kg/h")
                                             Text("Estado: ${statusText(m.status)}")
-                                            if (m.status == MachineStatus.MAINTENANCE) {
-                                                Button(onClick = { perform { repository.releaseMachine(m.id) } }) {
-                                                    Text("Liberar máquina")
+                                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                                OutlinedButton(onClick = { showEditMachineId = m.id }) { Text("Editar") }
+                                                TextButton(onClick = { showDeleteMachineId = m.id }) { Text("Excluir") }
+                                                if (m.status == MachineStatus.MAINTENANCE) {
+                                                    Button(onClick = { perform { repository.releaseMachine(m.id) } }) {
+                                                        Text("Liberar máquina")
+                                                    }
                                                 }
                                             }
                                         }
@@ -279,6 +285,31 @@ class MainActivity : ComponentActivity() {
                     perform { repository.addMachine(Machine(java.util.UUID.randomUUID().toString(), name, code, sector, rate)) }
                     showMachine = false
                 }
+                showEditMachineId?.let { machineId ->
+                    val machine = repository.listMachines().firstOrNull { it.id == machineId }
+                    if (machine != null) MachineDialog(
+                        initial = machine,
+                        onDismiss = { showEditMachineId = null }
+                    ) { name, code, sector, rate ->
+                        perform { repository.updateMachine(machineId, name, code, sector, rate) }
+                        showEditMachineId = null
+                    }
+                }
+                showDeleteMachineId?.let { machineId ->
+                    val machineName = repository.listMachines().firstOrNull { it.id == machineId }?.name ?: machineId
+                    AlertDialog(
+                        onDismissRequest = { showDeleteMachineId = null },
+                        title = { Text("Excluir máquina?") },
+                        text = { Text("Deseja excluir $machineName? O sistema bloqueia a exclusão se houver paradas, ordens ou manutenção ativa vinculadas.") },
+                        confirmButton = {
+                            Button(onClick = {
+                                perform { repository.deleteMachine(machineId) }
+                                showDeleteMachineId = null
+                            }) { Text("Excluir") }
+                        },
+                        dismissButton = { TextButton(onClick = { showDeleteMachineId = null }) { Text("Cancelar") } }
+                    )
+                }
                 showStopFor?.let { machineId ->
                     val machineName = repository.listMachines().firstOrNull { it.id == machineId }?.name ?: machineId
                     StopDialog(machineName, onDismiss = { showStopFor = null }) { cause ->
@@ -329,18 +360,28 @@ private fun orderText(s: WorkOrderStatus) = when (s) {
     WorkOrderStatus.CANCELLED -> "Cancelada"
 }
 
-@Composable private fun MachineDialog(onDismiss: () -> Unit, onSave: (String,String,String,Double) -> Unit) {
-    var name by remember { mutableStateOf("") }; var code by remember { mutableStateOf("") }
-    var sector by remember { mutableStateOf("") }; var rate by remember { mutableStateOf("0") }
-    AlertDialog(onDismissRequest = onDismiss, title = { Text("Nova máquina") }, text = {
+@Composable private fun MachineDialog(
+    initial: Machine? = null,
+    onDismiss: () -> Unit,
+    onSave: (String,String,String,Double) -> Unit
+) {
+    var name by remember(initial?.id) { mutableStateOf(initial?.name ?: "") }
+    var code by remember(initial?.id) { mutableStateOf(initial?.code ?: "") }
+    var sector by remember(initial?.id) { mutableStateOf(initial?.sector ?: "") }
+    var rate by remember(initial?.id) { mutableStateOf((initial?.productionKgPerHour ?: 0.0).toString()) }
+    AlertDialog(onDismissRequest = onDismiss, title = { Text(if (initial == null) "Nova máquina" else "Editar máquina") }, text = {
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             OutlinedTextField(name, { name = it }, label = { Text("Nome da máquina") })
             OutlinedTextField(code, { code = it }, label = { Text("Código") })
             OutlinedTextField(sector, { sector = it }, label = { Text("Setor") })
             OutlinedTextField(rate, { rate = it }, label = { Text("Produção kg/h") })
         }
-    }, confirmButton = { Button(enabled = name.isNotBlank() && (rate.toDoubleOrNull() ?: -1.0) >= 0, onClick = { onSave(name.trim(),code.trim(),sector.trim(),rate.toDoubleOrNull() ?: 0.0) }) { Text("Salvar") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } })
+    }, confirmButton = {
+        Button(
+            enabled = name.isNotBlank() && (rate.toDoubleOrNull() ?: -1.0) >= 0,
+            onClick = { onSave(name.trim(), code.trim(), sector.trim(), rate.toDoubleOrNull() ?: 0.0) }
+        ) { Text("Salvar") }
+    }, dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } })
 }
 
 @Composable private fun OrderDialog(machines: List<Machine>, stops: List<StopRecord>, onDismiss: () -> Unit, onSave: (String,String,String,String?) -> Unit) {
