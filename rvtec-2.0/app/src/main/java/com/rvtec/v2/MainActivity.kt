@@ -59,6 +59,10 @@ class MainActivity : ComponentActivity() {
                     FirebaseAuthScreen(auth) { signedIn = true }
                 } else {
                 var page by remember { mutableStateOf("Início") }
+                var visiblePages by remember {
+                    mutableStateOf(settings.getStringSet("visible_pages", null)?.toSet() ?: pages.toSet())
+                }
+                val menuPages = pages.filter { it == "Início" || it in visiblePages }
                 var revision by remember { mutableIntStateOf(0) }
                 var error by remember { mutableStateOf<String?>(null) }
                 var showMachine by remember { mutableStateOf(false) }
@@ -72,8 +76,8 @@ class MainActivity : ComponentActivity() {
                 }
                 Scaffold(topBar = { TopAppBar(title = { Text("RVTEC 2.0") }) }) { padding ->
                     Column(Modifier.fillMaxSize().padding(padding).padding(horizontal = 12.dp)) {
-                        ScrollableTabRow(selectedTabIndex = pages.indexOf(page).coerceAtLeast(0)) {
-                            pages.forEach { item ->
+                        ScrollableTabRow(selectedTabIndex = menuPages.indexOf(page).coerceAtLeast(0)) {
+                            menuPages.forEach { item ->
                                 Tab(selected = page == item, onClick = { page = item }, text = { Text(item) })
                             }
                         }
@@ -87,10 +91,20 @@ class MainActivity : ComponentActivity() {
                         }
                         error?.let { Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(8.dp)) }
                         when (page) {
-                            "Configurações" -> AppearanceSettingsScreen(appearance) { selected ->
-                                appearance = selected
-                                settings.edit().putString("appearance", selected).apply()
-                            }
+                            "Configurações" -> AppearanceSettingsScreen(
+                                selected = appearance,
+                                visiblePages = visiblePages,
+                                onAppearanceSelect = { selected ->
+                                    appearance = selected
+                                    settings.edit().putString("appearance", selected).apply()
+                                },
+                                onModuleToggle = { module, enabled ->
+                                    val updated = if (enabled) visiblePages + module else visiblePages - module
+                                    visiblePages = updated + "Início"
+                                    settings.edit().putStringSet("visible_pages", visiblePages.toSet()).apply()
+                                    if (!enabled && page == module) page = "Início"
+                                }
+                            )
                             "Início" -> {
                                 val machines = remember(revision) { repository.listMachines() }
                                 val stops = remember(revision) { repository.listStops() }
@@ -406,7 +420,12 @@ private fun orderText(s: WorkOrderStatus) = when (s) {
 
 
 @Composable
-private fun AppearanceSettingsScreen(selected: String, onSelect: (String) -> Unit) {
+private fun AppearanceSettingsScreen(
+    selected: String,
+    visiblePages: Set<String>,
+    onAppearanceSelect: (String) -> Unit,
+    onModuleToggle: (String, Boolean) -> Unit
+) {
     val styles = listOf(
         "Atual/Referência" to "Visual claro, cabeçalho azul e cartões suaves — modelo de referência aprovado.",
         "Moderno" to "Visual escuro sofisticado, com detalhes dourados.",
@@ -431,7 +450,7 @@ private fun AppearanceSettingsScreen(selected: String, onSelect: (String) -> Uni
                     Modifier.fillMaxWidth().padding(12.dp),
                     verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
                 ) {
-                    RadioButton(selected = selected == name, onClick = { onSelect(name) })
+                    RadioButton(selected = selected == name, onClick = { onAppearanceSelect(name) })
                     Column(Modifier.weight(1f).padding(start = 8.dp)) {
                         Text(name, style = MaterialTheme.typography.titleMedium)
                         Text(description, style = MaterialTheme.typography.bodySmall)
@@ -439,6 +458,22 @@ private fun AppearanceSettingsScreen(selected: String, onSelect: (String) -> Uni
                 }
             }
         }
-        Text("A troca de estilo não altera nem apaga máquinas, paradas, ordens ou apontamentos.")
+        HorizontalDivider()
+        Text("Módulos do menu", style = MaterialTheme.typography.titleMedium)
+        Text("Desmarque para ocultar uma aba. Os dados e as funções permanecem salvos.")
+        pages.forEach { module ->
+            Row(
+                Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+            ) {
+                Checkbox(
+                    checked = module == "Início" || module in visiblePages,
+                    enabled = module != "Início",
+                    onCheckedChange = { checked -> onModuleToggle(module, checked) }
+                )
+                Text(module, style = MaterialTheme.typography.bodyLarge)
+            }
+        }
+        Text("A aba Início é obrigatória. Ocultar módulos não exclui máquinas, paradas, ordens ou apontamentos.")
     }
 }
