@@ -78,7 +78,7 @@ class MainActivity : ComponentActivity() {
                             Row(Modifier.fillMaxWidth().padding(horizontal=10.dp, vertical=8.dp).height(70.dp)
                                 .background(menuColor, MaterialTheme.shapes.extraLarge).padding(5.dp),
                                 horizontalArrangement=Arrangement.spacedBy(3.dp), verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
-                                val mainNav = listOf(Triple("Início","⌂","Início"),Triple("Ordens de serviço","🔧","OS"),Triple("Máquinas","⚙","Máquinas"),Triple("Relatórios","▥","Indicadores"),Triple("Configurações","⚙","Ajustes"))
+                                val mainNav = listOf(Triple("Início","⌂","Início"),Triple("Ordens de serviço","🔧","OS"),Triple("Máquinas","⚙","Máquinas"),Triple("Relatórios","▥","Indicadores"),Triple("Configurações","⚙","Ajustes")).filter { it.first == "Início" || it.first == "Configurações" || it.first in visiblePages }
                                 mainNav.forEach { (target,icon,label) ->
                                     val selected = page == target
                                     Column(Modifier.weight(1f).fillMaxHeight().clickable { page=target }
