@@ -20,7 +20,7 @@ import com.rvtec.v2.data.FirebaseServices
 import com.google.firebase.auth.FirebaseAuth
 import com.rvtec.v2.domain.*
 
-private val pages = listOf("Início", "Máquinas", "Paradas", "Ordens de serviço", "Apontamentos", "Memória Técnica IA", "Sincronização", "Configurações")
+private val pages = listOf("Início", "Máquinas", "Paradas", "Ordens de serviço", "Preventivas", "Relatórios", "Apontamentos", "Memória Técnica IA", "Sincronização", "Configurações")
 
 @OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
@@ -36,22 +36,8 @@ class MainActivity : ComponentActivity() {
             var appName by remember { mutableStateOf(settings.getString("app_name", "RVTEC 2.0") ?: "RVTEC 2.0") }
             var workSchedule by remember { mutableStateOf(settings.getString("work_schedule", "") ?: "") }
             val rvtecColors = when (appearance) {
-                "Moderno" -> darkColorScheme(
-                    primary = Color(0xFFD6B45A), onPrimary = Color(0xFF171717),
-                    secondary = Color(0xFFC6A15B), background = Color(0xFF101216),
-                    surface = Color(0xFF1B1E24), surfaceVariant = Color(0xFF2A2D34),
-                    onBackground = Color(0xFFF4F1E8), onSurface = Color(0xFFF4F1E8)
-                )
-                "Antigo/Clássico" -> lightColorScheme(
-                    primary = Color(0xFF2F5D50), secondary = Color(0xFFA0784A),
-                    background = Color(0xFFF3EFE7), surface = Color(0xFFFFFDF8),
-                    surfaceVariant = Color(0xFFE8E0D2)
-                )
-                else -> lightColorScheme(
-                    primary = Color(0xFF2563EB), secondary = Color(0xFF64748B),
-                    background = Color(0xFFF4F7FB), surface = Color(0xFFFFFFFF),
-                    surfaceVariant = Color(0xFFEAF0F8)
-                )
+                "Antigo/Clássico" -> lightColorScheme(primary=Color(0xFF2F5D50),secondary=Color(0xFFA0784A),background=Color(0xFFF3EFE7),surface=Color(0xFFFFFDF8),surfaceVariant=Color(0xFFE8E0D2))
+                else -> darkColorScheme(primary=Color(0xFF1687FF),secondary=Color(0xFF00C8D7),background=Color(0xFF020A18),surface=Color(0xFF102544),surfaceVariant=Color(0xFF183456),onBackground=Color(0xFFF4F7FB),onSurface=Color(0xFFF4F7FB))
             }
             MaterialTheme(colorScheme = rvtecColors) {
                 var signedIn by remember { mutableStateOf(auth.currentUser != null) }
@@ -155,25 +141,18 @@ class MainActivity : ComponentActivity() {
                                 val machines = remember(revision) { repository.listMachines() }
                                 val stops = remember(revision) { repository.listStops() }
                                 val orders = remember(revision) { repository.listOrders() }
-                                val periodEnd = System.currentTimeMillis()
-                                val periodStart = periodEnd - 30L * 24L * 60L * 60L * 1000L
-                                val indicators = remember(revision) {
-                                    MaintenanceIndicatorsCalculator.calculate(stops, periodStart, periodEnd)
-                                }
-                                Text("Painel operacional", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(vertical = 12.dp))
-                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Summary("Máquinas", machines.size.toString(), Modifier.weight(1f))
-                                    Summary("Paradas abertas", stops.count { it.status != StopStatus.CLOSED }.toString(), Modifier.weight(1f))
-                                    Summary("OS abertas", orders.count { it.status != WorkOrderStatus.COMPLETED && it.status != WorkOrderStatus.CANCELLED }.toString(), Modifier.weight(1f))
-                                }
-                                Text("Indicadores • últimos 30 dias corridos", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 18.dp, bottom = 8.dp))
-                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Summary("Disponibilidade*", String.format("%.1f%%", indicators.availabilityPercent), Modifier.weight(1f))
-                                    Summary("MTTR*", indicators.mttrHours?.let { String.format("%.1f h", it) } ?: "—", Modifier.weight(1f))
-                                    Summary("MTBF*", indicators.mtbfHours?.let { String.format("%.1f h", it) } ?: "—", Modifier.weight(1f))
-                                }
-                                Text("* Cálculo em horas corridas, não desconta turnos ou paradas programadas. MTTR considera paradas encerradas; MTBF é tempo operacional dividido pelas falhas iniciadas no período.", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 6.dp))
-                                Text("Cadastre as máquinas para iniciar os apontamentos de manutenção.", modifier = Modifier.padding(top = 16.dp))
+                                val now = System.currentTimeMillis()
+                                val indicators = remember(revision) { MaintenanceIndicatorsCalculator.calculate(stops, now - 30L * 24 * 60 * 60 * 1000, now) }
+                                DashboardScreen(
+                                    machines, stops.count { it.status != StopStatus.CLOSED },
+                                    orders.count { it.status != WorkOrderStatus.COMPLETED && it.status != WorkOrderStatus.CANCELLED },
+                                    indicators.availabilityPercent, indicators.mtbfHours, indicators.mttrHours,
+                                    { page = "Máquinas" }, { page = "Paradas" }, { page = "Ordens de serviço" },
+                                    { page = "Relatórios" }, { page = "Memória Técnica IA" }, { page = "Preventivas" },
+                                    { if (machines.isNotEmpty()) showStopFor = machines.first().id else page = "Máquinas" },
+                                    { if (machines.isNotEmpty()) showOrder = true else page = "Máquinas" },
+                                    { page = "Apontamentos" }
+                                )
                             }
                             "Máquinas" -> {
                                 val machines = remember(revision) { repository.listMachines() }
@@ -429,6 +408,86 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
+@Composable
+private fun DashboardScreen(
+    machines: List<Machine>, stopsOpen: Int, ordersOpen: Int, availability: Double,
+    mtbf: Double?, mttr: Double?, onMachines: () -> Unit, onStops: () -> Unit,
+    onOrders: () -> Unit, onReports: () -> Unit, onAi: () -> Unit,
+    onPreventive: () -> Unit, onNewStop: () -> Unit, onNewOrder: () -> Unit, onEntries: () -> Unit
+) {
+    val running = machines.count { it.status == MachineStatus.RUNNING }
+    val stopped = machines.count { it.status == MachineStatus.STOPPED }
+    val service = machines.count { it.status == MachineStatus.MAINTENANCE }
+    val panel = Color(0xFF102544); val edge = Color(0xFF29496F); val ink = Color(0xFFF5F8FF)
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        item { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Column { Text("PAINEL OPERACIONAL", color = Color(0xFF9CCBFF)); Text("RVTEC 2.0 • Manutenção Industrial", color = ink, style = MaterialTheme.typography.titleLarge) }
+            Text("● Técnico", color = Color(0xFF35E66C))
+        } }
+        item {
+            androidx.compose.foundation.lazy.grid.LazyVerticalGrid(GridCells.Fixed(4), Modifier.fillMaxWidth().heightIn(max = 210.dp), userScrollEnabled = false, horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(machines.size) { i ->
+                    val m=machines[i]; val c=when(m.status){MachineStatus.RUNNING->Color(0xFF087A3D);MachineStatus.STOPPED->Color(0xFFD20D18);MachineStatus.MAINTENANCE->Color(0xFFD69A00)}
+                    Card(Modifier.fillMaxWidth().height(82.dp).clickable(onClick=onMachines), colors=CardDefaults.cardColors(containerColor=c), border=androidx.compose.foundation.BorderStroke(1.dp,Color(0xFF39E77A))) {
+                        Column(Modifier.fillMaxSize().padding(4.dp),horizontalAlignment=androidx.compose.ui.Alignment.CenterHorizontally,verticalArrangement=Arrangement.Center) {
+                            Text(m.code.ifBlank{m.name.take(5)},color=Color.White,style=MaterialTheme.typography.titleLarge)
+                            Text(when(m.status){MachineStatus.RUNNING->"Operando";MachineStatus.STOPPED->"Parada";MachineStatus.MAINTENANCE->"Atendimento"},color=Color.White,style=MaterialTheme.typography.labelSmall,maxLines=1)
+                        }
+                    }
+                }
+            }
+            if(machines.isEmpty()) Text("Cadastre as máquinas para visualizar o painel.",color=ink)
+        }
+        item { Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+            DashboardMetric("Disponibilidade",String.format(java.util.Locale("pt","BR"),"%.1f%%",availability),Color(0xFF24E45C),Modifier.weight(1f),panel,edge,ink)
+            DashboardMetric("MTBF",mtbf?.let{String.format(java.util.Locale("pt","BR"),"%.1f h",it)}?:"—",ink,Modifier.weight(1f),panel,edge,ink)
+            DashboardMetric("MTTR",mttr?.let{String.format(java.util.Locale("pt","BR"),"%.1f h",it)}?:"—",ink,Modifier.weight(1f),panel,edge,ink)
+        } }
+        item { Card(Modifier.fillMaxWidth(),colors=CardDefaults.cardColors(containerColor=panel),border=androidx.compose.foundation.BorderStroke(1.dp,edge)) {
+            Column(Modifier.padding(14.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
+                Text("Situação das máquinas",color=ink,style=MaterialTheme.typography.titleMedium)
+                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {
+                    Text("● Operando: $running",color=Color(0xFF35E66C));Text("● Paradas: $stopped",color=Color(0xFFFF6268));Text("● Atendimento: $service",color=Color(0xFFFFC542))
+                }
+                HorizontalDivider(color=edge)
+                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){Text("Paradas abertas: $stopsOpen",color=ink);Text("OS abertas: $ordersOpen",color=ink)}
+            }
+        } }
+        item {
+            Text("ACESSO RÁPIDO",color=Color(0xFF9CCBFF),style=MaterialTheme.typography.titleMedium)
+            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
+                DashboardAction("■","Nova Parada",onNewStop,Modifier.weight(1f),panel,edge,ink)
+                DashboardAction("＋","Nova OS",onNewOrder,Modifier.weight(1f),panel,edge,ink)
+                DashboardAction("🔧","Apontamento",onEntries,Modifier.weight(1f),panel,edge,ink)
+            }
+            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
+                DashboardAction("▥","Gráficos",onReports,Modifier.weight(1f),panel,edge,ink)
+                DashboardAction("✦","IA Técnica",onAi,Modifier.weight(1f),panel,edge,ink)
+                DashboardAction("✓","Preventivas",onPreventive,Modifier.weight(1f),panel,edge,ink)
+            }
+        }
+        item { Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
+            OutlinedButton(onClick=onMachines,modifier=Modifier.weight(1f)){Text("Máquinas")}
+            OutlinedButton(onClick=onStops,modifier=Modifier.weight(1f)){Text("Paradas")}
+            OutlinedButton(onClick=onOrders,modifier=Modifier.weight(1f)){Text("Ordens")}
+        } }
+    }
+}
+@Composable private fun DashboardMetric(label:String,value:String,valueColor:Color,modifier:Modifier,panel:Color,edge:Color,ink:Color){
+    Card(modifier,colors=CardDefaults.cardColors(containerColor=panel),border=androidx.compose.foundation.BorderStroke(1.dp,edge)){
+        Column(Modifier.fillMaxWidth().padding(9.dp),horizontalAlignment=androidx.compose.ui.Alignment.CenterHorizontally){
+            Text(value,color=valueColor,style=MaterialTheme.typography.titleLarge);Text(label,color=ink,style=MaterialTheme.typography.labelSmall,maxLines=1)
+        }
+    }
+}
+@Composable private fun DashboardAction(symbol:String,label:String,action:()->Unit,modifier:Modifier,panel:Color,edge:Color,ink:Color){
+    Card(modifier.height(88.dp).clickable(onClick=action),colors=CardDefaults.cardColors(containerColor=panel),border=androidx.compose.foundation.BorderStroke(1.dp,edge)){
+        Column(Modifier.fillMaxSize().padding(5.dp),horizontalAlignment=androidx.compose.ui.Alignment.CenterHorizontally,verticalArrangement=Arrangement.Center){
+            Text(symbol,color=Color.White,style=MaterialTheme.typography.headlineSmall);Text(label,color=ink,style=MaterialTheme.typography.labelSmall,maxLines=2)
+        }
+    }
+}
+
 private fun StatusCount(label: String, count: Int, color: Color, modifier: Modifier = Modifier) {
     Card(modifier = modifier, colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.13f))) {
         Column(Modifier.padding(horizontal = 7.dp, vertical = 8.dp), horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
