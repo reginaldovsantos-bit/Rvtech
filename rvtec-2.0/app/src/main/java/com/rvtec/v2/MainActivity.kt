@@ -6,6 +6,8 @@ import androidx.activity.compose.setContent
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -37,7 +39,7 @@ class MainActivity : ComponentActivity() {
             var appName by remember { mutableStateOf(settings.getString("app_name", "RVTEC 2.0") ?: "RVTEC 2.0") }
             var workSchedule by remember { mutableStateOf(settings.getString("work_schedule", "") ?: "") }
             val rvtecColors = when (appearance) {
-                "Atual/Referência" -> darkColorScheme(primary=Color(0xFF168BFF),secondary=Color(0xFF18C7D8),background=Color(0xFF020B1A),surface=Color(0xFF102849),surfaceVariant=Color(0xFF17375E),onBackground=Color(0xFFF4F7FB),onSurface=Color(0xFFF4F7FB))
+                "Atual/Referência" -> lightColorScheme(primary=Color(0xFF173B61),secondary=Color(0xFF3986CF),background=Color(0xFFE3EFFB),surface=Color(0xFFF8FBFF),surfaceVariant=Color(0xFFD8E8F8),onBackground=Color(0xFF18334F),onSurface=Color(0xFF18334F))
                 "Antigo/Clássico" -> lightColorScheme(primary=Color(0xFF2F5D50),secondary=Color(0xFFA0784A),background=Color(0xFFF3EFE7),surface=Color(0xFFFFFDF8),surfaceVariant=Color(0xFFE8E0D2))
                 else -> darkColorScheme(primary=Color(0xFFD6A84B),secondary=Color(0xFFB88A32),background=Color(0xFF101318),surface=Color(0xFF202832),surfaceVariant=Color(0xFF303B48),onBackground=Color(0xFFF4F7FB),onSurface=Color(0xFFF4F7FB))
             }
@@ -75,39 +77,28 @@ class MainActivity : ComponentActivity() {
                 Scaffold(containerColor=MaterialTheme.colorScheme.background) { padding ->
                     Column(Modifier.fillMaxSize().padding(padding)) {
                         if (referenceStyle) {
-                            Row(Modifier.fillMaxWidth().padding(horizontal=12.dp, vertical=7.dp), verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
-                                Text("⚙", color=Color(0xFF18C7D8), style=MaterialTheme.typography.headlineLarge)
-                                Column(Modifier.weight(1f).padding(start=10.dp)) {
-                                    Text("RVTEC 2.0", color=Color.White, style=MaterialTheme.typography.headlineMedium)
-                                    Text("Manutenção Industrial", color=Color(0xFFB8D7F4), style=MaterialTheme.typography.titleSmall)
-                                }
-                                Column(horizontalAlignment=androidx.compose.ui.Alignment.End) {
-                                    Text("Técnico", color=Color.White, style=MaterialTheme.typography.titleSmall)
-                                    Text("● Online", color=Color(0xFF18D66B), style=MaterialTheme.typography.labelMedium)
-                                }
-                            }
-                            Row(Modifier.fillMaxWidth().padding(horizontal=8.dp, vertical=7.dp).height(76.dp)
-                                .background(menuColor, MaterialTheme.shapes.extraLarge).padding(4.dp),
-                                horizontalArrangement=Arrangement.spacedBy(2.dp), verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
-                                val mainNav = listOf(Triple("Início","⌂","Início"),Triple("Máquinas","⚙","Máquinas"),Triple("Paradas","⚠","Paradas"),Triple("Ordens de serviço","▤","Ordens"),Triple("Preventivas","☑","Preventivas"),Triple("Relatórios","▥","Relatórios"),Triple("Configurações","⚙","Config.")).filter { it.first == "Início" || it.first == "Configurações" || it.first in visiblePages }
-                                mainNav.forEach { (target,icon,label) ->
-                                    val selected = page == target
-                                    Column(Modifier.weight(1f).fillMaxHeight().clickable { page=target }
-                                        .background(if(selected) Color(0xFF087BFF) else menuColor, MaterialTheme.shapes.large),
-                                        horizontalAlignment=androidx.compose.ui.Alignment.CenterHorizontally,
-                                        verticalArrangement=Arrangement.Center) {
-                                        Text(icon,color=Color.White,style=MaterialTheme.typography.titleLarge)
-                                        Text(label,color=Color.White,style=MaterialTheme.typography.labelSmall,maxLines=1)
+                            Card(Modifier.fillMaxWidth().padding(horizontal=10.dp, vertical=8.dp), colors=CardDefaults.cardColors(containerColor=Color(0xFFD8E8F8)), shape=MaterialTheme.shapes.extraLarge) {
+                                Column(Modifier.fillMaxWidth().padding(horizontal=18.dp, vertical=14.dp)) {
+                                    Text("MANUTENÇÃO INDUSTRIAL", color=Color(0xFF42617F), style=MaterialTheme.typography.labelLarge)
+                                    Row(verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
+                                        Text("Manutenção Industrial", modifier=Modifier.weight(1f), color=Color(0xFF173451), style=MaterialTheme.typography.headlineSmall)
+                                        Text("v2.0", color=Color(0xFF536D87), style=MaterialTheme.typography.labelLarge)
                                     }
+                                    Text("Painel de controle da equipe", color=Color(0xFF60778E), style=MaterialTheme.typography.bodyMedium)
                                 }
                             }
-                            Row(Modifier.fillMaxWidth().padding(horizontal=10.dp, vertical=4.dp), horizontalArrangement=Arrangement.spacedBy(7.dp)) {
-                                listOf(Triple("Memória Técnica IA","🤖 IA RVTEC","Memória Técnica IA"),Triple("Ordens de serviço","• Solicitações","Ordens de serviço"),Triple("Configurações","⚙ Configurações","Configurações")).forEach { (target,label,_) ->
-                                    Card(Modifier.weight(1f).height(48.dp).clickable { page=target },
-                                        colors=CardDefaults.cardColors(containerColor=menuColor),shape=MaterialTheme.shapes.large) {
-                                        Box(Modifier.fillMaxSize(),contentAlignment=androidx.compose.ui.Alignment.Center) {
-                                            Text(label,color=Color.White,style=MaterialTheme.typography.labelLarge,maxLines=1)
-                                        }
+                            ScrollableTabRow(selectedTabIndex=menuPages.indexOf(page).coerceAtLeast(0), containerColor=Color(0xFF102D50), contentColor=Color.White, edgePadding=10.dp) {
+                                val mainNav=listOf("Início","Ordens de serviço","Máquinas","Relatórios","Configurações","Paradas","Preventivas","Apontamentos","Memória Técnica IA").filter { it=="Início" || it=="Configurações" || it in visiblePages }
+                                mainNav.forEach { target ->
+                                    Tab(selected=page==target,onClick={page=target},
+                                        text={Text(when(target){"Ordens de serviço"->"OS";"Configurações"->"Ajustes";"Memória Técnica IA"->"IA";else->target},maxLines=1)},
+                                        icon={Text(when(target){"Início"->"⌂";"Ordens de serviço"->"🔧";"Máquinas"->"⚙";"Relatórios"->"▥";"Configurações"->"⚙";"Paradas"->"⚠";"Preventivas"->"☑";"Apontamentos"->"▤";else->"✦"})})
+                                }
+                            }
+                            Row(Modifier.fillMaxWidth().padding(vertical=5.dp).horizontalScroll(rememberScrollState()).background(Color(0xFF102D50),MaterialTheme.shapes.large).padding(6.dp), horizontalArrangement=Arrangement.spacedBy(7.dp)) {
+                                listOf("Solicitações" to "Ordens de serviço","Ordens" to "Ordens de serviço","Apontamentos" to "Apontamentos","Preventivas" to "Preventivas","IA Técnica" to "Memória Técnica IA").forEach { (label,target) ->
+                                    Card(Modifier.widthIn(min=112.dp).height(44.dp).clickable{page=target},colors=CardDefaults.cardColors(containerColor=Color(0xFF1B416B)),shape=MaterialTheme.shapes.large) {
+                                        Box(Modifier.fillMaxSize().padding(horizontal=10.dp),contentAlignment=androidx.compose.ui.Alignment.Center) { Text(label,color=Color.White,style=MaterialTheme.typography.labelLarge,maxLines=1) }
                                     }
                                 }
                             }
@@ -431,75 +422,104 @@ private fun DashboardScreen(
     onOrders: () -> Unit, onReports: () -> Unit, onAi: () -> Unit,
     onPreventive: () -> Unit, onNewStop: () -> Unit, onNewOrder: () -> Unit, onEntries: () -> Unit
 ) {
-    val running = machines.count { it.status == MachineStatus.RUNNING }
-    val stopped = machines.count { it.status == MachineStatus.STOPPED }
-    val attending = machines.count { it.status == MachineStatus.MAINTENANCE }
-    val panel = Color(0xFF102849)
-    val edge = Color(0xFF294A70)
-    val ink = Color(0xFFF4F7FB)
-    val muted = Color(0xFFB8D7F4)
-    val capacity = machines.sumOf { it.productionKgPerHour }
-    LazyColumn(Modifier.fillMaxSize().background(Color(0xFF020B1A)),
-        contentPadding=PaddingValues(start=10.dp,end=10.dp,top=10.dp,bottom=22.dp),
-        verticalArrangement=Arrangement.spacedBy(12.dp)) {
+    val running=machines.count{it.status==MachineStatus.RUNNING}
+    val stopped=machines.count{it.status==MachineStatus.STOPPED}
+    val attending=machines.count{it.status==MachineStatus.MAINTENANCE}
+    val capacity=machines.sumOf{it.productionKgPerHour}
+    val ink=Color(0xFF173451)
+    val muted=Color(0xFF637B92)
+    LazyColumn(Modifier.fillMaxSize().background(Color(0xFFE3EFFB)),contentPadding=PaddingValues(10.dp,12.dp,10.dp,24.dp),verticalArrangement=Arrangement.spacedBy(14.dp)) {
         item {
-            androidx.compose.foundation.lazy.grid.LazyVerticalGrid(columns=GridCells.Fixed(4),
-                modifier=Modifier.fillMaxWidth().heightIn(max=240.dp),userScrollEnabled=false,
-                horizontalArrangement=Arrangement.spacedBy(7.dp),verticalArrangement=Arrangement.spacedBy(7.dp)) {
-                items(machines.size) { i ->
-                    val m=machines[i]
-                    val tile=when(m.status) { MachineStatus.RUNNING -> Color(0xFF087A39); MachineStatus.STOPPED -> Color(0xFFD00000); MachineStatus.MAINTENANCE -> Color(0xFFD99A00) }
-                    val pulse=if(m.status==MachineStatus.STOPPED) rememberInfiniteTransition(label="machinePulse").animateFloat(0.45f,1f,infiniteRepeatable(tween(650),RepeatMode.Reverse),label="pulse").value else 1f
-                    Card(Modifier.fillMaxWidth().height(104.dp).clickable(onClick=onMachines),
-                        colors=CardDefaults.cardColors(containerColor=tile.copy(alpha=pulse)),
-                        border=androidx.compose.foundation.BorderStroke(2.dp,when(m.status){MachineStatus.RUNNING->Color(0xFF22E879);MachineStatus.STOPPED->Color(0xFFFF4747);MachineStatus.MAINTENANCE->Color(0xFFFFC52E)}),
-                        shape=MaterialTheme.shapes.large) {
-                        Column(Modifier.fillMaxSize().padding(4.dp),horizontalAlignment=androidx.compose.ui.Alignment.CenterHorizontally,verticalArrangement=Arrangement.Center) {
-                            Text(when(m.status){MachineStatus.RUNNING->"⚙";MachineStatus.STOPPED->"⚠";MachineStatus.MAINTENANCE->"🔧"},color=Color.White,style=MaterialTheme.typography.titleLarge)
-                            Text(m.code.ifBlank { m.name.take(5) },color=Color.White,style=MaterialTheme.typography.headlineSmall,maxLines=1)
-                            Text(when(m.status){MachineStatus.RUNNING->"Operando";MachineStatus.STOPPED->"Parada";MachineStatus.MAINTENANCE->"Atendimento"},color=Color.White,style=MaterialTheme.typography.labelSmall,maxLines=1)
+            Row(Modifier.fillMaxWidth(),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) { Text("Painel geral",color=ink,style=MaterialTheme.typography.headlineSmall); Text("Visão geral da manutenção",color=muted) }
+                Surface(color=Color(0xFFD7F2E2),shape=MaterialTheme.shapes.large) { Text("● Online",Modifier.padding(horizontal=12.dp,vertical=6.dp),color=Color(0xFF167A45),style=MaterialTheme.typography.labelLarge) }
+            }
+        }
+        item {
+            Column(verticalArrangement=Arrangement.spacedBy(10.dp)) {
+                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
+                    DashboardMetric("Máquinas cadastradas",machines.size.toString(),Color(0xFFEAF5FF),Modifier.weight(1f),onMachines)
+                    DashboardMetric("Máquinas paradas agora",stopped.toString(),Color(0xFFFBE6E6),Modifier.weight(1f),onStops)
+                }
+                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
+                    DashboardMetric("Máquinas em atendimento",attending.toString(),Color(0xFFFFF1CC),Modifier.weight(1f),onMachines)
+                    DashboardMetric("OS pendentes",ordersOpen.toString(),Color(0xFFEAF5FF),Modifier.weight(1f),onOrders)
+                }
+                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
+                    DashboardMetric("Máquinas operando",running.toString(),Color(0xFFE1F4E9),Modifier.weight(1f),onMachines)
+                    DashboardMetric("Paradas abertas",stopsOpen.toString(),Color(0xFFFBE6E6),Modifier.weight(1f),onStops)
+                }
+            }
+        }
+        item {
+            Card(Modifier.fillMaxWidth().clickable(onClick=onMachines),colors=CardDefaults.cardColors(containerColor=Color(0xFFF9FCFF)),border=androidx.compose.foundation.BorderStroke(1.dp,Color(0xFFB8CEE2)),shape=MaterialTheme.shapes.extraLarge) {
+                Column(Modifier.fillMaxWidth().padding(16.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
+                    Text("Máquinas em atendimento",color=ink,style=MaterialTheme.typography.titleLarge)
+                    val active=machines.filter{it.status!=MachineStatus.RUNNING}
+                    if(active.isEmpty()) Text("Nenhuma máquina parada ou em atendimento.",color=muted)
+                    else active.take(5).forEachIndexed { index,machine ->
+                        Row(Modifier.fillMaxWidth(),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text("Máquina ${machine.code.ifBlank{machine.name}}",color=ink,style=MaterialTheme.typography.titleMedium)
+                                Text(machine.sector.ifBlank{"Setor não informado"},color=muted)
+                            }
+                            val isStopped=machine.status==MachineStatus.STOPPED
+                            Surface(color=if(isStopped)Color(0xFFFBE0E0) else Color(0xFFFFEFC2),shape=MaterialTheme.shapes.large) {
+                                Text(if(isStopped)"Parada" else "Atendimento",Modifier.padding(horizontal=10.dp,vertical=6.dp),color=if(isStopped)Color(0xFFB3261E) else Color(0xFF875900),style=MaterialTheme.typography.labelLarge)
+                            }
                         }
+                        if(index<active.take(5).lastIndex) HorizontalDivider(color=Color(0xFFD8E4EF))
                     }
                 }
             }
-            if(machines.isEmpty()) Text("Cadastre máquinas para acompanhar os estados.",color=muted)
         }
         item {
-            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(9.dp)) {
-                Card(Modifier.weight(1f),colors=CardDefaults.cardColors(containerColor=panel),border=androidx.compose.foundation.BorderStroke(1.dp,edge),shape=MaterialTheme.shapes.large) {
-                    Column(Modifier.fillMaxWidth().padding(11.dp),verticalArrangement=Arrangement.spacedBy(6.dp)) {
-                        Text("▥  Indicadores",color=ink,style=MaterialTheme.typography.titleMedium)
-                        HorizontalDivider(color=edge)
-                        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){Text("Disponibilidade",color=muted);Text(String.format(java.util.Locale("pt","BR"),"%.1f%%",availability),color=Color(0xFF18D66B))}
-                        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){Text("MTBF",color=muted);Text(mtbf?.let{String.format(java.util.Locale("pt","BR"),"%.1f h",it)}?:"—",color=ink)}
-                        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){Text("MTTR",color=muted);Text(mttr?.let{String.format(java.util.Locale("pt","BR"),"%.1f h",it)}?:"—",color=ink)}
-                        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){Text("Paradas abertas",color=muted);Text(stopsOpen.toString(),color=ink)}
+            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
+                Card(Modifier.weight(1f),colors=CardDefaults.cardColors(containerColor=Color(0xFFF9FCFF))) {
+                    Column(Modifier.padding(13.dp),verticalArrangement=Arrangement.spacedBy(5.dp)) {
+                        Text("Disponibilidade",color=muted,style=MaterialTheme.typography.labelLarge)
+                        Text(String.format(java.util.Locale("pt","BR"),"%.1f%%",availability),color=ink,style=MaterialTheme.typography.headlineSmall)
+                        Text("MTBF: ${mtbf?.let{String.format(java.util.Locale("pt","BR"),"%.1f h",it)}?:"—"}",color=muted)
+                        Text("MTTR: ${mttr?.let{String.format(java.util.Locale("pt","BR"),"%.1f h",it)}?:"—"}",color=muted)
                     }
                 }
-                Card(Modifier.weight(1f),colors=CardDefaults.cardColors(containerColor=panel),border=androidx.compose.foundation.BorderStroke(1.dp,edge),shape=MaterialTheme.shapes.large) {
-                    Column(Modifier.fillMaxWidth().padding(11.dp),verticalArrangement=Arrangement.spacedBy(6.dp)) {
-                        Text("▣  Produção / Capacidade",color=ink,style=MaterialTheme.typography.titleMedium)
-                        HorizontalDivider(color=edge)
-                        Text("Capacidade cadastrada",color=muted)
+                Card(Modifier.weight(1f),colors=CardDefaults.cardColors(containerColor=Color(0xFFF9FCFF))) {
+                    Column(Modifier.padding(13.dp),verticalArrangement=Arrangement.spacedBy(5.dp)) {
+                        Text("Produção / Capacidade",color=muted,style=MaterialTheme.typography.labelLarge)
                         Text(String.format(java.util.Locale("pt","BR"),"%.0f kg/h",capacity),color=ink,style=MaterialTheme.typography.headlineSmall)
-                        Text("Ordens pendentes: $ordersOpen",color=muted)
+                        Text("Capacidade cadastrada",color=muted)
                         Text("Produção real: sem apontamento",color=muted,style=MaterialTheme.typography.labelSmall)
                     }
                 }
             }
         }
         item {
-            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)) {
-                val shortcuts=listOf(Triple("■","Nova Parada",onNewStop),Triple("▤","Nova OS",onNewOrder),Triple("🔧","Apontamento",onEntries),Triple("▥","Gráficos",onReports),Triple("✦","IA Técnica",onAi))
-                shortcuts.forEach { (symbol,label,action) ->
-                    Card(Modifier.weight(1f).height(92.dp).clickable(onClick=action),colors=CardDefaults.cardColors(containerColor=panel),border=androidx.compose.foundation.BorderStroke(1.dp,edge),shape=MaterialTheme.shapes.large) {
-                        Column(Modifier.fillMaxSize().padding(3.dp),horizontalAlignment=androidx.compose.ui.Alignment.CenterHorizontally,verticalArrangement=Arrangement.Center) {
-                            Text(symbol,color=Color.White,style=MaterialTheme.typography.titleLarge)
-                            Text(label,color=ink,style=MaterialTheme.typography.labelSmall,maxLines=2)
-                        }
-                    }
-                }
+            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+                DashboardShortcut("＋","Nova Parada",Modifier.weight(1f),onNewStop)
+                DashboardShortcut("▤","Nova OS",Modifier.weight(1f),onNewOrder)
+                DashboardShortcut("✎","Apontamentos",Modifier.weight(1f),onEntries)
+                DashboardShortcut("▥","Relatórios",Modifier.weight(1f),onReports)
             }
+        }
+    }
+}
+
+@Composable
+private fun DashboardMetric(label:String,value:String,color:Color,modifier:Modifier=Modifier,onClick:()->Unit) {
+    Card(modifier=modifier.heightIn(min=104.dp).clickable(onClick=onClick),colors=CardDefaults.cardColors(containerColor=color),shape=MaterialTheme.shapes.large,border=androidx.compose.foundation.BorderStroke(1.dp,Color(0xFFD0DFEC))) {
+        Column(Modifier.fillMaxWidth().padding(14.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
+            Text(label,color=Color(0xFF526A80),style=MaterialTheme.typography.labelLarge,minLines=2)
+            Text(value,color=Color(0xFF173451),style=MaterialTheme.typography.headlineLarge)
+        }
+    }
+}
+
+@Composable
+private fun DashboardShortcut(icon:String,label:String,modifier:Modifier=Modifier,onClick:()->Unit) {
+    Card(modifier.height(82.dp).clickable(onClick=onClick),colors=CardDefaults.cardColors(containerColor=Color(0xFF173451)),shape=MaterialTheme.shapes.large) {
+        Column(Modifier.fillMaxSize().padding(5.dp),horizontalAlignment=androidx.compose.ui.Alignment.CenterHorizontally,verticalArrangement=Arrangement.Center) {
+            Text(icon,color=Color.White,style=MaterialTheme.typography.titleLarge)
+            Text(label,color=Color.White,style=MaterialTheme.typography.labelSmall,maxLines=2)
         }
     }
 }
