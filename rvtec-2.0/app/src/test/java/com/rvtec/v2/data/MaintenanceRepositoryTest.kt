@@ -143,4 +143,49 @@ class MaintenanceRepositoryTest {
         assertEquals(stop.id, repo.listMachines().single().activeStopId)
     }
 
+    @Test fun machineCanBeEditedWithoutChangingOperationalState() {
+        val repo = MaintenanceRepository()
+        repo.addMachine(Machine("m1", "Extrusora 108", code = "108", sector = "Filme", productionKgPerHour = 35.0))
+        repo.registerStop("m1", "Falha no puxador", now = 100)
+
+        val updated = repo.updateMachine("m1", "Extrusora 108A", "108A", "Linha 1", 42.5)
+
+        assertEquals("Extrusora 108A", updated.name)
+        assertEquals("108A", updated.code)
+        assertEquals("Linha 1", updated.sector)
+        assertEquals(42.5, updated.productionKgPerHour, 0.001)
+        assertEquals(MachineStatus.STOPPED, repo.listMachines().single().status)
+        assertNotNull(repo.listMachines().single().activeStopId)
+    }
+
+    @Test fun machineCanBeDeletedOnlyWhenItHasNoHistoryOrActiveMaintenance() {
+        val repo = MaintenanceRepository()
+        repo.addMachine(Machine("m1", "Extrusora 108"))
+        repo.deleteMachine("m1")
+        assertTrue(repo.listMachines().isEmpty())
+    }
+
+    @Test fun machineWithStopHistoryCannotBeDeleted() {
+        val repo = MaintenanceRepository()
+        repo.addMachine(Machine("m1", "Extrusora 108"))
+        repo.registerStop("m1", "Falha no encoder")
+        try {
+            repo.deleteMachine("m1")
+            fail("Não deve excluir máquina com histórico de parada")
+        } catch (_: IllegalStateException) { }
+        assertEquals(1, repo.listMachines().size)
+        assertEquals(1, repo.listStops().size)
+    }
+
+    @Test fun activeMachineCannotBeDeleted() {
+        val repo = MaintenanceRepository()
+        repo.addMachine(Machine("m1", "Extrusora 108"))
+        repo.registerStop("m1", "Falha no encoder")
+        try {
+            repo.deleteMachine("m1")
+            fail("Não deve excluir máquina parada")
+        } catch (_: IllegalStateException) { }
+        assertEquals(MachineStatus.STOPPED, repo.listMachines().single().status)
+    }
+
 }
