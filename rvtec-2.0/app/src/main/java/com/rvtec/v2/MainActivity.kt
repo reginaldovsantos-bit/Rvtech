@@ -33,6 +33,8 @@ class MainActivity : ComponentActivity() {
         val settings = getSharedPreferences("rvtec_settings", MODE_PRIVATE)
         setContent {
             var appearance by remember { mutableStateOf(settings.getString("appearance", "Atual/Referência") ?: "Atual/Referência") }
+            var appName by remember { mutableStateOf(settings.getString("app_name", "RVTEC 2.0") ?: "RVTEC 2.0") }
+            var workSchedule by remember { mutableStateOf(settings.getString("work_schedule", "") ?: "") }
             val rvtecColors = when (appearance) {
                 "Moderno" -> darkColorScheme(
                     primary = Color(0xFFD6B45A), onPrimary = Color(0xFF171717),
@@ -88,7 +90,7 @@ class MainActivity : ComponentActivity() {
                 Scaffold(
                     topBar = {
                         TopAppBar(
-                            title = { Text("RVTEC 2.0") },
+                            title = { Text(appName.ifBlank { "RVTEC 2.0" }) },
                             colors = TopAppBarDefaults.topAppBarColors(
                                 containerColor = headerColor,
                                 titleContentColor = headerContentColor
@@ -125,6 +127,16 @@ class MainActivity : ComponentActivity() {
                         when (page) {
                             "Configurações" -> AppearanceSettingsScreen(
                                 selected = appearance,
+                                appName = appName,
+                                workSchedule = workSchedule,
+                                onAppNameChange = { value ->
+                                    appName = value
+                                    settings.edit().putString("app_name", value).apply()
+                                },
+                                onWorkScheduleChange = { value ->
+                                    workSchedule = value
+                                    settings.edit().putString("work_schedule", value).apply()
+                                },
                                 visiblePages = visiblePages,
                                 onAppearanceSelect = { selected ->
                                     appearance = selected
@@ -561,6 +573,10 @@ private fun orderText(s: WorkOrderStatus) = when (s) {
 @Composable
 private fun AppearanceSettingsScreen(
     selected: String,
+    appName: String,
+    workSchedule: String,
+    onAppNameChange: (String) -> Unit,
+    onWorkScheduleChange: (String) -> Unit,
     visiblePages: Set<String>,
     onAppearanceSelect: (String) -> Unit,
     onModuleToggle: (String, Boolean) -> Unit
@@ -576,6 +592,22 @@ private fun AppearanceSettingsScreen(
     ) {
         item {
             Text("Configurações", style = MaterialTheme.typography.headlineSmall)
+            Text("Identificação e jornada", style = MaterialTheme.typography.titleMedium)
+            OutlinedTextField(
+                value = appName,
+                onValueChange = onAppNameChange,
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Nome exibido do aplicativo") },
+                singleLine = true
+            )
+            OutlinedTextField(
+                value = workSchedule,
+                onValueChange = onWorkScheduleChange,
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Horário / escala de trabalho") },
+                placeholder = { Text("Ex.: 6x2 • turnos de 8 horas") },
+                singleLine = true
+            )
             Text("Aparência do aplicativo", style = MaterialTheme.typography.titleMedium)
             Text("Escolha um dos três estilos. A preferência fica salva neste aparelho e é aplicada em todas as telas.")
         }
