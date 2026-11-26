@@ -427,7 +427,6 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-@Composable
 private fun DashboardScreen(
     machines: List<Machine>, stopsOpen: Int, ordersOpen: Int, availability: Double,
     mtbf: Double?, mttr: Double?, onMachines: () -> Unit, onStops: () -> Unit,
