@@ -32,6 +32,19 @@ class FirebaseServices(context: Context) {
         return true
     }
 
+    /**
+     * Checks whether this installation can obtain an App Check token.
+     * For debug builds, the debug token must still be registered in Firebase
+     * Console before protected backend requests can be accepted.
+     */
+    suspend fun validateAppCheck(): Boolean {
+        val firebaseApp = requireNotNull(app) {
+            "Firebase não configurado para o pacote RVTEC 2.0."
+        }
+        val token = FirebaseAppCheck.getInstance(firebaseApp).getAppCheckToken(false).await()
+        return token.token.isNotBlank()
+    }
+
     private fun authenticatedUserId(): String =
         FirebaseAuth.getInstance(requireNotNull(app) { "Firebase não configurado para o pacote RVTEC 2.0." })
             .currentUser?.uid ?: error("Faça login antes de sincronizar os dados.")
