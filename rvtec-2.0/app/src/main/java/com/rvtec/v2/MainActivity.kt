@@ -470,26 +470,70 @@ private fun DashboardScreen(
             }
         }
         item {
-            Card(Modifier.fillMaxWidth().clickable(onClick=onMachines),
-                colors=CardDefaults.cardColors(containerColor=panel),
-                border=androidx.compose.foundation.BorderStroke(1.dp,border),shape=MaterialTheme.shapes.extraLarge) {
-                Column(Modifier.fillMaxWidth().padding(16.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
-                    Text("Máquinas em atendimento",color=ink,style=MaterialTheme.typography.titleLarge)
-                    val active=machines.filter { it.status!=MachineStatus.RUNNING }
-                    if(active.isEmpty()) Text("Nenhuma máquina parada ou em atendimento.",color=muted)
-                    else active.take(5).forEachIndexed { index,machine ->
-                        Row(Modifier.fillMaxWidth(),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
-                            Column(Modifier.weight(1f)) {
-                                Text("Máquina " + machine.code.ifBlank { machine.name },color=ink,style=MaterialTheme.typography.titleMedium)
-                                Text(machine.sector.ifBlank { "Setor não informado" },color=muted)
-                            }
-                            val isStopped=machine.status==MachineStatus.STOPPED
-                            Surface(color=if(isStopped) Color(0xFFFCE3E3) else Color(0xFFFFF1C9),shape=MaterialTheme.shapes.large) {
-                                Text(if(isStopped) "Parada" else "Atendimento",Modifier.padding(horizontal=10.dp,vertical=6.dp),
-                                    color=if(isStopped) Color(0xFFB3261E) else Color(0xFF875900),style=MaterialTheme.typography.labelLarge)
+            val active = machines.filter { it.status != MachineStatus.RUNNING }
+            var activeIndex by remember(active.map { it.id }) { mutableIntStateOf(0) }
+            LaunchedEffect(active.map { it.id }) {
+                while (active.isNotEmpty()) {
+                    kotlinx.coroutines.delay(5000)
+                    activeIndex = (activeIndex + 1) % active.size
+                }
+            }
+            Card(
+                Modifier.fillMaxWidth().clickable(onClick = onMachines),
+                colors = CardDefaults.cardColors(containerColor = panel),
+                border = androidx.compose.foundation.BorderStroke(1.dp, border),
+                shape = MaterialTheme.shapes.extraLarge
+            ) {
+                Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                        Text("Máquinas em atendimento", color = ink, style = MaterialTheme.typography.titleLarge)
+                        Text(if (active.isEmpty()) "0" else "${activeIndex + 1}/${active.size}",
+                            color = muted, style = MaterialTheme.typography.labelMedium)
+                    }
+                    if (active.isEmpty()) {
+                        Text("Nenhuma máquina parada ou em atendimento.", color = muted)
+                    } else {
+                        val machine = active[activeIndex.coerceIn(0, active.lastIndex)]
+                        val isStopped = machine.status == MachineStatus.STOPPED
+                        val pulse = if (isStopped) {
+                            rememberInfiniteTransition(label = "home-stopped-${machine.id}")
+                                .animateFloat(
+                                    initialValue = 0.38f,
+                                    targetValue = 1f,
+                                    animationSpec = infiniteRepeatable(tween(2500), RepeatMode.Reverse),
+                                    label = "home-stopped-pulse"
+                                ).value
+                        } else 1f
+                        val statusColor = if (isStopped) Color(0xFFC62828) else Color(0xFFD9A000)
+                        Card(
+                            Modifier.fillMaxWidth().heightIn(min = 112.dp),
+                            colors = CardDefaults.cardColors(containerColor = statusColor.copy(alpha = pulse)),
+                            shape = MaterialTheme.shapes.large
+                        ) {
+                            Row(
+                                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                            ) {
+                                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Text("MÁQUINA", color = Color.White.copy(alpha = 0.85f), style = MaterialTheme.typography.labelLarge)
+                                    Text(machine.code.ifBlank { machine.name }, color = Color.White,
+                                        style = MaterialTheme.typography.headlineMedium, maxLines = 1)
+                                    Text(machine.sector.ifBlank { "Setor não informado" }, color = Color.White,
+                                        style = MaterialTheme.typography.bodyMedium)
+                                }
+                                Surface(color = Color.White, shape = MaterialTheme.shapes.large) {
+                                    Text(if (isStopped) "PARADA" else "EM ATENDIMENTO",
+                                        Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                                        color = statusColor, style = MaterialTheme.typography.labelLarge)
+                                }
                             }
                         }
-                        if(index<active.take(5).lastIndex) HorizontalDivider(color=border)
+                        if (active.size > 1) {
+                            Text("Exibição automática: uma máquina por vez, alternando a cada 5 segundos.",
+                                color = muted, style = MaterialTheme.typography.bodySmall)
+                        }
                     }
                 }
             }
