@@ -526,6 +526,7 @@ private fun DashboardScreen(
     }
 }
 
+@Composable
 private fun StatusCount(label: String, count: Int, color: Color, modifier: Modifier = Modifier) {
     Card(modifier = modifier, colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.13f))) {
         Column(Modifier.padding(horizontal = 7.dp, vertical = 8.dp), horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
