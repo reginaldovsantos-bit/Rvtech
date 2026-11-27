@@ -194,7 +194,7 @@ fun ReportsScreen(machines: List<Machine>, stops: List<StopRecord>, orders: List
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             ReportMetric("MTBF", total.mtbfHours?.let(::formatNumber) ?: "—", Modifier.weight(1f), "h")
-            ReportMetric("OS concluídas", orders.count { it.status == WorkOrderStatus.COMPLETED }.toString(), Modifier.weight(1f))
+            ReportMetric("OS concluídas", orders.count { order -> order.status == WorkOrderStatus.COMPLETED && order.completedAt?.let { it in start..end } == true }.toString(), Modifier.weight(1f))
         }
         Text("Indicadores por máquina", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 14.dp, bottom = 6.dp))
         if (machines.isEmpty()) {
