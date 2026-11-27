@@ -94,10 +94,29 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                             val mainNav=listOf("Início","Ordens de serviço","Máquinas","Relatórios","Configurações","Paradas","Preventivas","Apontamentos","Memória Técnica IA","Sincronização","Módulos legados").filter { it=="Início" || it=="Configurações" || it in visiblePages }
-                            ScrollableTabRow(selectedTabIndex=mainNav.indexOf(page).coerceAtLeast(0), containerColor=Color(0xFF102D50), contentColor=Color.White, edgePadding=4.dp) {
+                            Row(
+                                Modifier.fillMaxWidth().background(Color(0xFF102D50))
+                                    .horizontalScroll(rememberScrollState())
+                                    .padding(horizontal=9.dp, vertical=7.dp),
+                                horizontalArrangement=Arrangement.spacedBy(6.dp),
+                                verticalAlignment=androidx.compose.ui.Alignment.CenterVertically
+                            ) {
                                 mainNav.forEach { target ->
-                                    Tab(selected=page==target,onClick={page=target},
-                                        text={Text(when(target){"Ordens de serviço"->"OS";"Configurações"->"Ajustes";"Memória Técnica IA"->"IA";"Sincronização"->"Nuvem";else->target},maxLines=1,softWrap=false,style=MaterialTheme.typography.labelMedium)})
+                                    val active = page == target
+                                    Surface(
+                                        modifier=Modifier.clickable { page=target },
+                                        color=if(active) Color(0xFF1877B9) else Color(0xFF263F56),
+                                        shape=MaterialTheme.shapes.medium
+                                    ) {
+                                        Text(
+                                            when(target){"Ordens de serviço"->"OS";"Configurações"->"Ajustes";"Memória Técnica IA"->"IA";"Sincronização"->"Nuvem";else->target},
+                                            modifier=Modifier.padding(horizontal=11.dp, vertical=9.dp),
+                                            color=Color.White,
+                                            style=MaterialTheme.typography.labelMedium,
+                                            maxLines=1,
+                                            softWrap=false
+                                        )
+                                    }
                                 }
                             }
                         } else {
@@ -199,7 +218,7 @@ class MainActivity : ComponentActivity() {
                                         Text("Nenhuma máquina cadastrada. Toque em Nova para começar.", modifier = Modifier.padding(vertical = 16.dp))
                                     } else {
                                         LazyVerticalGrid(
-                                            columns = GridCells.Fixed(2),
+                                            columns = GridCells.Fixed(4),
                                             modifier = Modifier.fillMaxWidth().heightIn(max = 440.dp),
                                             horizontalArrangement = Arrangement.spacedBy(7.dp),
                                             verticalArrangement = Arrangement.spacedBy(7.dp)
@@ -225,20 +244,20 @@ class MainActivity : ComponentActivity() {
                                                     .ifBlank { machine.name.filter { it.isDigit() }.take(4) }
                                                     .ifBlank { machine.name.take(4) }
                                                 Card(
-                                                    modifier = Modifier.fillMaxWidth().height(92.dp)
+                                                    modifier = Modifier.fillMaxWidth().height(72.dp)
                                                         .clickable { selectedMachineId = machine.id },
                                                     colors = CardDefaults.cardColors(containerColor = tileColor.copy(alpha = pulse)),
                                                     border = if (selectedMachine?.id == machine.id) androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.onSurface) else null
                                                 ) {
                                                     Column(
-                                                        Modifier.fillMaxSize().padding(horizontal = 2.dp, vertical = 7.dp),
+                                                        Modifier.fillMaxSize().padding(horizontal = 2.dp, vertical = 5.dp),
                                                         verticalArrangement = Arrangement.Center,
                                                         horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
                                                     ) {
                                                         Text(
                                                             tileLabel,
                                                             color = tileText,
-                                                            style = MaterialTheme.typography.titleLarge,
+                                                            style = MaterialTheme.typography.titleMedium,
                                                             maxLines = 1
                                                         )
                                                         Text(
@@ -248,7 +267,7 @@ class MainActivity : ComponentActivity() {
                                                                 MachineStatus.STOPPED -> "PARADA"
                                                             },
                                                             color = tileText,
-                                                            style = MaterialTheme.typography.labelMedium,
+                                                            style = MaterialTheme.typography.labelSmall,
                                                             maxLines = 1
                                                         )
                                                     }
@@ -558,7 +577,7 @@ private fun DashboardScreen(
         item {
             Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = panel),
                 border = androidx.compose.foundation.BorderStroke(1.dp, border), shape = MaterialTheme.shapes.extraLarge) {
-                Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
                     Text("Indicadores de manutenção", color = ink, style = MaterialTheme.typography.titleLarge)
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Column(Modifier.weight(1f)) {
@@ -631,7 +650,7 @@ private fun DashboardCarouselCard(
 
 @Composable
 private fun DashboardMetric(label:String,value:String,color:Color,modifier:Modifier=Modifier,onClick:()->Unit) {
-    Card(modifier=modifier.heightIn(min=104.dp).clickable(onClick=onClick),
+    Card(modifier=modifier.heightIn(min=88.dp).clickable(onClick=onClick),
         colors=CardDefaults.cardColors(containerColor=color),shape=MaterialTheme.shapes.extraLarge,
         border=androidx.compose.foundation.BorderStroke(1.dp,Color(0xFFC9D8E7)),
         elevation=CardDefaults.cardElevation(defaultElevation=2.dp)) {
