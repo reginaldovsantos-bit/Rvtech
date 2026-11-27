@@ -80,25 +80,24 @@ class MainActivity : ComponentActivity() {
                 Scaffold(containerColor=MaterialTheme.colorScheme.background) { padding ->
                     Column(Modifier.fillMaxSize().padding(padding)) {
                         if (referenceStyle) {
-                            Card(Modifier.fillMaxWidth().padding(horizontal=10.dp, vertical=8.dp), colors=CardDefaults.cardColors(containerColor=Color(0xFF102849)), shape=MaterialTheme.shapes.extraLarge) {
+                            Card(Modifier.fillMaxWidth().padding(horizontal=10.dp, vertical=5.dp), colors=CardDefaults.cardColors(containerColor=Color(0xFF102849)), shape=MaterialTheme.shapes.extraLarge) {
                                 Row(
-                                    Modifier.fillMaxWidth().padding(horizontal=16.dp, vertical=13.dp),
+                                    Modifier.fillMaxWidth().padding(horizontal=14.dp, vertical=9.dp),
                                     verticalAlignment=androidx.compose.ui.Alignment.CenterVertically
                                 ) {
-                                    Text("⚙", color=Color(0xFF18C7D8), style=MaterialTheme.typography.headlineLarge)
-                                    Column(Modifier.weight(1f).padding(start=12.dp)) {
-                                        Text("RVTEC 2.0", color=Color.White, style=MaterialTheme.typography.headlineSmall)
-                                        Text("Manutenção Industrial", color=Color(0xFFB8D7F4), style=MaterialTheme.typography.titleSmall)
+                                    Text("⚙", color=Color(0xFF18C7D8), style=MaterialTheme.typography.headlineMedium)
+                                    Column(Modifier.weight(1f).padding(start=10.dp)) {
+                                        Text("RVTEC 2.0", color=Color.White, style=MaterialTheme.typography.titleLarge)
+                                        Text("Manutenção Industrial", color=Color(0xFFB8D7F4), style=MaterialTheme.typography.labelLarge)
                                     }
                                     Text("v2.0", color=Color(0xFFB8D7F4), style=MaterialTheme.typography.labelLarge)
                                 }
                             }
                             val mainNav=listOf("Início","Ordens de serviço","Máquinas","Relatórios","Configurações","Paradas","Preventivas","Apontamentos","Memória Técnica IA","Sincronização","Módulos legados").filter { it=="Início" || it=="Configurações" || it in visiblePages }
-                            ScrollableTabRow(selectedTabIndex=mainNav.indexOf(page).coerceAtLeast(0), containerColor=Color(0xFF102D50), contentColor=Color.White, edgePadding=10.dp) {
+                            ScrollableTabRow(selectedTabIndex=mainNav.indexOf(page).coerceAtLeast(0), containerColor=Color(0xFF102D50), contentColor=Color.White, edgePadding=4.dp) {
                                 mainNav.forEach { target ->
                                     Tab(selected=page==target,onClick={page=target},
-                                        text={Text(when(target){"Ordens de serviço"->"OS";"Configurações"->"Ajustes";"Memória Técnica IA"->"IA";"Sincronização"->"Nuvem";else->target},maxLines=1)},
-                                        icon={Text(when(target){"Início"->"⌂";"Ordens de serviço"->"🔧";"Máquinas"->"⚙";"Relatórios"->"▥";"Configurações"->"⚙";"Paradas"->"⚠";"Preventivas"->"☑";"Apontamentos"->"▤";"Sincronização"->"☁";else->"✦"})})
+                                        text={Text(when(target){"Ordens de serviço"->"OS";"Configurações"->"Ajustes";"Memória Técnica IA"->"IA";"Sincronização"->"Nuvem";else->target},maxLines=1,softWrap=false,style=MaterialTheme.typography.labelMedium)})
                                 }
                             }
                         } else {
@@ -636,9 +635,9 @@ private fun DashboardMetric(label:String,value:String,color:Color,modifier:Modif
         colors=CardDefaults.cardColors(containerColor=color),shape=MaterialTheme.shapes.extraLarge,
         border=androidx.compose.foundation.BorderStroke(1.dp,Color(0xFFC9D8E7)),
         elevation=CardDefaults.cardElevation(defaultElevation=2.dp)) {
-        Column(Modifier.fillMaxWidth().padding(14.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
-            Text(label,color=Color(0xFF687B8D),style=MaterialTheme.typography.labelLarge,minLines=2)
-            Text(value,color=Color(0xFF17324D),style=MaterialTheme.typography.headlineLarge)
+        Column(Modifier.fillMaxWidth().padding(10.dp),verticalArrangement=Arrangement.spacedBy(5.dp)) {
+            Text(label,color=Color(0xFF687B8D),style=MaterialTheme.typography.labelMedium,minLines=2)
+            Text(value,color=Color(0xFF17324D),style=MaterialTheme.typography.headlineMedium)
         }
     }
 }
@@ -656,7 +655,7 @@ private fun DashboardQuickButton(label:String,modifier:Modifier=Modifier,primary
 
 @Composable
 private fun DashboardShortcut(icon:String,label:String,modifier:Modifier=Modifier,onClick:()->Unit) {
-    Card(modifier.height(82.dp).clickable(onClick=onClick),colors=CardDefaults.cardColors(containerColor=Color(0xFF173451)),shape=MaterialTheme.shapes.large) {
+    Card(modifier.height(70.dp).clickable(onClick=onClick),colors=CardDefaults.cardColors(containerColor=Color(0xFF173451)),shape=MaterialTheme.shapes.large) {
         Column(Modifier.fillMaxSize().padding(5.dp),horizontalAlignment=androidx.compose.ui.Alignment.CenterHorizontally,verticalArrangement=Arrangement.Center) {
             Text(icon,color=Color.White,style=MaterialTheme.typography.titleLarge)
             Text(label,color=Color.White,style=MaterialTheme.typography.labelSmall,maxLines=2)
