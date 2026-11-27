@@ -118,6 +118,17 @@ class MainActivity : ComponentActivity() {
                         }
                         error?.let { Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(8.dp)) }
                         when (page) {
+                            "Preventivas" -> PreventivesScreen(
+                                repository = legacyRepository,
+                                machines = remember(revision) { repository.listMachines() },
+                                revision = revision,
+                                onRefresh = { refresh() }
+                            )
+                            "Relatórios" -> ReportsScreen(
+                                machines = remember(revision) { repository.listMachines() },
+                                stops = remember(revision) { repository.listStops() },
+                                orders = remember(revision) { repository.listOrders() }
+                            )
                             "Configurações" -> AppearanceSettingsScreen(
                                 selected = appearance,
                                 appName = appName,
