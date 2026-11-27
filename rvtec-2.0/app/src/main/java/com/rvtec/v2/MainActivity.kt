@@ -192,105 +192,59 @@ class MainActivity : ComponentActivity() {
                             }
                             "Máquinas" -> {
                                 val machines = remember(revision) { repository.listMachines() }
-                                val selectedMachine = machines.firstOrNull { it.id == selectedMachineId }
-                                    ?: machines.firstOrNull()
+                                val selectedMachine = machines.firstOrNull { it.id == selectedMachineId } ?: machines.firstOrNull()
                                 Column(Modifier.fillMaxSize()) {
-                                    Row(
-                                        Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-                                    ) {
+                                    Row(Modifier.fillMaxWidth().padding(top=12.dp,bottom=8.dp),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
                                         Column(Modifier.weight(1f)) {
-                                            Text("Máquinas", style = MaterialTheme.typography.titleLarge)
-                                            Text("Situação das máquinas", style = MaterialTheme.typography.bodySmall)
+                                            Text("⚙ Máquinas",style=MaterialTheme.typography.headlineMedium,color=Color(0xFF102849))
+                                            Text("Situação das máquinas",style=MaterialTheme.typography.bodyLarge,color=Color(0xFF34495E))
                                         }
-                                        Button(onClick = { showMachine = true }) { Text("Nova") }
+                                        Button(onClick={showMachine=true}) { Text("＋ Nova") }
                                     }
-                                    Row(
-                                        Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 10.dp),
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                    ) {
-                                        StatusCount("OPERAÇÃO", machines.count { it.status == MachineStatus.RUNNING }, Color(0xFF16834B), Modifier.weight(1f))
-                                        StatusCount("ATEND.", machines.count { it.status == MachineStatus.MAINTENANCE }, Color(0xFFD9A000), Modifier.weight(1f))
-                                        StatusCount("PARADA", machines.count { it.status == MachineStatus.STOPPED }, Color(0xFFC62828), Modifier.weight(1f))
+                                    Card(Modifier.fillMaxWidth().padding(bottom=10.dp),colors=CardDefaults.cardColors(containerColor=Color(0xFFEAF2FC)),shape=MaterialTheme.shapes.large,border=androidx.compose.foundation.BorderStroke(1.dp,Color(0xFFC9D8E7))) {
+                                        Row(Modifier.fillMaxWidth().padding(horizontal=8.dp,vertical=10.dp),horizontalArrangement=Arrangement.SpaceEvenly,verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
+                                            StatusLegend("Operação",Color(0xFF078B4B))
+                                            StatusLegend("Atendimento",Color(0xFFE0B000))
+                                            StatusLegend("Parada",Color(0xFFE3222B))
+                                        }
                                     }
-                                    if (machines.isEmpty()) {
-                                        Text("Nenhuma máquina cadastrada. Toque em Nova para começar.", modifier = Modifier.padding(vertical = 16.dp))
+                                    if(machines.isEmpty()) {
+                                        Text("Nenhuma máquina cadastrada. Toque em Nova para começar.",modifier=Modifier.padding(vertical=16.dp))
                                     } else {
-                                        LazyVerticalGrid(
-                                            columns = GridCells.Fixed(4),
-                                            modifier = Modifier.fillMaxWidth().heightIn(max = 440.dp),
-                                            horizontalArrangement = Arrangement.spacedBy(7.dp),
-                                            verticalArrangement = Arrangement.spacedBy(7.dp)
-                                        ) {
+                                        LazyVerticalGrid(columns=GridCells.Fixed(4),modifier=Modifier.fillMaxWidth().weight(1f),horizontalArrangement=Arrangement.spacedBy(6.dp),verticalArrangement=Arrangement.spacedBy(7.dp),contentPadding=PaddingValues(bottom=10.dp)) {
                                             items(machines.size) { index ->
-                                                val machine = machines[index]
-                                                val tileColor = when (machine.status) {
-                                                    MachineStatus.RUNNING -> Color(0xFF16834B)
-                                                    MachineStatus.MAINTENANCE -> Color(0xFFD9A000)
-                                                    MachineStatus.STOPPED -> Color(0xFFC62828)
+                                                val machine=machines[index]
+                                                val tileColor=when(machine.status) {
+                                                    MachineStatus.RUNNING -> Color(0xFF078B4B)
+                                                    MachineStatus.MAINTENANCE -> Color(0xFFE0B000)
+                                                    MachineStatus.STOPPED -> Color(0xFFE3222B)
                                                 }
-                                                val pulse = if (machine.status == MachineStatus.STOPPED) {
-                                                    rememberInfiniteTransition(label = "stopped-machine-${machine.id}")
-                                                        .animateFloat(
-                                                            initialValue = 0.28f,
-                                                            targetValue = 1f,
-                                                            animationSpec = infiniteRepeatable(tween(2500), RepeatMode.Reverse),
-                                                            label = "stopped-pulse"
-                                                        ).value
-                                                } else 1f
-                                                val tileText = if (machine.status == MachineStatus.MAINTENANCE) Color(0xFF342500) else Color.White
-                                                val tileLabel = machine.code.filter { it.isDigit() }.take(4)
-                                                    .ifBlank { machine.name.filter { it.isDigit() }.take(4) }
-                                                    .ifBlank { machine.name.take(4) }
-                                                Card(
-                                                    modifier = Modifier.fillMaxWidth().height(72.dp)
-                                                        .clickable { selectedMachineId = machine.id },
-                                                    colors = CardDefaults.cardColors(containerColor = tileColor.copy(alpha = pulse)),
-                                                    border = if (selectedMachine?.id == machine.id) androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.onSurface) else null
-                                                ) {
-                                                    Column(
-                                                        Modifier.fillMaxSize().padding(horizontal = 2.dp, vertical = 5.dp),
-                                                        verticalArrangement = Arrangement.Center,
-                                                        horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
-                                                    ) {
-                                                        Text(
-                                                            tileLabel,
-                                                            color = tileText,
-                                                            style = MaterialTheme.typography.titleMedium,
-                                                            maxLines = 1
-                                                        )
-                                                        Text(
-                                                            when (machine.status) {
-                                                                MachineStatus.RUNNING -> "OPERAÇÃO"
-                                                                MachineStatus.MAINTENANCE -> "ATEND."
-                                                                MachineStatus.STOPPED -> "PARADA"
-                                                            },
-                                                            color = tileText,
-                                                            style = MaterialTheme.typography.labelSmall,
-                                                            maxLines = 1
-                                                        )
+                                                val pulse=if(machine.status==MachineStatus.STOPPED) rememberInfiniteTransition(label="stopped-machine-${machine.id}").animateFloat(0.35f,1f,infiniteRepeatable(tween(2500),RepeatMode.Reverse),label="stopped-pulse").value else 1f
+                                                val tileText=if(machine.status==MachineStatus.MAINTENANCE) Color(0xFF302600) else Color.White
+                                                val tileLabel=machine.code.filter { it.isDigit() }.take(4).ifBlank { machine.name.filter { it.isDigit() }.take(4) }.ifBlank { machine.name.take(4) }
+                                                Card(Modifier.fillMaxWidth().height(82.dp).clickable { selectedMachineId=machine.id },colors=CardDefaults.cardColors(containerColor=tileColor.copy(alpha=pulse)),shape=MaterialTheme.shapes.large,border=androidx.compose.foundation.BorderStroke(1.5.dp,Color.White),elevation=CardDefaults.cardElevation(defaultElevation=2.dp)) {
+                                                    Column(Modifier.fillMaxSize().padding(horizontal=1.dp,vertical=4.dp),verticalArrangement=Arrangement.Center,horizontalAlignment=androidx.compose.ui.Alignment.CenterHorizontally) {
+                                                        Text(tileLabel,color=tileText,style=MaterialTheme.typography.headlineSmall,maxLines=1)
+                                                        Row(verticalAlignment=androidx.compose.ui.Alignment.CenterVertically,horizontalArrangement=Arrangement.Center) {
+                                                            if(machine.status==MachineStatus.STOPPED) Text("● ",color=Color.White,style=MaterialTheme.typography.labelSmall)
+                                                            Text(when(machine.status) { MachineStatus.RUNNING -> "OPERAÇÃO"; MachineStatus.MAINTENANCE -> "ATENDIMENTO"; MachineStatus.STOPPED -> "PARADA" },color=tileText,style=MaterialTheme.typography.labelSmall,maxLines=1,softWrap=false)
+                                                        }
                                                     }
                                                 }
                                             }
                                         }
                                         selectedMachine?.let { machine ->
-                                            Card(
-                                                Modifier.fillMaxWidth().padding(top = 12.dp),
-                                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                                            ) {
-                                                Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                                                    Text(machine.name, style = MaterialTheme.typography.titleMedium)
+                                            Card(Modifier.fillMaxWidth().padding(top=8.dp),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)) {
+                                                Column(Modifier.padding(12.dp),verticalArrangement=Arrangement.spacedBy(5.dp)) {
+                                                    Text(machine.name,style=MaterialTheme.typography.titleMedium)
                                                     Text("Código: ${machine.code.ifBlank { "—" }}")
                                                     Text("Setor: ${machine.sector.ifBlank { "—" }}")
                                                     Text("Produção: ${machine.productionKgPerHour} kg/h")
                                                     Text("Estado: ${statusText(machine.status)}")
-                                                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                                        OutlinedButton(onClick = { showEditMachineId = machine.id }) { Text("Editar") }
-                                                        TextButton(onClick = { showDeleteMachineId = machine.id }) { Text("Excluir") }
-                                                        if (machine.status == MachineStatus.MAINTENANCE) {
-                                                            Button(onClick = { perform { repository.releaseMachine(machine.id) } }) { Text("Liberar") }
-                                                        }
+                                                    Row(horizontalArrangement=Arrangement.spacedBy(6.dp)) {
+                                                        OutlinedButton(onClick={showEditMachineId=machine.id}) { Text("Editar") }
+                                                        TextButton(onClick={showDeleteMachineId=machine.id}) { Text("Excluir") }
+                                                        if(machine.status==MachineStatus.MAINTENANCE) Button(onClick={perform { repository.releaseMachine(machine.id) }}) { Text("Liberar") }
                                                     }
                                                 }
                                             }
@@ -679,6 +633,14 @@ private fun DashboardShortcut(icon:String,label:String,modifier:Modifier=Modifie
             Text(icon,color=Color.White,style=MaterialTheme.typography.titleLarge)
             Text(label,color=Color.White,style=MaterialTheme.typography.labelSmall,maxLines=2)
         }
+    }
+}
+
+@Composable
+private fun StatusLegend(label:String,color:Color) {
+    Row(verticalAlignment=androidx.compose.ui.Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(6.dp)) {
+        Surface(Modifier.size(13.dp),color=color,shape=MaterialTheme.shapes.small) {}
+        Text(label,color=Color(0xFF17324D),style=MaterialTheme.typography.labelMedium)
     }
 }
 
