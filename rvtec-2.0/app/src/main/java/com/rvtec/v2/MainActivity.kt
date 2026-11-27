@@ -42,7 +42,7 @@ class MainActivity : ComponentActivity() {
             var appName by remember { mutableStateOf(settings.getString("app_name", "RVTEC 2.0") ?: "RVTEC 2.0") }
             var workSchedule by remember { mutableStateOf(settings.getString("work_schedule", "") ?: "") }
             val rvtecColors = when (appearance) {
-                "Atual/Referência" -> lightColorScheme(primary=Color(0xFF2478B9),secondary=Color(0xFF173B5E),background=Color(0xFFE4EFFB),surface=Color(0xFFF8FBFF),surfaceVariant=Color(0xFFDCE9F7),onBackground=Color(0xFF17324D),onSurface=Color(0xFF17324D),onSurfaceVariant=Color(0xFF637587),outlineVariant=Color(0xFFC8D7E6))
+                "Atual/Referência" -> lightColorScheme(primary=Color(0xFF1877B9),secondary=Color(0xFF173B58),background=Color(0xFFF2F5F8),surface=Color.White,surfaceVariant=Color(0xFFEAF4FB),onBackground=Color(0xFF172635),onSurface=Color(0xFF172635),onSurfaceVariant=Color(0xFF68798A),outlineVariant=Color(0xFFE1E8EF))
                 "Antigo/Clássico" -> lightColorScheme(primary=Color(0xFF2F5D50),secondary=Color(0xFFA0784A),background=Color(0xFFF3EFE7),surface=Color(0xFFFFFDF8),surfaceVariant=Color(0xFFE8E0D2))
                 else -> darkColorScheme(primary=Color(0xFFD6A84B),secondary=Color(0xFFB88A32),background=Color(0xFF101318),surface=Color(0xFF202832),surfaceVariant=Color(0xFF303B48),onBackground=Color(0xFFF4F7FB),onSurface=Color(0xFFF4F7FB))
             }
@@ -80,7 +80,7 @@ class MainActivity : ComponentActivity() {
                 Scaffold(containerColor=MaterialTheme.colorScheme.background) { padding ->
                     Column(Modifier.fillMaxSize().padding(padding)) {
                         if (referenceStyle) {
-                            Card(Modifier.fillMaxWidth().padding(horizontal=10.dp, vertical=8.dp), colors=CardDefaults.cardColors(containerColor=Color(0xFF102849)), shape=MaterialTheme.shapes.extraLarge) {
+                            Card(Modifier.fillMaxWidth().padding(horizontal=10.dp, vertical=8.dp), colors=CardDefaults.cardColors(containerColor=Color(0xFF10283F)), shape=MaterialTheme.shapes.extraLarge) {
                                 Row(
                                     Modifier.fillMaxWidth().padding(horizontal=16.dp, vertical=13.dp),
                                     verticalAlignment=androidx.compose.ui.Alignment.CenterVertically
@@ -94,7 +94,7 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                             val mainNav=listOf("Início","Ordens de serviço","Máquinas","Relatórios","Configurações","Paradas","Preventivas","Apontamentos","Memória Técnica IA","Sincronização","Módulos legados").filter { it=="Início" || it=="Configurações" || it in visiblePages }
-                            ScrollableTabRow(selectedTabIndex=mainNav.indexOf(page).coerceAtLeast(0), containerColor=Color(0xFF102D50), contentColor=Color.White, edgePadding=10.dp) {
+                            ScrollableTabRow(selectedTabIndex=mainNav.indexOf(page).coerceAtLeast(0), containerColor=Color.White, contentColor=Color(0xFF526477), edgePadding=14.dp) {
                                 mainNav.forEach { target ->
                                     Tab(selected=page==target,onClick={page=target},
                                         text={Text(when(target){"Ordens de serviço"->"OS";"Configurações"->"Ajustes";"Memória Técnica IA"->"IA";"Sincronização"->"Nuvem";else->target},maxLines=1)},
@@ -436,13 +436,13 @@ private fun DashboardScreen(
         set(java.util.Calendar.SECOND, 0); set(java.util.Calendar.MILLISECOND, 0)
     }.timeInMillis
     val stopsToday = stops.count { it.startedAt >= todayStart }
-    val ink = Color(0xFF17324D)
-    val muted = Color(0xFF687B8D)
-    val panel = Color(0xFFF8FBFF)
-    val border = Color(0xFFC9D8E7)
+    val ink = Color(0xFF172635)
+    val muted = Color(0xFF68798A)
+    val panel = Color.White
+    val border = Color(0xFFE1E8EF)
     LazyColumn(
-        Modifier.fillMaxSize().background(Color(0xFFE4EFFB)),
-        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 10.dp),
+        Modifier.fillMaxSize().background(Color(0xFFF2F5F8)),
+        contentPadding = PaddingValues(horizontal = 15.dp, vertical = 18.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         item {
@@ -547,7 +547,7 @@ private fun DashboardScreen(
         }
         item {
             Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = panel),
-                border = androidx.compose.foundation.BorderStroke(1.dp, border), shape = MaterialTheme.shapes.extraLarge) {
+                border = androidx.compose.foundation.BorderStroke(1.dp, border), shape = MaterialTheme.shapes.large) {
                 Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Indicadores de manutenção", color = ink, style = MaterialTheme.typography.titleLarge)
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -600,8 +600,8 @@ private fun DashboardCarouselCard(
 ) {
     Card(
         Modifier.fillMaxWidth().clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FBFF)),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFC9D8E7)),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE1E8EF)),
         shape = MaterialTheme.shapes.extraLarge
     ) {
         Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -622,12 +622,12 @@ private fun DashboardCarouselCard(
 @Composable
 private fun DashboardMetric(label:String,value:String,color:Color,modifier:Modifier=Modifier,onClick:()->Unit) {
     Card(modifier=modifier.heightIn(min=104.dp).clickable(onClick=onClick),
-        colors=CardDefaults.cardColors(containerColor=color),shape=MaterialTheme.shapes.extraLarge,
-        border=androidx.compose.foundation.BorderStroke(1.dp,Color(0xFFC9D8E7)),
+        colors=CardDefaults.cardColors(containerColor=color),shape=MaterialTheme.shapes.large,
+        border=androidx.compose.foundation.BorderStroke(1.dp,Color(0xFFE1E8EF)),
         elevation=CardDefaults.cardElevation(defaultElevation=2.dp)) {
         Column(Modifier.fillMaxWidth().padding(14.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
-            Text(label,color=Color(0xFF687B8D),style=MaterialTheme.typography.labelLarge,minLines=2)
-            Text(value,color=Color(0xFF17324D),style=MaterialTheme.typography.headlineLarge)
+            Text(label,color=Color(0xFF68798A),style=MaterialTheme.typography.labelLarge,minLines=2)
+            Text(value,color=Color(0xFF172635),style=MaterialTheme.typography.headlineLarge)
         }
     }
 }
@@ -636,8 +636,8 @@ private fun DashboardMetric(label:String,value:String,color:Color,modifier:Modif
 private fun DashboardQuickButton(label:String,modifier:Modifier=Modifier,primary:Boolean=false,onClick:()->Unit) {
     Button(onClick=onClick,modifier=modifier.heightIn(min=54.dp),
         colors=ButtonDefaults.buttonColors(
-            containerColor=if(primary) Color(0xFF2478B9) else Color(0xFFE6F0FA),
-            contentColor=if(primary) Color.White else Color(0xFF173B5E)),
+            containerColor=if(primary) Color(0xFF1877B9) else Color(0xFFF1F5F8),
+            contentColor=if(primary) Color.White else Color(0xFF10283F)),
         shape=MaterialTheme.shapes.large,contentPadding=PaddingValues(horizontal=10.dp,vertical=10.dp)) {
         Text(label,style=MaterialTheme.typography.labelLarge)
     }
