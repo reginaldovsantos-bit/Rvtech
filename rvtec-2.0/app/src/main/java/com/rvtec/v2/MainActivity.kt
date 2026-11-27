@@ -428,8 +428,8 @@ private fun DashboardScreen(
     val attendingMachines = activeOrders.mapNotNull { order ->
         machines.firstOrNull { it.id == order.machineId }?.let { machine -> order to machine }
     }.distinctBy { it.second.id }
-    val attendingMachineIds = attendingMachines.map { it.second.id }.toSet()
-    val stoppedMachines = machines.filter { it.status == MachineStatus.STOPPED && it.id !in attendingMachineIds }
+    // Paradas e atendimentos são indicadores independentes: uma máquina pode aparecer nos dois cartões.
+    val stoppedMachines = machines.filter { it.status == MachineStatus.STOPPED }
     val pendingOrders = orders.count { it.status == WorkOrderStatus.OPEN || it.status == WorkOrderStatus.IN_PROGRESS }
     val todayStart = java.util.Calendar.getInstance().apply {
         set(java.util.Calendar.HOUR_OF_DAY, 0); set(java.util.Calendar.MINUTE, 0)
