@@ -80,12 +80,12 @@ class MainActivity : ComponentActivity() {
                 Scaffold(containerColor=MaterialTheme.colorScheme.background) { padding ->
                     Column(Modifier.fillMaxSize().padding(padding)) {
                         if (referenceStyle) {
-                            Card(Modifier.fillMaxWidth().padding(horizontal=10.dp, vertical=5.dp), colors=CardDefaults.cardColors(containerColor=Color(0xFF102849)), shape=MaterialTheme.shapes.extraLarge) {
+                            Card(Modifier.fillMaxWidth().padding(horizontal=10.dp, vertical=5.dp), colors=CardDefaults.cardColors(containerColor=Color(0xFFDCE9F7)), shape=MaterialTheme.shapes.extraLarge) {
                                 Row(
                                     Modifier.fillMaxWidth().padding(horizontal=14.dp, vertical=9.dp),
                                     verticalAlignment=androidx.compose.ui.Alignment.CenterVertically
                                 ) {
-                                    Text("⚙", color=Color(0xFF18C7D8), style=MaterialTheme.typography.headlineMedium)
+                                    Text("⚙", color=Color(0xFF102849), style=MaterialTheme.typography.headlineLarge)
                                     Column(Modifier.weight(1f).padding(start=10.dp)) {
                                         Text("RVTEC 2.0", color=Color.White, style=MaterialTheme.typography.titleLarge)
                                         Text("Manutenção Industrial", color=Color(0xFFB8D7F4), style=MaterialTheme.typography.labelLarge)
@@ -93,7 +93,7 @@ class MainActivity : ComponentActivity() {
                                     Text("v2.0", color=Color(0xFFB8D7F4), style=MaterialTheme.typography.labelLarge)
                                 }
                             }
-                            val mainNav=listOf("Início","Ordens de serviço","Máquinas","Relatórios","Configurações","Paradas","Preventivas","Apontamentos","Memória Técnica IA","Sincronização","Módulos legados").filter { it=="Início" || it=="Configurações" || it in visiblePages }
+                            val mainNav=listOf("Início","Ordens de serviço","Máquinas","Relatórios","Configurações").filter { it=="Início" || it=="Configurações" || it in visiblePages }
                             Row(
                                 Modifier.fillMaxWidth().background(Color(0xFF102D50))
                                     .horizontalScroll(rememberScrollState())
