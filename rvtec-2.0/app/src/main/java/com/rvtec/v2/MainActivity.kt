@@ -80,42 +80,69 @@ class MainActivity : ComponentActivity() {
                 Scaffold(containerColor=MaterialTheme.colorScheme.background) { padding ->
                     Column(Modifier.fillMaxSize().padding(padding)) {
                         if (referenceStyle) {
-                            Card(Modifier.fillMaxWidth().padding(horizontal=10.dp, vertical=5.dp), colors=CardDefaults.cardColors(containerColor=Color(0xFFDCE9F7)), shape=MaterialTheme.shapes.extraLarge) {
+                            Card(
+                                Modifier.fillMaxWidth().padding(horizontal=10.dp, vertical=5.dp),
+                                colors=CardDefaults.cardColors(containerColor=Color(0xFFDCE9F7)),
+                                shape=MaterialTheme.shapes.extraLarge,
+                                elevation=CardDefaults.cardElevation(defaultElevation=2.dp)
+                            ) {
                                 Row(
-                                    Modifier.fillMaxWidth().padding(horizontal=14.dp, vertical=9.dp),
+                                    Modifier.fillMaxWidth().heightIn(min=174.dp).padding(horizontal=14.dp, vertical=16.dp),
                                     verticalAlignment=androidx.compose.ui.Alignment.CenterVertically
                                 ) {
-                                    Text("⚙", color=Color(0xFF102849), style=MaterialTheme.typography.headlineLarge)
-                                    Column(Modifier.weight(1f).padding(start=10.dp)) {
-                                        Text("RVTEC 2.0", color=Color.White, style=MaterialTheme.typography.titleLarge)
-                                        Text("Manutenção Industrial", color=Color(0xFFB8D7F4), style=MaterialTheme.typography.labelLarge)
+                                    Surface(
+                                        modifier=Modifier.size(76.dp).clickable { page = "Início" },
+                                        color=Color.White, shape=MaterialTheme.shapes.large,
+                                        shadowElevation=2.dp
+                                    ) {
+                                        Box(contentAlignment=androidx.compose.ui.Alignment.Center) {
+                                            Text("☰", color=Color(0xFF102849), style=MaterialTheme.typography.headlineLarge)
+                                        }
                                     }
-                                    Text("v2.0", color=Color(0xFFB8D7F4), style=MaterialTheme.typography.labelLarge)
+                                    Column(Modifier.weight(1f).padding(start=16.dp)) {
+                                        Text("MANUTENÇÃO INDUSTRIAL", color=Color(0xFF405B76), style=MaterialTheme.typography.labelLarge)
+                                        Text("Manutenção Industrial", color=Color(0xFF102849), style=MaterialTheme.typography.headlineLarge)
+                                        Text("Painel de controle da equipe", color=Color(0xFF78899B), style=MaterialTheme.typography.bodyLarge)
+                                    }
+                                    Surface(color=Color(0xFFEAF2FC), shape=MaterialTheme.shapes.extraLarge) {
+                                        Text("v2.0", modifier=Modifier.padding(horizontal=15.dp, vertical=10.dp), color=Color(0xFF60758A), style=MaterialTheme.typography.labelLarge)
+                                    }
                                 }
                             }
                             val mainNav=listOf("Início","Ordens de serviço","Máquinas","Relatórios","Configurações").filter { it=="Início" || it=="Configurações" || it in visiblePages }
-                            Row(
-                                Modifier.fillMaxWidth().background(Color(0xFF102D50))
-                                    .horizontalScroll(rememberScrollState())
-                                    .padding(horizontal=9.dp, vertical=7.dp),
-                                horizontalArrangement=Arrangement.spacedBy(6.dp),
-                                verticalAlignment=androidx.compose.ui.Alignment.CenterVertically
+                            Surface(
+                                Modifier.fillMaxWidth().padding(horizontal=10.dp, vertical=7.dp),
+                                color=Color(0xFF102D50), shape=MaterialTheme.shapes.extraLarge,
+                                shadowElevation=4.dp
                             ) {
-                                mainNav.forEach { target ->
-                                    val active = page == target
-                                    Surface(
-                                        modifier=Modifier.clickable { page=target },
-                                        color=if(active) Color(0xFF1877B9) else Color(0xFF263F56),
-                                        shape=MaterialTheme.shapes.medium
-                                    ) {
-                                        Text(
-                                            when(target){"Ordens de serviço"->"OS";"Configurações"->"Ajustes";"Memória Técnica IA"->"IA";"Sincronização"->"Nuvem";else->target},
-                                            modifier=Modifier.padding(horizontal=11.dp, vertical=9.dp),
-                                            color=Color.White,
-                                            style=MaterialTheme.typography.labelMedium,
-                                            maxLines=1,
-                                            softWrap=false
-                                        )
+                                Row(
+                                    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal=7.dp, vertical=7.dp),
+                                    horizontalArrangement=Arrangement.spacedBy(5.dp),
+                                    verticalAlignment=androidx.compose.ui.Alignment.CenterVertically
+                                ) {
+                                    mainNav.forEach { target ->
+                                        val active = page == target
+                                        val (glyph,label)=when(target) {
+                                            "Início" -> "⌂" to "Início"
+                                            "Ordens de serviço" -> "🔧" to "OS"
+                                            "Máquinas" -> "⚙" to "Máquinas"
+                                            "Relatórios" -> "▥" to "Indicadores"
+                                            else -> "⚙" to "Ajustes"
+                                        }
+                                        Surface(
+                                            modifier=Modifier.widthIn(min=82.dp).clickable { page=target },
+                                            color=if(active) Color(0xFF398AD0) else Color.Transparent,
+                                            shape=MaterialTheme.shapes.large
+                                        ) {
+                                            Column(
+                                                Modifier.padding(horizontal=10.dp, vertical=10.dp),
+                                                horizontalAlignment=androidx.compose.ui.Alignment.CenterHorizontally,
+                                                verticalArrangement=Arrangement.spacedBy(3.dp)
+                                            ) {
+                                                Text(glyph, color=Color.White, style=MaterialTheme.typography.headlineSmall)
+                                                Text(label, color=Color.White, style=MaterialTheme.typography.labelMedium, maxLines=1, softWrap=false)
+                                            }
+                                        }
                                     }
                                 }
                             }
